@@ -15,7 +15,7 @@ class HomeHeader extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -110,68 +110,12 @@ class HomeHeader extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Right: Actions
+                // Right: Notification bell only
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Row(
-                      children: [
-                        const _NotificationBadge(),
-                        const SizedBox(width: 10),
-                        // Profile avatar
-                        GestureDetector(
-                          onTap: () {},
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
-                                  borderRadius: BorderRadius.circular(AppRadius.md),
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primaryBlue.withOpacity(0.3),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.person_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                              // Online indicator
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryGreen,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isDark
-                                          ? const Color(0xFF0C1B2A)
-                                          : LightColors.background,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                    const _NotificationBadge(),
+                    const SizedBox(height: 6),
                     // Location pill
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
