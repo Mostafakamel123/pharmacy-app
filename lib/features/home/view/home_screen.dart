@@ -44,7 +44,7 @@ class PatientHomeScreen extends ConsumerWidget {
             // Recent posts
             const SliverToBoxAdapter(child: RecentPostsSection()),
             // Bottom padding for nav bar
-            const SliverToBoxAdapter(child: SizedBox(height: 10)),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
       ),
