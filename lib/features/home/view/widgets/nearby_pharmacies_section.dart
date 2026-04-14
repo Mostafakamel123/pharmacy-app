@@ -2,8 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
+import 'package:pharmacy_app/features/pharmacies/view/nearby_pharmacies_screen.dart';
+import 'package:pharmacy_app/features/pharmacies/view/pharmacy_details_screen.dart';
 
 class NearbyPharmaciesSection extends ConsumerWidget {
   const NearbyPharmaciesSection({super.key});
@@ -30,14 +33,34 @@ class NearbyPharmaciesSection extends ConsumerWidget {
                   color: isDark ? Colors.white : const Color(0xFF1F2937),
                 ),
               ),
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  'View All',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0EA5E9),
+              Builder(
+                builder: (context) => TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const NearbyPharmaciesScreen(),
+                        transitionsBuilder: (_, animation, __, child) {
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(1, 0),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            )),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'View All',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0EA5E9),
+                    ),
                   ),
                 ),
               ),
@@ -88,7 +111,14 @@ class _PharmacyCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PharmacyDetailsScreen(pharmacy: pharmacy),
+          ),
+        );
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: 220,

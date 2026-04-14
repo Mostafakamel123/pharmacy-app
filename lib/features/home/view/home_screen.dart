@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
-import 'package:pharmacy_app/features/home/view/widgets/cta_banner.dart';
 import 'package:pharmacy_app/features/home/view/widgets/home_header.dart';
 import 'package:pharmacy_app/features/home/view/widgets/nearby_pharmacies_section.dart';
 import 'package:pharmacy_app/features/home/view/widgets/quick_actions_section.dart';
@@ -40,7 +39,7 @@ class PatientHomeScreen extends ConsumerWidget {
            
             const SliverToBoxAdapter(child: QuickActionsSection()),
             // CTA banner
-            const SliverToBoxAdapter(child: CTABanner()),
+            // const SliverToBoxAdapter(child: CTABanner()),
             // Recent posts
             const SliverToBoxAdapter(child: RecentPostsSection()),
             // Bottom padding for nav bar
