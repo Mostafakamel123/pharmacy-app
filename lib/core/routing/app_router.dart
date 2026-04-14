@@ -81,7 +81,7 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.home,
       name: 'home',
       builder: (context, state) => const PremiumNavShell(
-        userRole: UserRole.pharmacy, // Pharmacy view
+        userRole: UserRole.patient, // Patient view with home screen
       ),
     ),
   ],

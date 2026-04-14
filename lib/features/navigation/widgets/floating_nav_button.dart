@@ -1,6 +1,5 @@
-// ignore_for_file: unused_field, deprecated_member_use
-
 import 'package:flutter/material.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/core/theme/nav_theme.dart';
 
@@ -23,7 +22,6 @@ class _FloatingNavButtonState extends State<FloatingNavButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
 
   @override
   void initState() {
@@ -33,13 +31,9 @@ class _FloatingNavButtonState extends State<FloatingNavButton>
       duration: NavTheme.fabAnimationDuration,
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -48,22 +42,10 @@ class _FloatingNavButtonState extends State<FloatingNavButton>
     super.dispose();
   }
 
-  void _onTapDown(TapDownDetails details) {
-    setState(() => _isPressed = true);
-    _animationController.forward();
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    setState(() => _isPressed = false);
-    _animationController.reverse().then((_) {
-      widget.onPressed?.call();
-    });
-  }
-
-  void _onTapCancel() {
-    setState(() => _isPressed = false);
-    _animationController.reverse();
-  }
+  void _onTapDown(TapDownDetails details) => _animationController.forward();
+  void _onTapUp(TapUpDetails details) =>
+      _animationController.reverse().then((_) => widget.onPressed?.call());
+  void _onTapCancel() => _animationController.reverse();
 
   @override
   Widget build(BuildContext context) {

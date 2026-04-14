@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
 
 /// Navigation theme constants
 class NavTheme {
@@ -16,8 +17,8 @@ class NavTheme {
   static const double inactiveLabelSize = 11.0;
 
   // Border radius
-  static const double navBarRadius = 24.0;
-  static const double fabRadius = 18.0;
+  static const double navBarRadius = AppRadius.xxl;
+  static const double fabRadius = AppRadius.md;
 
   // Animation durations
   static const Duration animationDuration = Duration(milliseconds: 300);

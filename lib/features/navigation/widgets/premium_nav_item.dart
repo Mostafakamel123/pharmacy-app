@@ -1,6 +1,7 @@
 // ignore_for_file: unused_field
 
 import 'package:flutter/material.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/core/theme/nav_theme.dart';
 import 'package:pharmacy_app/core/utils/navigation_config.dart';
@@ -28,7 +29,6 @@ class _PremiumNavItemState extends State<PremiumNavItem>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
 
   @override
   void initState() {
@@ -38,13 +38,9 @@ class _PremiumNavItemState extends State<PremiumNavItem>
       duration: const Duration(milliseconds: 200),
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -62,35 +58,34 @@ class _PremiumNavItemState extends State<PremiumNavItem>
   }
 
   void _triggerBounce() {
-    _animationController.forward().then((_) {
-      _animationController.reverse();
-    });
+    _animationController.forward().then((_) => _animationController.reverse());
   }
 
   void _onTapDown(TapDownDetails details) {
-    setState(() => _isPressed = true);
     _animationController.forward();
   }
 
   void _onTapUp(TapUpDetails details) {
-    setState(() => _isPressed = false);
-    _animationController.reverse().then((_) {
-      widget.onTap();
-    });
+    _animationController.reverse().then((_) => widget.onTap());
   }
 
   void _onTapCancel() {
-    setState(() => _isPressed = false);
     _animationController.reverse();
   }
 
   @override
   Widget build(BuildContext context) {
     final iconColor = widget.isActive
-        ? null // Will use gradient for active
+        ? null
         : widget.isDark
             ? NavColors.iconInactiveDark
             : NavColors.iconInactiveLight;
+
+    final labelColor = widget.isActive
+        ? AppColors.primaryBlue
+        : widget.isDark
+            ? NavColors.labelInactiveDark
+            : NavColors.labelInactiveLight;
 
     return GestureDetector(
       onTapDown: _onTapDown,
@@ -105,19 +100,14 @@ class _PremiumNavItemState extends State<PremiumNavItem>
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon with optional gradient
             AnimatedSwitcher(
               duration: NavTheme.animationDuration,
               transitionBuilder: (child, animation) {
-                return ScaleTransition(
-                  scale: animation,
-                  child: child,
-                );
+                return ScaleTransition(scale: animation, child: child);
               },
               child: _buildIcon(iconColor),
             ),
             const SizedBox(height: 4),
-            // Label with fade animation
             AnimatedOpacity(
               duration: NavTheme.animationDuration,
               opacity: widget.isActive ? 1.0 : 0.0,
@@ -127,12 +117,9 @@ class _PremiumNavItemState extends State<PremiumNavItem>
                   fontSize: widget.isActive
                       ? NavTheme.activeLabelSize
                       : NavTheme.inactiveLabelSize,
-                  fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w500,
-                  color: widget.isActive
-                      ? NavColors.primaryBlue
-                      : widget.isDark
-                          ? NavColors.labelInactiveDark
-                          : NavColors.labelInactiveLight,
+                  fontWeight:
+                      widget.isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: labelColor,
                 ),
                 child: Text(
                   widget.item.label,
@@ -151,12 +138,12 @@ class _PremiumNavItemState extends State<PremiumNavItem>
     final icon = widget.isActive ? widget.item.activeIcon : widget.item.icon;
 
     if (widget.isActive) {
-      // Active icon with gradient overlay
       return ShaderMask(
         key: ValueKey('active_${widget.item.label}'),
-        shaderCallback: (bounds) => NavColors.primaryGradient.createShader(
-          Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-        ),
+        shaderCallback: (bounds) =>
+            NavColors.primaryGradient.createShader(
+              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+            ),
         child: Icon(
           icon,
           size: NavTheme.iconSize,
