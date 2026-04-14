@@ -3,7 +3,9 @@
     "allow": [
       "Bash(dart *)",
       "Bash(flutter *)",
-      "Bash(dir *)"
+      "Bash(dir *)",
+      "Bash(rmdir *)",
+      "Bash(del *)"
     ]
   },
   "$version": 3
