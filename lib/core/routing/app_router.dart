@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pharmacy_app/core/utils/user_role.dart';
+import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
 import 'package:pharmacy_app/features/onboarding/view/onboarding_screen.dart';
 import 'app_routes.dart';
 
@@ -74,12 +76,12 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
     
-    // Home Route (placeholder for future implementation)
+    // Home Route - Premium Navigation Shell
     GoRoute(
       path: AppRoutes.home,
       name: 'home',
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('Home Screen')),
+      builder: (context, state) => const PremiumNavShell(
+        userRole: UserRole.pharmacy, // Pharmacy view
       ),
     ),
   ],
