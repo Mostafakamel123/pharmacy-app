@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/utils/user_role.dart';
 import 'package:pharmacy_app/core/utils/navigation_config.dart';
 import 'package:pharmacy_app/features/navigation/widgets/floating_nav_button.dart';
@@ -13,12 +14,6 @@ import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/core/theme/nav_theme.dart';
 
 /// Premium Navigation Shell
-///
-/// This widget provides the complete navigation experience with:
-/// - Floating bottom navigation bar with glassmorphism
-/// - Central floating action button (for patients)
-/// - Smooth animations and transitions
-/// - Scroll-aware visibility
 class PremiumNavShell extends StatefulWidget {
   final UserRole userRole;
   final Widget? child;
@@ -62,14 +57,10 @@ class _PremiumNavShellState extends State<PremiumNavShell>
   void _onScroll() {
     if (_scrollController.position.userScrollDirection ==
         ScrollDirection.reverse) {
-      if (_isNavBarVisible) {
-        setState(() => _isNavBarVisible = false);
-      }
+      if (_isNavBarVisible) setState(() => _isNavBarVisible = false);
     } else if (_scrollController.position.userScrollDirection ==
         ScrollDirection.forward) {
-      if (!_isNavBarVisible) {
-        setState(() => _isNavBarVisible = true);
-      }
+      if (!_isNavBarVisible) setState(() => _isNavBarVisible = true);
     }
   }
 
@@ -83,9 +74,9 @@ class _PremiumNavShellState extends State<PremiumNavShell>
       SnackBar(
         content: const Text('Create new post'),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: NavColors.primaryBlue,
+        backgroundColor: AppColors.primaryBlue,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
       ),
     );
@@ -97,7 +88,6 @@ class _PremiumNavShellState extends State<PremiumNavShell>
       extendBody: true,
       body: Stack(
         children: [
-          // Main content area
           if (widget.child != null) widget.child! else _buildCurrentScreen(),
         ],
       ),
@@ -168,14 +158,13 @@ class _PremiumNavShellState extends State<PremiumNavShell>
   List<Widget> _buildNavItemsRow(double maxWidth) {
     final items = <Widget>[];
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final itemWidth = maxWidth / (_showFab ? (_navItems.length + 1) : _navItems.length);
+    final itemWidth =
+        maxWidth / (_showFab ? (_navItems.length + 1) : _navItems.length);
 
     if (_showFab) {
-      // Patient layout: 2 items - FAB - 2 items
       final halfIndex = _navItems.length ~/ 2;
 
       for (int i = 0; i < _navItems.length; i++) {
-        // Insert FAB in the middle
         if (i == halfIndex) {
           items.add(
             SizedBox(
@@ -190,7 +179,6 @@ class _PremiumNavShellState extends State<PremiumNavShell>
           );
         }
 
-        // Add nav item at current index (FAB is inserted between, not replacing)
         final isActive = _currentIndex == i;
         items.add(
           SizedBox(
@@ -205,7 +193,6 @@ class _PremiumNavShellState extends State<PremiumNavShell>
         );
       }
     } else {
-      // Pharmacy layout: all items evenly spaced
       for (int i = 0; i < _navItems.length; i++) {
         final isActive = _currentIndex == i;
         items.add(

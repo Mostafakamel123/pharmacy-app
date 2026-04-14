@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
 
 /// Premium color palette for the healthcare navigation system
 class NavColors {
   NavColors._();
 
-  // Primary medical gradient
-  static const primaryGradient = LinearGradient(
-    colors: [Color(0xFF06B6D4), Color(0xFF0EA5E9), Color(0xFF10B981)],
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-  );
+  // Primary medical gradient (now references AppColors)
+  static const primaryGradient = AppColors.primaryGradient;
 
-  static const primaryBlue = Color(0xFF0EA5E9);
-  static const primaryCyan = Color(0xFF06B6D4);
-  static const primaryGreen = Color(0xFF10B981);
+  static const primaryBlue = AppColors.primaryBlue;
+  static const primaryCyan = AppColors.primaryCyan;
+  static const primaryGreen = AppColors.primaryGreen;
 
   // Light mode colors
   static const navBackgroundLight = Color(0xFFFAFAFA);
@@ -32,14 +29,14 @@ class NavColors {
   // Glow effects
   static const glowColor = Color(0x400EA5E9);
   static const fabGradient = LinearGradient(
-    colors: [Color(0xFF0EA5E9), Color(0xFF10B981)],
+    colors: [AppColors.primaryBlue, AppColors.primaryGreen],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   // Indicator
   static const indicatorGradient = LinearGradient(
-    colors: [Color(0xFF06B6D4), Color(0xFF0EA5E9)],
+    colors: [AppColors.primaryCyan, AppColors.primaryBlue],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
