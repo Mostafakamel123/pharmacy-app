@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/features/home/view/home_screen.dart';
+import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 import 'package:pharmacy_app/features/posts/view/posts_feed_screen.dart';
+import 'package:pharmacy_app/features/profile/view/profile_screen.dart';
 
 /// Navigation item configuration
 class NavItem {
@@ -76,17 +78,9 @@ class PatientNavItems {
         gradient: NavColors.primaryGradient,
       );
 
-  static Widget _placeholderProfile() => _PlaceholderScreen(
-        title: 'Profile',
-        icon: Icons.person,
-        gradient: NavColors.primaryGradient,
-      );
+  static Widget _placeholderProfile() => const ProfileScreen();
 
-  static Widget _placeholderAdd() => _PlaceholderScreen(
-        title: 'Create Post',
-        icon: Icons.add,
-        gradient: NavColors.fabGradient,
-      );
+  static Widget _placeholderAdd() => const CreatePostScreen();
 }
 
 /// Navigation configuration for Pharmacy role

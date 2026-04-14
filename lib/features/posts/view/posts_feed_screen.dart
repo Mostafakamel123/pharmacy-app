@@ -183,7 +183,7 @@ class PostsFeedScreen extends ConsumerWidget {
             ),
           ),
           const SliverToBoxAdapter(
-            child: SizedBox(height: 20),
+            child: SizedBox(height: 100),
           ),
         ],
       ),

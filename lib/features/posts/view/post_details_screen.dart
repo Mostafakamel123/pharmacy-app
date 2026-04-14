@@ -165,7 +165,7 @@ class PostDetailsScreen extends ConsumerWidget {
 
           // Bottom padding
           const SliverToBoxAdapter(
-            child: SizedBox(height: 20),
+            child: SizedBox(height: 100),
           ),
         ],
       ),
