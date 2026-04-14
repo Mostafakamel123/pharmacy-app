@@ -5,13 +5,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/utils/user_role.dart';
 import 'package:pharmacy_app/core/utils/navigation_config.dart';
 import 'package:pharmacy_app/features/navigation/widgets/floating_nav_button.dart';
 import 'package:pharmacy_app/features/navigation/widgets/premium_nav_item.dart';
 import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/core/theme/nav_theme.dart';
+import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 
 /// Premium Navigation Shell
 class PremiumNavShell extends StatefulWidget {
@@ -68,16 +68,25 @@ class _PremiumNavShellState extends State<PremiumNavShell>
     setState(() => _currentIndex = index);
   }
 
-  void _onFabPressed() {
+  void _onFabPressed() async {
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Create new post'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primaryBlue,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
+    await Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => const CreatePostScreen(),
+        transitionsBuilder: (_, animation, __, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }

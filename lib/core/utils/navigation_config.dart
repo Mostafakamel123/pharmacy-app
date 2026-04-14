@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/features/home/view/home_screen.dart';
+import 'package:pharmacy_app/features/posts/view/posts_feed_screen.dart';
 
 /// Navigation item configuration
 class NavItem {
@@ -67,11 +68,7 @@ class PatientNavItems {
   // Placeholder screens - replace with actual screens
   static Widget _placeholderHome() => const PatientHomeScreen();
 
-  static Widget _placeholderPosts() => _PlaceholderScreen(
-        title: 'My Inquiries',
-        icon: Icons.article,
-        gradient: NavColors.primaryGradient,
-      );
+  static Widget _placeholderPosts() => const PostsFeedScreen();
 
   static Widget _placeholderChat() => _PlaceholderScreen(
         title: 'Messages',
