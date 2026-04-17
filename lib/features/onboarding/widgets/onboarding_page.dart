@@ -24,32 +24,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   final List<OnboardingData> _screens = [
     OnboardingData(
-      headline: 'Welcome to Elaaj',
-      description: 'Your smart way to connect with nearby pharmacies with ease and speed.',
-      icon: Icons.medical_services_outlined,
-      gradientColors: [_primaryGreen, _softGreen],
-      bgAccent: const Color(0xFFE8F8F0),
-    ),
-    OnboardingData(
-      headline: 'Find Nearby Pharmacies',
-      description: 'Discover pharmacies around you based on your location instantly.',
-      icon: Icons.location_on_outlined,
+      headline: 'Find Nearby Pharmacies Easily',
+      description: 'Discover pharmacies around you instantly using smart location-based search.',
+      image: 'assets/onboarding/onboarding_1.png',
       gradientColors: [_primaryBlue, _softBlue],
       bgAccent: const Color(0xFFE8F4FD),
     ),
     OnboardingData(
-      headline: 'Ask & Get Answers',
-      description: 'Send your prescriptions or questions and get quick responses from pharmacies.',
-      icon: Icons.chat_bubble_outline,
-      gradientColors: [_softBlue, _primaryGreen],
-      bgAccent: const Color(0xFFEBF5FB),
+      headline: 'Upload Prescriptions & Ask Anytime',
+      description: 'Send your prescription or medical inquiry and get quick responses from trusted pharmacists.',
+      image: 'assets/onboarding/onboarding_2.png',
+      gradientColors: [_primaryGreen, _softGreen],
+      bgAccent: const Color(0xFFE8F8F0),
     ),
     OnboardingData(
-      headline: 'Professional Community',
-      description: 'Pharmacists collaborate and share knowledge to provide better care.',
-      icon: Icons.people_outline,
-      gradientColors: [_primaryGreen, _primaryBlue],
-      bgAccent: const Color(0xFFE6F7F1),
+      headline: 'Connect with Trusted Pharmacists',
+      description: 'Get expert advice and real-time communication from professional pharmacists.',
+      image: 'assets/onboarding/onboarding_3.png',
+      gradientColors: [_primaryBlue, _softGreen],
+      bgAccent: const Color(0xFFE8F4FD),
     ),
   ];
 
@@ -199,14 +192,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
 class OnboardingData {
   final String headline;
   final String description;
-  final IconData icon;
+  final String image;
   final List<Color> gradientColors;
   final Color bgAccent;
 
   OnboardingData({
     required this.headline,
     required this.description,
-    required this.icon,
+    required this.image,
     required this.gradientColors,
     required this.bgAccent,
   });
@@ -227,7 +220,7 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLast = data.icon == Icons.people_outline;
+    final isLast = data.headline == 'Connect with Trusted Pharmacists';
     final textColor = isDark ? const Color(0xFFEEF2F7) : const Color(0xFF1A2B4A);
     final descColor = isDark ? const Color(0xFF8A96A8) : const Color(0xFF6B7D91);
 
@@ -238,7 +231,7 @@ class OnboardingScreen extends StatelessWidget {
         children: [
           const Spacer(flex: 1),
 
-          // Animated icon container
+          // Animated illustration container
           TweenAnimationBuilder<double>(
             duration: const Duration(milliseconds: 600),
             tween: Tween(begin: 0.0, end: 1.0),
@@ -252,34 +245,30 @@ class OnboardingScreen extends StatelessWidget {
               );
             },
             child: Container(
-              width: 150,
-              height: 150,
+              width: 380,
+              height: 380,
               decoration: BoxDecoration(
-                color: data.bgAccent,
-                borderRadius: BorderRadius.circular(75),
-                border: Border.all(
-                  color: data.gradientColors[0].withOpacity(0.15),
-                  width: 2,
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(160),
                 boxShadow: [
                   BoxShadow(
-                    color: data.gradientColors[0].withOpacity(0.12),
+                    color: data.gradientColors[0].withOpacity(0.2),
                     blurRadius: 30,
-                    offset: const Offset(0, 12),
+                    offset: const Offset(0, 16),
+                  ),
+                  BoxShadow(
+                    color: data.gradientColors[0].withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: data.gradientColors,
-                  ),
-                  borderRadius: BorderRadius.circular(73),
-                ),
-                child: Icon(
-                  data.icon,
-                  size: 64,
-                  color: Colors.white,
+              child: Center(
+                child: Image.asset(
+                  data.image,
+                  fit: BoxFit.contain,
+                  width: 380,
+                  height: 380,
                 ),
               ),
             ),
