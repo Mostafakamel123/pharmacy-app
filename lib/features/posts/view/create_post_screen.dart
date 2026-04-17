@@ -36,16 +36,17 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         scrolledUnderElevation: 0,
         backgroundColor:
             isDark ? DarkColors.background : LightColors.background,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
+          icon: const Icon(Icons.close_rounded, size: 24),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'New Post',
+          'Create Post',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
+            letterSpacing: -0.5,
           ),
         ),
         centerTitle: false,
@@ -65,12 +66,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                       }
                     }
                   : null,
-              style: ElevatedButton.styleFrom(
+                style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
                 disabledBackgroundColor:
                     AppColors.primaryBlue.withOpacity(0.3),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
@@ -95,6 +97,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
@@ -112,22 +115,21 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               duration: const Duration(milliseconds: 300),
               height: hasContent ? 32 : 0,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                child: Row(
-                  children: [
-                    Text(
-                      '$charCount',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: charCount > 500
-                            ? AppColors.accentRed
-                            : isDark
-                                ? DarkColors.textHint
-                                : LightColors.textHint,
-                        fontWeight: FontWeight.w600,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                  child: Row(
+                    children: [
+                      Text(
+                        '$charCount',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: charCount > 500
+                              ? AppColors.accentRed
+                              : isDark
+                                  ? DarkColors.textHint
+                                  : LightColors.textHint,
+                        ),
                       ),
-                    ),
                     Text(
                       ' / 500',
                       style: TextStyle(
@@ -235,8 +237,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                     ? DarkColors.divider
                                     : LightColors.divider,
                             width: 1,
-                          ),
-                        ),
+                          ),                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],                        ),
                         child: TextField(
                           focusNode: _textFocus,
                           maxLines: null,
@@ -247,17 +254,19 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                               .updateContent(value),
                           style: const TextStyle(
                             fontSize: 16,
-                            height: 1.6,
+                            height: 1.5,
+                            letterSpacing: 0.2,
                           ),
                           decoration: InputDecoration(
                             hintText:
                                 'What medicine or health question do you have?',
                             hintStyle: TextStyle(
                               color: isDark
-                                  ? DarkColors.textHint.withOpacity(0.6)
-                                  : LightColors.textHint.withOpacity(0.6),
+                                  ? DarkColors.textHint.withOpacity(0.5)
+                                  : LightColors.textHint.withOpacity(0.5),
                               fontSize: 16,
-                              height: 1.6,
+                              height: 1.5,
+                              letterSpacing: 0.2,
                             ),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.all(18),
@@ -284,47 +293,55 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             ],
                           ),
                         ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
                       // Category selector
                       Text(
                         'Category',
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
                           color: isDark
                               ? DarkColors.textPrimary
                               : LightColors.textPrimary,
-                          letterSpacing: -0.2,
+                          letterSpacing: -0.3,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Text(
-                        'Choose the type of your inquiry',
+                        'Select the type of your inquiry',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: isDark
                               ? DarkColors.textHint
                               : LightColors.textHint,
+                          letterSpacing: 0.2,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 14),
+                            horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           color: isDark ? DarkColors.card : LightColors.card,
-                          borderRadius: BorderRadius.circular(AppRadius.xl),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
                           border: Border.all(
                             color: isDark
                                 ? DarkColors.divider
                                 : LightColors.divider,
                             width: 1,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                          spacing: 10,
+                          runSpacing: 10,
                           children: PostCategory.values.map((cat) {
                             final isSelected = formState.category == cat;
                             return _ModernCategoryChip(
@@ -337,7 +354,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                           }).toList(),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
                       // Image upload
                       GestureDetector(
@@ -345,13 +362,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             .read(createPostFormProvider.notifier)
                             .toggleImage(),
                         child: Container(
-                          height: 180,
+                          height: 200,
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: isDark
                                 ? DarkColors.card
                                 : LightColors.card,
-                            borderRadius: BorderRadius.circular(AppRadius.xl),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             border: Border.all(
                               color: isDark
                                   ? DarkColors.divider
@@ -359,6 +376,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                               width: 1,
                               style: BorderStyle.solid,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: formState.hasImage
                               ? Stack(
@@ -505,7 +529,6 @@ class _ModernCategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _getCategoryColor();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
@@ -513,73 +536,41 @@ class _ModernCategoryChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? color : (isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant),
+          color: isSelected 
+              ? AppColors.primaryBlue 
+              : (isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant),
           borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: isSelected 
+              ? null 
+              : Border.all(
+                  color: isDark 
+                      ? DarkColors.divider 
+                      : LightColors.divider,
+                  width: 1,
+                ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: AppColors.primaryBlue.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ]
               : null,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) {
-                return ScaleTransition(scale: animation, child: child);
-              },
-              child: Icon(
-                _getCategoryIcon(),
-                key: ValueKey(isSelected),
-                size: 16,
-                color: isSelected ? Colors.white : color,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              category.label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? Colors.white : color,
-              ),
-            ),
-          ],
+        child: Text(
+          category.label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected ? Colors.white : (isDark ? DarkColors.textSecondary : LightColors.textSecondary),
+            letterSpacing: 0.3,
+          ),
         ),
       ),
     );
   }
-
-  Color _getCategoryColor() {
-    switch (category) {
-      case PostCategory.general:
-        return AppColors.primaryBlue;
-      case PostCategory.prescription:
-        return AppColors.primaryGreen;
-      case PostCategory.emergency:
-        return AppColors.accentRed;
-      case PostCategory.advice:
-        return AppColors.accentPurple;
-    }
-  }
-
-  IconData _getCategoryIcon() {
-    switch (category) {
-      case PostCategory.general:
-        return Icons.help_outline_rounded;
-      case PostCategory.prescription:
-        return Icons.description_rounded;
-      case PostCategory.emergency:
-        return Icons.local_hospital_rounded;
-      case PostCategory.advice:
-        return Icons.lightbulb_outline_rounded;
-    }
-  }
 }
+
