@@ -245,8 +245,8 @@ class OnboardingScreen extends StatelessWidget {
               );
             },
             child: Container(
-              width: 380,
-              height: 380,
+              width: 320,
+              height: 320,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(160),

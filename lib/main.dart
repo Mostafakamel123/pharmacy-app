@@ -14,7 +14,7 @@ void main() async {
     ),
   );
 
-  // Remove splash after 3 seconds
+
   Future.delayed(const Duration(seconds: 5), () {
     FlutterNativeSplash.remove();
   });
@@ -34,4 +34,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
     );
   }
+
+
 }
