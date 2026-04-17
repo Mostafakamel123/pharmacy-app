@@ -92,10 +92,8 @@ class _PremiumNavItemState extends State<PremiumNavItem>
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
       behavior: HitTestBehavior.translucent,
-      child: AnimatedContainer(
-        duration: NavTheme.animationDuration,
-        curve: Curves.easeInOut,
-        padding: NavTheme.itemPadding,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -108,18 +106,37 @@ class _PremiumNavItemState extends State<PremiumNavItem>
               child: _buildIcon(iconColor),
             ),
             const SizedBox(height: 4),
+            // Active indicator dot
+            AnimatedContainer(
+              duration: NavTheme.animationDuration,
+              curve: Curves.easeInOut,
+              width: widget.isActive ? 6 : 0,
+              height: widget.isActive ? 6 : 0,
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue,
+                shape: BoxShape.circle,
+                boxShadow: widget.isActive
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primaryBlue.withOpacity(0.5),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : [],
+              ),
+            ),
+            const SizedBox(height: 2),
             AnimatedOpacity(
               duration: NavTheme.animationDuration,
               opacity: widget.isActive ? 1.0 : 0.0,
               child: AnimatedDefaultTextStyle(
                 duration: NavTheme.animationDuration,
                 style: TextStyle(
-                  fontSize: widget.isActive
-                      ? NavTheme.activeLabelSize
-                      : NavTheme.inactiveLabelSize,
-                  fontWeight:
-                      widget.isActive ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: widget.isActive ? 10 : 9,
+                  fontWeight: widget.isActive ? FontWeight.w700 : FontWeight.w600,
                   color: labelColor,
+                  letterSpacing: 0.3,
                 ),
                 child: Text(
                   widget.item.label,

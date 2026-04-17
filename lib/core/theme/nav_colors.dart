@@ -13,23 +13,26 @@ class NavColors {
   static const primaryGreen = AppColors.primaryGreen;
 
   // Light mode colors
-  static const navBackgroundLight = Color(0xFFFAFAFA);
+  static const navBackgroundLight = Color(0xFFFBFCFE);
   static const navSurfaceLight = Color(0xFFFFFFFF);
-  static const iconInactiveLight = Color(0xFF9CA3AF);
-  static const labelInactiveLight = Color(0xFF6B7280);
-  static const shadowLight = Color(0x1A000000);
+  static const iconInactiveLight = Color(0xFF94A3B8);
+  static const labelInactiveLight = Color(0xFF64748B);
+  static const shadowLight = Color(0x14000000);
 
   // Dark mode colors
-  static const navBackgroundDark = Color(0xFF1F2937);
-  static const navSurfaceDark = Color(0xFF374151);
-  static const iconInactiveDark = Color(0xFF6B7280);
-  static const labelInactiveDark = Color(0xFF9CA3AF);
+  static const navBackgroundDark = Color(0xFF0F172A);
+  static const navSurfaceDark = Color(0xFF1E293B);
+  static const iconInactiveDark = Color(0xFF64748B);
+  static const labelInactiveDark = Color(0xFF94A3B8);
   static const shadowDark = Color(0x40000000);
 
-  // Glow effects
-  static const glowColor = Color(0x400EA5E9);
+  // Glow effects - Enhanced
+  static const glowColor = Color(0xFF0EA5E9);
   static const fabGradient = LinearGradient(
-    colors: [AppColors.primaryBlue, AppColors.primaryGreen],
+    colors: [
+      Color(0xFF0EA5E9),
+      Color(0xFF06B6D4),
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

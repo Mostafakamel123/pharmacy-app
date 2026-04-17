@@ -67,29 +67,39 @@ class _FloatingNavButtonState extends State<FloatingNavButton>
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: NavColors.fabGradient,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    NavColors.glowColor.withOpacity(0.9),
+                    NavColors.glowColor.withOpacity(0.7),
+                  ],
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: NavColors.glowColor,
-                    blurRadius: 20,
-                    spreadRadius: 2,
+                    color: NavColors.glowColor.withOpacity(0.25),
+                    blurRadius: 12,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
                   ),
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(NavTheme.fabSize / 2),
+                  borderRadius: BorderRadius.circular((NavTheme.fabSize + 8) / 2),
                   onTap: widget.onPressed,
-                  child: const Icon(
-                    Icons.add_rounded,
-                    color: Colors.white,
-                    size: 32,
+                  child: Center(
+                    child: Icon(
+                      Icons.add_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
                   ),
                 ),
               ),
