@@ -29,7 +29,7 @@ class _FloatingNavButtonState extends State<FloatingNavButton>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: NavTheme.fabAnimationDuration,
+      duration: const Duration(milliseconds: 150),
     );
 
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(

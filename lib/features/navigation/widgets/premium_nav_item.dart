@@ -35,7 +35,7 @@ class _PremiumNavItemState extends State<PremiumNavItem>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 100),
     );
 
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(

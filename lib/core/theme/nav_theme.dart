@@ -21,9 +21,9 @@ class NavTheme {
   static const double fabRadius = AppRadius.md;
 
   // Animation durations
-  static const Duration animationDuration = Duration(milliseconds: 350);
-  static const Duration fabAnimationDuration = Duration(milliseconds: 400);
-  static const Duration indicatorDuration = Duration(milliseconds: 350);
+  static const Duration animationDuration = Duration(milliseconds: 150);
+  static const Duration fabAnimationDuration = Duration(milliseconds: 200);
+  static const Duration indicatorDuration = Duration(milliseconds: 150);
 
   // Haptic feedback
   static const bool enableHapticFeedback = true;
