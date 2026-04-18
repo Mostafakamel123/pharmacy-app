@@ -11,6 +11,10 @@ class AppRoutes {
   // Home
   static const String home = '/home';
   
+  // Chat
+  static const String chats = '/chats';
+  static const String chat = '/chat/:chatId';
+  
   // Error
   static const String notFound = '/404';
 }

@@ -14,7 +14,7 @@ class QuickActionsSection extends StatelessWidget {
     final actions = _getActions(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
