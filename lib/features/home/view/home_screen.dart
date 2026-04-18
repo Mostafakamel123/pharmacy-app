@@ -1,11 +1,16 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 import 'package:pharmacy_app/features/home/view/widgets/home_header.dart';
 import 'package:pharmacy_app/features/home/view/widgets/nearby_pharmacies_section.dart';
 import 'package:pharmacy_app/features/home/view/widgets/quick_actions_section.dart';
 import 'package:pharmacy_app/features/home/view/widgets/recent_posts_section.dart';
 import 'package:pharmacy_app/features/home/view/widgets/smart_search_bar.dart';
+import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart'
+    hide nearbyPharmaciesProvider;
 
 class PatientHomeScreen extends ConsumerWidget {
   const PatientHomeScreen({super.key});
@@ -16,7 +21,7 @@ class PatientHomeScreen extends ConsumerWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: () async {
-          await Future.wait([
+          await Future.wait<void>([
             ref.read(nearbyPharmaciesProvider.notifier).refresh(),
             ref.read(recentPostsProvider.notifier).refresh(),
           ]);
@@ -46,6 +51,23 @@ class PatientHomeScreen extends ConsumerWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
+      ),
+      floatingActionButton: Consumer(
+        builder: (context, ref, child) {
+          final routingState = ref.watch(routingStateNotifierProvider);
+          final isRequestPending = routingState?.isRequestPending ?? false;
+          print('🎯 DEBUG HomeScreen: routingState=${routingState?.id}, isRequestPending=$isRequestPending');
+          if (!isRequestPending) return const SizedBox.shrink();
+
+          return FloatingActionButton(
+            onPressed: () {
+              // Navigate back to the prescription screen
+              context.push('/searching-pharmacies');
+            },
+            backgroundColor: Theme.of(context).primaryColor,
+            child: const Icon(Icons.assignment, color: Colors.white),
+          );
+        },
       ),
     );
   }
