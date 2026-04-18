@@ -1,7 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
+import 'package:pharmacy_app/core/routing/app_routes.dart';
 import 'package:pharmacy_app/features/home/model/quick_action_model.dart';
 
 class QuickActionsSection extends StatelessWidget {
@@ -61,7 +63,7 @@ class QuickActionsSection extends StatelessWidget {
         icon: Icons.document_scanner_rounded,
         iconColor: AppColors.primaryGreen,
         gradient: const [AppColors.primaryGreen, Color(0xFF34D399)],
-        onTap: () {},
+        onTap: () => context.push(AppRoutes.uploadPrescription),
       ),
       QuickActionModel(
         id: '2',

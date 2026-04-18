@@ -7,6 +7,8 @@ import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart'
 import 'package:pharmacy_app/features/onboarding/view/onboarding_screen.dart';
 import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
 import 'package:pharmacy_app/features/chat/view/screens/chat_conversation_screen.dart';
+import 'package:pharmacy_app/features/prescription/view/screens/upload_prescription_screen.dart';
+import 'package:pharmacy_app/features/prescription/view/screens/searching_pharmacies_screen.dart';
 import 'app_routes.dart';
 
 // Simple 404 error page
@@ -104,6 +106,18 @@ final GoRouter appRouter = GoRouter(
           pharmacyName: pharmacyName,
         );
       },
+    ),
+    
+    // Prescription Routing Routes
+    GoRoute(
+      path: AppRoutes.uploadPrescription,
+      name: 'uploadPrescription',
+      builder: (context, state) => const UploadPrescriptionScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.searchingPharmacies,
+      name: 'searchingPharmacies',
+      builder: (context, state) => const SearchingPharmaciesScreen(),
     ),
   ],
 );

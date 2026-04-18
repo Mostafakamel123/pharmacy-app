@@ -73,7 +73,7 @@ class ProfileHeader extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 child: LinearProgressIndicator(
-                  value: 50,
+                  value: profile.completionPercentage,
                   backgroundColor: isDark
                       ? Colors.white.withOpacity(0.1)
                       : Colors.white,
