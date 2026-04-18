@@ -54,7 +54,7 @@ class UserProfileModel {
       postsCount: 12,
       repliesCount: 8,
       savedCount: 5,
-      completionPercentage: 85,
+      completionPercentage: 100,
       joinDate: DateTime(2024, 6),
     );
   }

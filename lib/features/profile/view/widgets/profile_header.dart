@@ -55,7 +55,7 @@ class ProfileHeader extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${(profile.completionPercentage * 100).toInt()}%',
+                    '${(profile.completionPercentage ).toInt()}%',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -73,7 +73,7 @@ class ProfileHeader extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 child: LinearProgressIndicator(
-                  value: profile.completionPercentage,
+                  value: 50,
                   backgroundColor: isDark
                       ? Colors.white.withOpacity(0.1)
                       : Colors.white,

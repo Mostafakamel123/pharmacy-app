@@ -4,6 +4,7 @@ import 'package:pharmacy_app/features/home/view/home_screen.dart';
 import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 import 'package:pharmacy_app/features/posts/view/posts_feed_screen.dart';
 import 'package:pharmacy_app/features/profile/view/profile_screen.dart';
+import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
 
 /// Navigation item configuration
 class NavItem {
@@ -72,11 +73,7 @@ class PatientNavItems {
 
   static Widget _placeholderPosts() => const PostsFeedScreen();
 
-  static Widget _placeholderChat() => _PlaceholderScreen(
-        title: 'Messages',
-        icon: Icons.chat_bubble,
-        gradient: NavColors.primaryGradient,
-      );
+  static Widget _placeholderChat() => const ChatsListScreen();
 
   static Widget _placeholderProfile() => const ProfileScreen();
 

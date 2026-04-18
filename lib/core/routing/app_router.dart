@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/utils/user_role.dart';
 import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
 import 'package:pharmacy_app/features/onboarding/view/onboarding_screen.dart';
+import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
+import 'package:pharmacy_app/features/chat/view/screens/chat_conversation_screen.dart';
 import 'app_routes.dart';
 
 // Simple 404 error page
@@ -83,6 +85,25 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PremiumNavShell(
         userRole: UserRole.patient, // Patient view with home screen
       ),
+    ),
+    
+    // Chat Routes
+    GoRoute(
+      path: AppRoutes.chats,
+      name: 'chats',
+      builder: (context, state) => const ChatsListScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.chat,
+      name: 'chat',
+      builder: (context, state) {
+        final chatId = state.pathParameters['chatId']!;
+        final pharmacyName = state.extra as String?;
+        return ChatConversationScreen(
+          chatId: chatId,
+          pharmacyName: pharmacyName,
+        );
+      },
     ),
   ],
 );
