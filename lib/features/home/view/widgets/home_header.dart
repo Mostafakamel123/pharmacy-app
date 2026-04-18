@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -13,27 +12,42 @@ class HomeHeader extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      margin: const EdgeInsets.only(bottom: 24),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [const Color(0xFF0C1B2A), const Color(0xFF132F3F), const Color(0xFF1A3B4F)]
-              : [const Color(0xFFE0F2FE), const Color(0xFFDCFCE7), const Color(0xFFF0FDF4)],
+              ? [
+                  const Color(0xFF0C1B2A),
+                  const Color(0xFF132F3F).withOpacity(0.95),
+                  const Color(0xFF1A3B4F).withOpacity(0.9),
+                ]
+              : [
+                  const Color(0xFFF0FAFE),
+                  const Color(0xFFE5F9F3),
+                  const Color(0xFFF5FEF9),
+                ],
         ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(AppRadius.xxl),
-          bottomRight: Radius.circular(AppRadius.xxl),
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
         ),
         boxShadow: [
           BoxShadow(
-            color: (isDark ? Colors.black : AppColors.primaryGreen)
-                .withOpacity(isDark ? 0.3 : 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+            color: (isDark ? Colors.black : const Color(0xFF0EA5E9))
+                .withOpacity(isDark ? 0.25 : 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: (isDark ? Colors.black : const Color(0xFF10B981))
+                .withOpacity(isDark ? 0 : 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -52,113 +66,132 @@ class HomeHeader extends StatelessWidget {
                     children: [
                       // Time-based greeting with icon
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? AppColors.primaryBlue.withOpacity(0.15)
-                              : AppColors.primaryGreen.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                              ? const Color(0xFF0EA5E9).withOpacity(0.15)
+                              : const Color(0xFF10B981).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF0EA5E9).withOpacity(0.25)
+                                : const Color(0xFF10B981).withOpacity(0.2),
+                            width: 0.8,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               _getGreetingIcon(),
-                              size: 14,
+                              size: 13.5,
                               color: isDark
-                                  ? const Color(0xFF90CAF9)
-                                  : AppColors.primaryGreen,
+                                  ? const Color(0xFF38BDF8)
+                                  : const Color(0xFF10B981),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 5),
                             Text(
                               _getGreeting(),
                               style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
                                 color: isDark
-                                    ? const Color(0xFF90CAF9)
-                                    : AppColors.primaryGreen,
-                                letterSpacing: -0.1,
+                                    ? const Color(0xFF38BDF8)
+                                    : const Color(0xFF10B981),
+                                letterSpacing: -0.15,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       // Main greeting
                       Text(
                         'Hello, Mostafa',
                         style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
-                          letterSpacing: -0.8,
-                          height: 1.1,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
+                          letterSpacing: -1.0,
+                          height: 1.0,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       // Subtitle
                       Text(
-                        'Find medicines بسهولة من أقرب صيدلية',
+                        'Find medicines from the nearest pharmacy',
                         style: TextStyle(
-                          fontSize: 13.5,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                          height: 1.4,
-                          letterSpacing: -0.1,
+                          fontSize: 14,
+                          color: isDark
+                              ? const Color(0xFFA4ACBC)
+                              : const Color(0xFF577080),
+                          height: 1.5,
+                          letterSpacing: -0.05,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Right: Notification bell only
+                // Right: Action buttons
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     const _NotificationBadge(),
-                    const SizedBox(height: 6),
-                    // Location pill
+                    const SizedBox(height: 8),
+                    // Location pill with enhanced styling
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? AppColors.primaryBlue.withOpacity(0.12)
-                            : Colors.white.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                            ? const Color(0xFF0EA5E9).withOpacity(0.1)
+                            : Colors.white.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isDark
-                              ? AppColors.primaryBlue.withOpacity(0.2)
-                              : Colors.white,
+                              ? const Color(0xFF0EA5E9).withOpacity(0.2)
+                              : const Color(0xFFE8F5E9),
                           width: 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.location_on_rounded,
-                            size: 14,
+                            size: 13.5,
                             color: isDark
-                                ? const Color(0xFF90CAF9)
-                                : AppColors.primaryBlue,
+                                ? const Color(0xFF38BDF8)
+                                : const Color(0xFF0EA5E9),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 5),
                           Text(
-                            'Mohandessin, Giza',
+                            'Assiut',
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
                               color: isDark
-                                  ? const Color(0xFF90CAF9)
-                                  : AppColors.primaryBlue,
+                                  ? const Color(0xFF38BDF8)
+                                  : const Color(0xFF0F172A),
+                              letterSpacing: -0.1,
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: isDark ? 4 : 3),
                           Icon(
                             Icons.keyboard_arrow_down_rounded,
-                            size: 14,
+                            size: 13.5,
                             color: isDark
-                                ? const Color(0xFF90CAF9)
-                                : AppColors.primaryBlue,
+                                ? const Color(0xFF38BDF8)
+                                : const Color(0xFF0EA5E9),
                           ),
                         ],
                       ),
@@ -195,57 +228,65 @@ class _NotificationBadge extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationCount = ref.watch(notificationCountProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? const Color(0xFF1E3A4A) : LightColors.surface;
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(11),
           decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            color: isDark
+                ? const Color(0xFF0EA5E9).withOpacity(0.1)
+                : Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? const Color(0xFF2D4A5A) : const Color(0xFFF1F5F9),
+              color: isDark
+                  ? const Color(0xFF0EA5E9).withOpacity(0.2)
+                  : const Color(0xFFE8F5E9),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: (isDark ? Colors.black : const Color(0xFF0EA5E9))
+                    .withOpacity(isDark ? 0.1 : 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
           child: Icon(
-            Icons.notifications_outlined,
-            size: 22,
-            color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF334155),
+            Icons.notifications_none_rounded,
+            size: 20,
+            color: isDark
+                ? const Color(0xFF38BDF8)
+                : const Color(0xFF0EA5E9),
           ),
         ),
         if (notificationCount > 0)
           Positioned(
-            right: 4,
-            top: 4,
+            right: 2,
+            top: 2,
             child: Container(
-              padding: const EdgeInsets.all(4),
+              width: 18,
+              height: 18,
               decoration: BoxDecoration(
-                color: AppColors.accentRed,
+                color: const Color(0xFFEF4444),
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF0C1B2A)
-                      : LightColors.background,
-                  width: 2,
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEF4444).withOpacity(0.4),
+                    blurRadius: 6,
+                    spreadRadius: 0,
+                  ),
+                ],
               ),
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
               child: Text(
-                notificationCount.toString(),
+                notificationCount > 9 ? '9+' : notificationCount.toString(),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
                 ),
                 textAlign: TextAlign.center,
               ),

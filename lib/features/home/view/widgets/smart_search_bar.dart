@@ -43,10 +43,10 @@ class SmartSearchBar extends StatelessWidget {
                   onPressed: () {},
                 ),
                 Container(width: 1, height: 24, color: divider),
-                IconButton(
-                  icon: Icon(Icons.mic_none_rounded, color: iconColor),
-                  onPressed: () {},
-                ),
+                // IconButton(
+                //   icon: Icon(Icons.mic_none_rounded, color: iconColor),
+                //   onPressed: () {},
+                // ),
                 const SizedBox(width: 4),
               ],
             ),

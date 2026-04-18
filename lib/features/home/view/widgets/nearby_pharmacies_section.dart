@@ -20,7 +20,7 @@ class NearbyPharmaciesSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -85,7 +85,7 @@ class _PharmacyList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 164,
+      height: 138,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -120,8 +120,8 @@ class _PharmacyCard extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 220,
-        padding: const EdgeInsets.all(14),
+        width: 170,
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1F2937) : Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -142,7 +142,7 @@ class _PharmacyCard extends StatelessWidget {
           children: [
             // Map placeholder
             Container(
-              height: 54,
+              height: 42,
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -150,64 +150,64 @@ class _PharmacyCard extends StatelessWidget {
                       ? [const Color(0xFF1E3A4A), const Color(0xFF2C5364)]
                       : [const Color(0xFFE0F7FA), const Color(0xFFE8F5E9)],
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Icon(
                   Icons.location_on_rounded,
                   color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0EA5E9),
-                  size: 28,
+                  size: 22,
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             // Pharmacy name
             Text(
               pharmacy.name,
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
                 color: isDark ? Colors.white : const Color(0xFF1F2937),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             // Distance
             Row(
               children: [
                 Icon(
                   Icons.directions_walk_rounded,
-                  size: 14,
+                  size: 12,
                   color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF6B7280),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 3),
                 Text(
                   '${pharmacy.distance.toStringAsFixed(1)} km',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF6B7280),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 // Rating
                 Icon(
                   Icons.star_rounded,
-                  size: 14,
+                  size: 12,
                   color: const Color(0xFFF59E0B),
                 ),
                 const SizedBox(width: 2),
                 Text(
                   pharmacy.rating.toStringAsFixed(1),
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFFF59E0B),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             // Status row
             Row(
               children: [
@@ -271,15 +271,15 @@ class _ShimmerLoading extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SizedBox(
-      height: 164,
+      height: 138,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: 3,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
         itemBuilder: (context, index) => Container(
-          width: 220,
-          padding: const EdgeInsets.all(14),
+          width: 170,
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1F2937) : Colors.white,
             borderRadius: BorderRadius.circular(18),
@@ -287,23 +287,29 @@ class _ShimmerLoading extends StatelessWidget {
           child: Column(
             children: [
               Container(
-                height: 54,
+                height: 42,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              const SizedBox(height: 10),
-              Container(
-                height: 14,
-                width: 120,
-                color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Container(
                 height: 12,
-                width: 80,
+                width: 100,
+                color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                height: 11,
+                width: 70,
+                color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                height: 11,
+                width: 60,
                 color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
               ),
             ],
@@ -324,7 +330,7 @@ class _ErrorState extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SizedBox(
-      height: 120,
+      height: 138,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

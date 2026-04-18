@@ -15,7 +15,7 @@ void main() async {
   );
 
 
-  Future.delayed(const Duration(seconds: 5), () {
+  Future.delayed(const Duration(seconds: 2), () {
     FlutterNativeSplash.remove();
   });
 }
@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Elaaj - Pharmacy App',
+      title: 'Elaaj',
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
@@ -34,6 +34,4 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
     );
   }
-
-
 }
