@@ -23,13 +23,9 @@ class PharmacyDetailsScreen extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             slivers: [
               // Hero header
-              SliverToBoxAdapter(
-                child: _HeroHeader(pharmacy: pharmacy),
-              ),
+              SliverToBoxAdapter(child: _HeroHeader(pharmacy: pharmacy)),
               // Spacer after hero
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 24),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
               // Info section title
               SliverToBoxAdapter(
                 child: Padding(
@@ -41,7 +37,10 @@ class PharmacyDetailsScreen extends StatelessWidget {
                         height: 20,
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [AppColors.primaryBlue, AppColors.primaryGreen],
+                            colors: [
+                              AppColors.primaryBlue,
+                              AppColors.primaryGreen,
+                            ],
                           ),
                           borderRadius: BorderRadius.all(Radius.circular(2)),
                         ),
@@ -120,7 +119,10 @@ class PharmacyDetailsScreen extends StatelessWidget {
                         height: 20,
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [AppColors.primaryGreen, AppColors.primaryCyan],
+                            colors: [
+                              AppColors.primaryGreen,
+                              AppColors.primaryCyan,
+                            ],
                           ),
                           borderRadius: BorderRadius.all(Radius.circular(2)),
                         ),
@@ -150,7 +152,9 @@ class PharmacyDetailsScreen extends StatelessWidget {
                       color: isDark ? DarkColors.card : LightColors.card,
                       borderRadius: BorderRadius.circular(AppRadius.xl),
                       border: Border.all(
-                        color: isDark ? DarkColors.divider : LightColors.divider,
+                        color: isDark
+                            ? DarkColors.divider
+                            : LightColors.divider,
                         width: 1,
                       ),
                     ),
@@ -228,10 +232,7 @@ class _HeroHeader extends StatelessWidget {
                       const Color(0xFF0EA5E9),
                       const Color(0xFF10B981),
                     ]
-                  : [
-                      const Color(0xFFF59E0B),
-                      const Color(0xFFEF4444),
-                    ],
+                  : [const Color(0xFFF59E0B), const Color(0xFFEF4444)],
             ),
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(32),
@@ -390,7 +391,9 @@ class _HeroHeader extends StatelessWidget {
                     if (pharmacy.isVerified)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [AppColors.primaryBlue, Color(0xFF38BDF8)],
@@ -400,8 +403,11 @@ class _HeroHeader extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.verified_rounded,
-                                size: 12, color: Colors.white),
+                            const Icon(
+                              Icons.verified_rounded,
+                              size: 12,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 4),
                             const Text(
                               'Verified',
@@ -423,7 +429,9 @@ class _HeroHeader extends StatelessWidget {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF59E0B).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(8),
@@ -431,8 +439,11 @@ class _HeroHeader extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star_rounded,
-                              size: 14, color: Color(0xFFF59E0B)),
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 14,
+                            color: Color(0xFFF59E0B),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             pharmacy.rating.toStringAsFixed(1),
@@ -457,7 +468,9 @@ class _HeroHeader extends StatelessWidget {
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryBlue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -587,9 +600,7 @@ class _InfoCard extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark
-                        ? DarkColors.textHint
-                        : LightColors.textHint,
+                    color: isDark ? DarkColors.textHint : LightColors.textHint,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -743,8 +754,10 @@ class _ActionBtnState extends State<_ActionBtn>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.95)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
