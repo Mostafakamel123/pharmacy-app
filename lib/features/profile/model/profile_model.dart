@@ -5,7 +5,6 @@ class UserProfileModel {
   final String phone;
   final String? location;
   final String? avatarUrl;
-  final String role;
   final int postsCount;
   final int repliesCount;
   final int savedCount;
@@ -19,7 +18,6 @@ class UserProfileModel {
     required this.phone,
     this.location,
     this.avatarUrl,
-    this.role = 'Patient',
     this.postsCount = 0,
     this.repliesCount = 0,
     this.savedCount = 0,
@@ -50,7 +48,6 @@ class UserProfileModel {
       email: 'mostafa.k@email.com',
       phone: '+20 101 234 5678',
       location: 'Mohandessin, Giza',
-      role: 'Patient',
       postsCount: 12,
       repliesCount: 8,
       savedCount: 5,

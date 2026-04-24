@@ -1,6 +1,13 @@
 import 'package:pharmacy_app/core/config/env_config.dart';
 
 
+/// Pharmacy-related API endpoints
+/// 
+/// Includes endpoints for:
+/// - Nearby pharmacies (for users to find)
+/// - User-owned pharmacies (CRUD operations)
+/// - Pharmacy admin management
+
 class ApiEndpoints {
   ApiEndpoints._();
 
@@ -40,9 +47,9 @@ class ApiEndpoints {
   /// GET /users/{userId}/activity - Get user activity history
   static String userActivity(String userId) => '$_baseUrl/users/$userId/activity';
 
-  // ========================= Pharmacies =========================
+  // ========================= Pharmacies (Nearby/Search) =========================
 
-  /// GET /pharmacies/nearby - Get nearby pharmacies
+  /// GET /pharmacies/nearby - Get nearby pharmacies (for users to find)
   static const String nearbyPharmacies = '$_baseUrl/pharmacies/nearby';
 
   /// GET /pharmacies/{pharmacyId} - Get pharmacy details
@@ -71,6 +78,42 @@ class ApiEndpoints {
   /// GET /pharmacies/{pharmacyId}/medicines - Get pharmacy's medicines
   static String pharmacyMedicines(String pharmacyId) =>
       '$_baseUrl/pharmacies/$pharmacyId/medicines';
+
+  // ========================= User-Owned Pharmacies =========================
+
+  /// POST /pharmacies/user - Create a new user-owned pharmacy
+  static const String createPharmacy = '$_baseUrl/pharmacies/user';
+
+  /// GET /pharmacies/user/my - Get all pharmacies owned/managed by current user
+  static const String myPharmacies = '$_baseUrl/pharmacies/user/my';
+
+  /// GET /pharmacies/user/{pharmacyId} - Get specific user-owned pharmacy
+  static String getUserPharmacy(String pharmacyId) =>
+      '$_baseUrl/pharmacies/user/$pharmacyId';
+
+  /// PUT /pharmacies/user/{pharmacyId} - Update user-owned pharmacy
+  static String updateUserPharmacy(String pharmacyId) =>
+      '$_baseUrl/pharmacies/user/$pharmacyId';
+
+  /// DELETE /pharmacies/user/{pharmacyId} - Delete user-owned pharmacy
+  static String deleteUserPharmacy(String pharmacyId) =>
+      '$_baseUrl/pharmacies/user/$pharmacyId';
+
+  /// POST /pharmacies/user/{pharmacyId}/admins - Add admin to pharmacy
+  static String addPharmacyAdmin(String pharmacyId) =>
+      '$_baseUrl/pharmacies/user/$pharmacyId/admins';
+
+  /// DELETE /pharmacies/user/{pharmacyId}/admins/{userId} - Remove admin from pharmacy
+  static String removePharmacyAdmin(String pharmacyId, String userId) =>
+      '$_baseUrl/pharmacies/user/$pharmacyId/admins/$userId';
+
+  /// GET /pharmacies/user/{pharmacyId}/admins - Get all admins of a pharmacy
+  static String getPharmacyAdmins(String pharmacyId) =>
+      '$_baseUrl/pharmacies/user/$pharmacyId/admins';
+
+  /// POST /pharmacies/user/{pharmacyId}/transfer - Transfer ownership
+  static String transferPharmacyOwnership(String pharmacyId) =>
+      '$_baseUrl/pharmacies/user/$pharmacyId/transfer';
 
   // ========================= Posts/Q&A Forum =========================
 
