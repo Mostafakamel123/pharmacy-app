@@ -11,14 +11,24 @@ import 'package:pharmacy_app/features/home/view/widgets/recent_posts_section.dar
 import 'package:pharmacy_app/features/home/view/widgets/smart_search_bar.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart'
     hide nearbyPharmaciesProvider;
+import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
 
-class PatientHomeScreen extends ConsumerWidget {
+class PatientHomeScreen extends ConsumerStatefulWidget {
   const PatientHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PatientHomeScreen> createState() => _PatientHomeScreenState();
+}
+
+class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      drawer: const PharmacyDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait<void>([
