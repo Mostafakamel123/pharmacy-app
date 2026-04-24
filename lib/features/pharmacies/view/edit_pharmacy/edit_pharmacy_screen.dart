@@ -125,7 +125,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
+              backgroundColor: AppColors.accentRed,
             ),
             child: const Text('Delete'),
           ),
@@ -150,7 +150,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
             content: Text(
               result ? 'Pharmacy deleted successfully' : 'Failed to delete pharmacy',
             ),
-            backgroundColor: result ? AppColors.success : AppColors.error,
+            backgroundColor: result ? AppColors.primaryGreen : AppColors.accentRed,
           ),
         );
 
@@ -163,7 +163,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.accentRed,
           ),
         );
       }
@@ -216,7 +216,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
             content: Text(
               result ? 'Pharmacy updated successfully' : 'Failed to update pharmacy',
             ),
-            backgroundColor: result ? AppColors.success : AppColors.error,
+            backgroundColor: result ? AppColors.primaryGreen : AppColors.accentRed,
           ),
         );
 
@@ -229,7 +229,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.accentRed,
           ),
         );
       }
@@ -244,6 +244,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final currentUserId = ref.read(currentUserIdProvider);
     final isOwner = widget.pharmacy.ownerUserId == currentUserId;
 
@@ -256,7 +257,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
               icon: const Icon(Icons.delete_outline),
               tooltip: 'Delete Pharmacy',
               onPressed: _isLoading ? null : _deletePharmacy,
-              color: AppColors.error,
+              color: AppColors.accentRed,
             ),
           TextButton(
             onPressed: _isLoading ? null : _submitForm,
@@ -273,13 +274,13 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             // Header
             Card(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primaryBlue.withOpacity(0.1),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   children: [
                     Icon(
@@ -287,18 +288,18 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
                       size: 40,
                       color: AppColors.primary,
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppSpacing.lg),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             widget.pharmacy.name,
-                            style: Theme.of(context).textTheme.titleLarge,
+                            style: theme.textTheme.titleLarge,
                           ),
                           Text(
                             'Update pharmacy information',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: theme.textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -308,11 +309,11 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
               ),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             
             // Basic Information Section
             _buildSectionTitle('Basic Information'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             
             TextFormField(
               controller: _nameController,
@@ -360,15 +361,15 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
                   : null,
               secondary: Icon(
                 _isActive ? Icons.visibility : Icons.visibility_off,
-                color: _isActive ? AppColors.success : AppColors.textSecondary,
+                color: _isActive ? AppColors.primaryGreen : LightColors.textSecondary,
               ),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             
             // Contact Information Section
             _buildSectionTitle('Contact Information'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             
             TextFormField(
               controller: _addressController,
@@ -390,10 +391,10 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
             InkWell(
               onTap: _selectLocation,
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: LightColors.divider),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Row(
                   children: [
@@ -405,16 +406,16 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
                         children: [
                           Text(
                             'Location Coordinates',
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: theme.textTheme.titleSmall,
                           ),
                           Text(
                             'Lat: $_latitude, Lng: $_longitude',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: theme.textTheme.bodySmall,
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
+                    Icon(Icons.edit, size: 16, color: LightColors.textSecondary),
                   ],
                 ),
               ),
@@ -464,11 +465,11 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
               keyboardType: TextInputType.url,
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             
             // License Information Section
             _buildSectionTitle('License Information'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             
             TextFormField(
               controller: _licenseNumberController,
@@ -479,11 +480,11 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
               ),
             ),
             
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxxl),
             
             // Metadata Section
             _buildSectionTitle('Information'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             
             _buildInfoRow('Created', _formatDate(widget.pharmacy.createdAt)),
             if (widget.pharmacy.updatedAt != null) ...[
@@ -491,7 +492,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
             ],
             _buildInfoRow('Total Admins', '${widget.pharmacy.adminUserIds.length + 1}'),
             
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
       ),
@@ -501,7 +502,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+      style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
         color: AppColors.primary,
       ),
@@ -516,13 +517,13 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: LightColors.textSecondary,
             ),
           ),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
             ),
           ),

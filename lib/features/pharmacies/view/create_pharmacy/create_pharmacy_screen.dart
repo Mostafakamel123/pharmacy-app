@@ -127,17 +127,17 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
 
       if (result != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pharmacy created successfully!'),
-            backgroundColor: AppColors.success,
+          SnackBar(
+            content: const Text('Pharmacy created successfully!'),
+            backgroundColor: AppColors.primaryGreen,
           ),
         );
         Navigator.pop(context);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to create pharmacy'),
-            backgroundColor: AppColors.error,
+          SnackBar(
+            content: const Text('Failed to create pharmacy'),
+            backgroundColor: AppColors.accentRed,
           ),
         );
       }
@@ -146,7 +146,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.accentRed,
           ),
         );
       }
@@ -161,6 +161,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Pharmacy'),
@@ -180,19 +181,19 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             // Header
             Card(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primaryBlue.withOpacity(0.1),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   children: [
                     Icon(
                       Icons.add_business,
                       size: 40,
-                      color: AppColors.primary,
+                      color: AppColors.primaryBlue,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -201,11 +202,11 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
                         children: [
                           Text(
                             'New Pharmacy',
-                            style: Theme.of(context).textTheme.titleLarge,
+                            style: theme.textTheme.titleLarge,
                           ),
                           Text(
                             'Fill in the details to create your pharmacy',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: theme.textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -277,31 +278,31 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
             InkWell(
               onTap: _selectLocation,
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: LightColors.divider),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.map, color: AppColors.primary),
-                    const SizedBox(width: 12),
+                    Icon(Icons.map, color: AppColors.primaryBlue),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Location Coordinates',
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: theme.textTheme.titleSmall,
                           ),
                           Text(
                             'Lat: $_latitude, Lng: $_longitude',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: theme.textTheme.bodySmall,
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
+                    Icon(Icons.edit, size: 16, color: LightColors.textSecondary),
                   ],
                 ),
               ),
@@ -355,7 +356,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
             
             // License Information Section
             _buildSectionTitle('License Information'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             
             TextFormField(
               controller: _licenseNumberController,
@@ -366,21 +367,21 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
               ),
             ),
             
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxxl),
             
             // Info Card
             Card(
-              color: AppColors.info.withOpacity(0.1),
+              color: AppColors.primaryBlue.withOpacity(0.1),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: AppColors.info),
-                    const SizedBox(width: 12),
+                    Icon(Icons.info_outline, color: AppColors.primaryBlue),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         'You will be the owner and primary admin of this pharmacy. You can add more admins later.',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: theme.textTheme.bodySmall,
                       ),
                     ),
                   ],
@@ -388,7 +389,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
               ),
             ),
             
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
       ),
@@ -398,9 +399,9 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+      style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
-        color: AppColors.primary,
+        color: AppColors.primaryBlue,
       ),
     );
   }

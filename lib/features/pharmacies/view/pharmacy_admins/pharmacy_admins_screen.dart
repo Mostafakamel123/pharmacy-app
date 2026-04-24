@@ -33,7 +33,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cannot remove the owner'),
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.accentRed,
         ),
       );
       return;
@@ -52,7 +52,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
+              backgroundColor: AppColors.accentRed,
             ),
             child: const Text('Remove'),
           ),
@@ -78,7 +78,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
             content: Text(
               result ? 'Admin removed successfully' : 'Failed to remove admin',
             ),
-            backgroundColor: result ? AppColors.success : AppColors.error,
+            backgroundColor: result ? AppColors.primaryGreen : AppColors.accentRed,
           ),
         );
       }
@@ -87,7 +87,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.accentRed,
           ),
         );
       }
@@ -124,7 +124,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
             const SizedBox(height: 16),
             const Text(
               'User search functionality will be implemented here.',
-              style: TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: LightColors.textSecondary),
             ),
           ],
         ),
@@ -161,7 +161,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.warning,
+              backgroundColor: AppColors.accentYellow,
             ),
             child: const Text('Transfer'),
           ),
@@ -176,7 +176,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Ownership transfer functionality coming soon'),
-          backgroundColor: AppColors.info,
+          backgroundColor: AppColors.primaryBlue,
         ),
       );
     }
@@ -184,6 +184,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final allAdminIds = widget.pharmacy.allAdminIds;
     final currentUserId = ref.read(currentUserIdProvider);
     final isOwner = widget.pharmacy.ownerUserId == currentUserId;
@@ -197,27 +198,27 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
         children: [
           // Header Card
           Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.primary.withOpacity(0.1),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            color: AppColors.primaryBlue.withOpacity(0.1),
             child: Row(
               children: [
                 Icon(
                   Icons.admin_panel_settings,
                   size: 40,
-                  color: AppColors.primary,
+                  color: AppColors.primaryBlue,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         '${allAdminIds.length} Total Admins',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: theme.textTheme.titleLarge,
                       ),
                       Text(
                         'Manage who can administer this pharmacy',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: theme.textTheme.bodySmall,
                       ),
                     ],
                   ),
@@ -228,7 +229,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
 
           // Search Bar
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -286,7 +287,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
           // Add Admin Button
           if (isOwner)
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -321,7 +322,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
         leading: CircleAvatar(
           backgroundColor: isOwnerUser
               ? AppColors.primary
-              : AppColors.secondary,
+              : AppColors.accentPurple,
           child: Icon(
             isOwnerUser ? Icons.verified_user : Icons.person,
             color: Colors.white,
@@ -339,7 +340,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primaryBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -347,7 +348,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: AppColors.primaryBlue,
                   ),
                 ),
               ),
@@ -355,7 +356,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.1),
+                  color: AppColors.accentPurple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -363,7 +364,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.secondary,
+                    color: AppColors.accentPurple,
                   ),
                 ),
               ),
@@ -371,7 +372,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
             const SizedBox(width: 8),
             Text(
               'ID: ${userId.substring(0, 8)}...',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: theme.textTheme.bodySmall,
             ),
           ],
         ),
@@ -389,7 +390,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
                     value: 'remove',
                     child: Row(
                       children: [
-                        Icon(Icons.person_remove, color: AppColors.error),
+                        Icon(Icons.person_remove, color: AppColors.accentRed),
                         SizedBox(width: 8),
                         Text('Remove Admin'),
                       ],
@@ -399,7 +400,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
                     value: 'transfer',
                     child: Row(
                       children: [
-                        Icon(Icons.swap_horiz, color: AppColors.warning),
+                        Icon(Icons.swap_horiz, color: AppColors.accentYellow),
                         SizedBox(width: 8),
                         Text('Transfer Ownership'),
                       ],
