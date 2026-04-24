@@ -74,7 +74,7 @@ class UserNavItems {
   );
 
   // Screen builders
-  static Widget _buildHome() => const HomeScreen();
+  static Widget _buildHome() => const PatientHomeScreen();
   static Widget _buildPosts() => const PostsFeedScreen();
   static Widget _buildChat() => const ChatsListScreen();
   static Widget _buildProfile() => const ProfileScreen();

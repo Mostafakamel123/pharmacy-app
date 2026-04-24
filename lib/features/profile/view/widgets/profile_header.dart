@@ -172,7 +172,7 @@ class ProfileHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
               child: Text(
-                profile.role,
+                profile.name,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,

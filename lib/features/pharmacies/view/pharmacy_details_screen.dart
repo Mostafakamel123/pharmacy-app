@@ -167,23 +167,10 @@ class PharmacyDetailsScreen extends StatelessWidget {
                           label: 'Medicines',
                           color: AppColors.primaryGreen,
                         ),
-                        if (pharmacy.hasDelivery)
-                          _ServiceChip(
-                            icon: Icons.delivery_dining_rounded,
-                            label: 'Delivery',
-                            color: AppColors.primaryBlue,
-                          ),
                         _ServiceChip(
                           icon: Icons.chat_rounded,
                           label: 'Consultation',
                           color: AppColors.accentPurple,
-                        ),
-                        _ServiceChip(
-                          icon: Icons.access_time_rounded,
-                          label: pharmacy.isOpen ? 'Open Now' : 'Closed',
-                          color: pharmacy.isOpen
-                              ? AppColors.primaryGreen
-                              : AppColors.accentRed,
                         ),
                       ],
                     ),

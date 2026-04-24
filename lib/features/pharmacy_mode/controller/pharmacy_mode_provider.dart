@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../model/user_pharmacy_model.dart';
+import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
 
 /// Application mode enum
 enum AppMode {

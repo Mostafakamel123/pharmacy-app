@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
@@ -192,7 +194,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manage Admins'),
-        subtitle: Text(widget.pharmacy.name),
+        // subtitle: Text(widget.pharmacy.name),
       ),
       body: Column(
         children: [
@@ -279,6 +281,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
                         userId,
                         isOwnerUser,
                         isOwner && !isOwnerUser,
+                        theme,
                       );
                     },
                   ),
@@ -315,13 +318,13 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
     );
   }
 
-  Widget _buildAdminTile(String userId, bool isOwnerUser, bool canRemove) {
+  Widget _buildAdminTile(String userId, bool isOwnerUser, bool canRemove, ThemeData theme) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: isOwnerUser
-              ? AppColors.primary
+              ? AppColors.primaryBlue
               : AppColors.accentPurple,
           child: Icon(
             isOwnerUser ? Icons.verified_user : Icons.person,

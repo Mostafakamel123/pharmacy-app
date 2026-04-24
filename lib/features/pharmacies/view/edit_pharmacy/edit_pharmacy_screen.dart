@@ -286,7 +286,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
                     Icon(
                       Icons.edit,
                       size: 40,
-                      color: AppColors.primary,
+                      color: AppColors.primaryBlue,
                     ),
                     const SizedBox(width: AppSpacing.lg),
                     Expanded(
@@ -312,7 +312,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
             const SizedBox(height: AppSpacing.xxl),
             
             // Basic Information Section
-            _buildSectionTitle('Basic Information'),
+            _buildSectionTitle('Basic Information', theme),
             const SizedBox(height: AppSpacing.sm),
             
             TextFormField(
@@ -368,7 +368,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
             const SizedBox(height: AppSpacing.xxl),
             
             // Contact Information Section
-            _buildSectionTitle('Contact Information'),
+            _buildSectionTitle('Contact Information', theme),
             const SizedBox(height: AppSpacing.sm),
             
             TextFormField(
@@ -398,7 +398,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.map, color: AppColors.primary),
+                    Icon(Icons.map, color: AppColors.primaryBlue),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -468,7 +468,7 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
             const SizedBox(height: AppSpacing.xxl),
             
             // License Information Section
-            _buildSectionTitle('License Information'),
+            _buildSectionTitle('License Information', theme),
             const SizedBox(height: AppSpacing.sm),
             
             TextFormField(
@@ -483,14 +483,14 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
             const SizedBox(height: AppSpacing.xxxl),
             
             // Metadata Section
-            _buildSectionTitle('Information'),
+            _buildSectionTitle('Information', theme),
             const SizedBox(height: AppSpacing.sm),
             
-            _buildInfoRow('Created', _formatDate(widget.pharmacy.createdAt)),
+            _buildInfoRow('Created', _formatDate(widget.pharmacy.createdAt), theme),
             if (widget.pharmacy.updatedAt != null) ...[
-              _buildInfoRow('Last Updated', _formatDate(widget.pharmacy.updatedAt!)),
+              _buildInfoRow('Last Updated', _formatDate(widget.pharmacy.updatedAt!), theme),
             ],
-            _buildInfoRow('Total Admins', '${widget.pharmacy.adminUserIds.length + 1}'),
+            _buildInfoRow('Total Admins', '${widget.pharmacy.adminUserIds.length + 1}', theme),
             
             const SizedBox(height: AppSpacing.xxxl),
           ],
@@ -499,17 +499,17 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, ThemeData theme) {
     return Text(
       title,
       style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
-        color: AppColors.primary,
+        color: AppColors.primaryBlue,
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(

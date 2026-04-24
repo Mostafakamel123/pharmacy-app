@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
@@ -6,7 +8,6 @@ import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart'
 import 'package:pharmacy_app/features/pharmacies/view/create_pharmacy/create_pharmacy_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/edit_pharmacy/edit_pharmacy_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/pharmacy_admins/pharmacy_admins_screen.dart';
-import 'package:pharmacy_app/features/pharmacies/view/pharmacy_details_screen.dart';
 
 /// Screen displaying all pharmacies owned/managed by the user
 class MyPharmaciesScreen extends ConsumerStatefulWidget {
@@ -53,7 +54,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
               Icon(
                 Icons.error_outline,
                 size: 64,
-                color: AppColors.error,
+                color: AppColors.accentRed,
               ),
               const SizedBox(height: 16),
               Text(
@@ -109,7 +110,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
             Icon(
               Icons.business_outlined,
               size: 96,
-              color: AppColors.primary.withOpacity(0.5),
+              color: AppColors.primaryBlue.withOpacity(0.5),
             ),
             const SizedBox(height: 24),
             Text(
@@ -179,7 +180,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PharmacyDetailsScreen(pharmacy: pharmacy),
+              builder: (context) => EditPharmacyScreen(pharmacy: pharmacy),
             ),
           );
         },
@@ -191,7 +192,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
             Container(
               height: 120,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primaryBlue.withOpacity(0.1),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12),
                 ),
@@ -236,7 +237,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primaryBlue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -245,7 +246,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                               Icon(
                                 Icons.verified_user,
                                 size: 14,
-                                color: AppColors.primary,
+                                color: AppColors.primaryBlue,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -253,7 +254,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
+                                  color: AppColors.primaryBlue,
                                 ),
                               ),
                             ],
@@ -266,7 +267,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withOpacity(0.1),
+                            color: AppColors.primaryGreen.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -275,7 +276,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                               Icon(
                                 Icons.admin_panel_settings,
                                 size: 14,
-                                color: AppColors.success,
+                                color: AppColors.primaryGreen,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -283,7 +284,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.success,
+                                  color: AppColors.primaryGreen,
                                 ),
                               ),
                             ],
@@ -309,7 +310,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                       Icon(
                         Icons.location_on_outlined,
                         size: 16,
-                        color: AppColors.textSecondary,
+                        color: AppColors.primaryCyan,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -317,7 +318,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                           pharmacy.address,
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.textSecondary,
+                            color: AppColors.primaryCyan,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -333,14 +334,14 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                         Icon(
                           Icons.phone_outlined,
                           size: 16,
-                          color: AppColors.textSecondary,
+                          color: AppColors.primaryCyan,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           pharmacy.phone!,
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.textSecondary,
+                            color: AppColors.primaryCyan,
                           ),
                         ),
                       ],
@@ -356,7 +357,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                         '${pharmacy.adminUserIds.length + 1} Admin${pharmacy.adminUserIds.length + 1 > 1 ? 's' : ''}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: AppColors.primaryCyan,
                         ),
                       ),
                       Row(
@@ -421,7 +422,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
           Icon(
             Icons.business,
             size: 48,
-            color: AppColors.primary.withOpacity(0.5),
+            color: AppColors.primaryBlue.withOpacity(0.5),
           ),
           const SizedBox(height: 8),
           Text(
@@ -429,7 +430,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary.withOpacity(0.7),
+              color: AppColors.primaryBlue.withOpacity(0.7),
             ),
           ),
         ],

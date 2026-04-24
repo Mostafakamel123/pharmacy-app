@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
@@ -219,7 +221,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
             const SizedBox(height: 24),
             
             // Basic Information Section
-            _buildSectionTitle('Basic Information'),
+            _buildSectionTitle('Basic Information', theme),
             const SizedBox(height: 12),
             
             TextFormField(
@@ -255,7 +257,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
             const SizedBox(height: 24),
             
             // Contact Information Section
-            _buildSectionTitle('Contact Information'),
+            _buildSectionTitle('Contact Information', theme),
             const SizedBox(height: 12),
             
             TextFormField(
@@ -355,7 +357,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
             const SizedBox(height: 24),
             
             // License Information Section
-            _buildSectionTitle('License Information'),
+            _buildSectionTitle('License Information', theme),
             const SizedBox(height: AppSpacing.sm),
             
             TextFormField(
@@ -396,7 +398,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, ThemeData theme) {
     return Text(
       title,
       style: theme.textTheme.titleMedium?.copyWith(

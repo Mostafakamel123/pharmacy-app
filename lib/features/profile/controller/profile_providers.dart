@@ -41,7 +41,6 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfileModel>> {
       phone: phone ?? current.phone,
       location: location ?? current.location,
       avatarUrl: current.avatarUrl,
-      role: current.role,
       postsCount: current.postsCount,
       repliesCount: current.repliesCount,
       savedCount: current.savedCount,
