@@ -1,3 +1,8 @@
+/// Unified navigation configuration for all users
+/// 
+/// The app now has a single navigation flow regardless of user type.
+/// Pharmacy management is handled through pharmacy mode toggle.
+
 import 'package:flutter/material.dart';
 import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/features/home/view/home_screen.dart';
@@ -23,187 +28,72 @@ class NavItem {
   });
 }
 
-/// Navigation configuration for Patient role
-class PatientNavItems {
-  PatientNavItems._();
+/// Unified navigation items for all users
+class UserNavItems {
+  UserNavItems._();
 
   static const List<NavItem> items = [
     NavItem(
       label: 'Home',
       icon: Icons.medical_services_outlined,
       activeIcon: Icons.medical_services,
-      builder: _placeholderHome,
-      route: '/patient/home',
+      builder: _buildHome,
+      route: '/home',
     ),
     NavItem(
       label: 'Posts',
       icon: Icons.article_outlined,
       activeIcon: Icons.article,
-      builder: _placeholderPosts,
-      route: '/patient/posts',
+      builder: _buildPosts,
+      route: '/posts',
     ),
-    // Center FAB - no regular nav item
+    // Center FAB - no regular nav item (index 2 is skipped for FAB)
     NavItem(
       label: 'Chat',
       icon: Icons.chat_bubble_outline,
       activeIcon: Icons.chat_bubble,
-      builder: _placeholderChat,
-      route: '/patient/chat',
+      builder: _buildChat,
+      route: '/chat',
     ),
     NavItem(
       label: 'Profile',
       icon: Icons.person_outline,
       activeIcon: Icons.person,
-      builder: _placeholderProfile,
-      route: '/patient/profile',
+      builder: _buildProfile,
+      route: '/profile',
     ),
   ];
 
-  // Center FAB configuration
+  /// Center FAB configuration
   static const fabNavItem = NavItem(
     label: 'Add',
     icon: Icons.add,
     activeIcon: Icons.add,
-    builder: _placeholderAdd,
-    route: '/patient/add',
+    builder: _buildAdd,
+    route: '/add',
   );
 
-  // Placeholder screens - replace with actual screens
-  static Widget _placeholderHome() => const PatientHomeScreen();
+  // Screen builders
+  static Widget _buildHome() => const HomeScreen();
+  static Widget _buildPosts() => const PostsFeedScreen();
+  static Widget _buildChat() => const ChatsListScreen();
+  static Widget _buildProfile() => const ProfileScreen();
+  static Widget _buildAdd() => const CreatePostScreen();
 
-  static Widget _placeholderPosts() => const PostsFeedScreen();
+  /// Get screen by index (accounts for FAB at index 2)
+  static Widget getScreenByIndex(int index) {
+    if (index < 0 || index >= items.length) {
+      return const SizedBox.shrink();
+    }
+    return items[index].builder();
+  }
 
-  static Widget _placeholderChat() => const ChatsListScreen();
-
-  static Widget _placeholderProfile() => const ProfileScreen();
-
-  static Widget _placeholderAdd() => const CreatePostScreen();
-}
-
-/// Navigation configuration for Pharmacy role
-class PharmacyNavItems {
-  PharmacyNavItems._();
-
-  static const List<NavItem> items = [
-    NavItem(
-      label: 'Home',
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home,
-      builder: _placeholderHome,
-      route: '/pharmacy/home',
-    ),
-    NavItem(
-      label: 'Requests',
-      icon: Icons.inbox_outlined,
-      activeIcon: Icons.inbox,
-      builder: _placeholderRequests,
-      route: '/pharmacy/requests',
-    ),
-    NavItem(
-      label: 'Community',
-      icon: Icons.groups_outlined,
-      activeIcon: Icons.groups,
-      builder: _placeholderCommunity,
-      route: '/pharmacy/community',
-    ),
-    NavItem(
-      label: 'Alerts',
-      icon: Icons.notifications_outlined,
-      activeIcon: Icons.notifications,
-      builder: _placeholderNotifications,
-      route: '/pharmacy/notifications',
-    ),
-    NavItem(
-      label: 'Profile',
-      icon: Icons.business_outlined,
-      activeIcon: Icons.business,
-      builder: _placeholderProfile,
-      route: '/pharmacy/profile',
-    ),
-  ];
-
-  // Placeholder screens - replace with actual screens
-  static Widget _placeholderHome() => _PlaceholderScreen(
-        title: 'Incoming Posts',
-        icon: Icons.home,
-        gradient: NavColors.primaryGradient,
-      );
-
-  static Widget _placeholderRequests() => _PlaceholderScreen(
-        title: 'Requests to Respond',
-        icon: Icons.inbox,
-        gradient: NavColors.primaryGradient,
-      );
-
-  static Widget _placeholderCommunity() => _PlaceholderScreen(
-        title: 'Pharmacists Chat',
-        icon: Icons.groups,
-        gradient: NavColors.primaryGradient,
-      );
-
-  static Widget _placeholderNotifications() => _PlaceholderScreen(
-        title: 'Notifications',
-        icon: Icons.notifications,
-        gradient: NavColors.primaryGradient,
-      );
-
-  static Widget _placeholderProfile() => _PlaceholderScreen(
-        title: 'Pharmacy Profile',
-        icon: Icons.business,
-        gradient: NavColors.primaryGradient,
-      );
-}
-
-/// Generic placeholder screen (replace with actual screens)
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Gradient gradient;
-
-  const _PlaceholderScreen({
-    required this.title,
-    required this.icon,
-    required this.gradient,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Icon(
-                  icon,
-                  size: 64,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Replace with actual screen',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  /// Get route by index
+  static String getRouteByIndex(int index) {
+    if (index < 0 || index >= items.length) {
+      return '/';
+    }
+    return items[index].route;
   }
 }
+

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/utils/user_role.dart';
 import 'package:pharmacy_app/core/utils/navigation_config.dart';
 import 'package:pharmacy_app/features/navigation/widgets/floating_nav_button.dart';
 import 'package:pharmacy_app/features/navigation/widgets/premium_nav_item.dart';
@@ -15,13 +14,14 @@ import 'package:pharmacy_app/core/theme/nav_theme.dart';
 import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 
 /// Premium Navigation Shell
+/// 
+/// Unified navigation shell for all users.
+/// No role-based navigation - single flow for everyone.
 class PremiumNavShell extends StatefulWidget {
-  final UserRole userRole;
   final Widget? child;
 
   const PremiumNavShell({
     super.key,
-    required this.userRole,
     this.child,
   });
 
@@ -35,12 +35,11 @@ class _PremiumNavShellState extends State<PremiumNavShell>
   bool _isNavBarVisible = true;
   final ScrollController _scrollController = ScrollController();
 
-  List<NavItem> get _navItems =>
-      widget.userRole == UserRole.patient
-          ? PatientNavItems.items
-          : PharmacyNavItems.items;
+  // Use unified navigation items
+  List<NavItem> get _navItems => UserNavItems.items;
 
-  bool get _showFab => widget.userRole == UserRole.patient;
+  // Always show FAB for all users
+  bool get _showFab => true;
 
   @override
   void initState() {
