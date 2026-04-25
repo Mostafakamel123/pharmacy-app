@@ -704,7 +704,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.transparent,
-      builder: (dialogContext) => Center(
+      builder: (_) => Center(
         child: Container(
           width: 80,
           height: 80,
@@ -754,7 +754,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
 
       // Close loading dialog
       if (context.mounted) {
-        Navigator.of(dialogContext).pop();
+        Navigator.of(context).pop();
 
         // Show success feedback
         ScaffoldMessenger.of(context).showSnackBar(
