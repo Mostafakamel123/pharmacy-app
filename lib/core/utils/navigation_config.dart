@@ -78,7 +78,7 @@ class UserNavItems {
   }
 
   /// Center FAB configuration
-  static const fabNavItem = NavItem(
+  static final fabNavItem = NavItem(
     label: 'Add',
     icon: Icons.add,
     activeIcon: Icons.add,
@@ -91,7 +91,7 @@ class UserNavItems {
   static Widget _buildPosts() => const PostsFeedScreen();
   static Widget _buildChat() => const ChatsListScreen();
   static Widget _buildProfile() => const ProfileScreen();
-  static Widget _buildAdd() => const CreatePostScreen();
+  static Widget _buildAdd(WidgetRef ref) => const CreatePostScreen();
 
   /// Get screen by index (accounts for FAB at index 2)
   static Widget getScreenByIndex(int index, WidgetRef ref) {

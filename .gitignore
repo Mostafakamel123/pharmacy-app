@@ -1,46 +1,83 @@
 ```
-# Dependency directories
-.dart_tool/
-.build/
-dependencies/
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.class
+*.exe
+*.dll
+*.so
+*.a
+*.out
 
-# Build artifacts
-/bin/
-/ios/.symlinks/
-/android/.gradle/
-/android/local.properties
-
-# Environment variables
+# Dependencies
+node_modules/
+venv/
+.venv/
 .env
 .env.local
-.env.*
-!.env.example
+*.env.*
 
-# IDE files
-.idea/
-.vscode/
+# Build directories
+dist/
+build/
+target/
+.gradle/
+
+# Python specific
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+coverage/
+htmlcov/
+
+# Logs and temp files
+*.log
+*.tmp
 *.swp
 *.swo
 
-# Logs
-*.log
-**/logs
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Coverage
-coverage/
-*.coverage
-
-# Temporary files
-*.tmp
+# System files
 .DS_Store
 Thumbs.db
 
-# Flutter/Dart specific
-pubspec.lock
-*.g.dart
-*.freezed.dart
+# Testing
+.mypy_cache/
+.pytest_cache/
+coverage/
 
-# Debug files
-debug/
-debugger/
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```
