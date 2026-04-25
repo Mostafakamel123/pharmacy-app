@@ -4,19 +4,23 @@
 /// Pharmacy management is handled through pharmacy mode toggle.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/features/home/view/home_screen.dart';
 import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 import 'package:pharmacy_app/features/posts/view/posts_feed_screen.dart';
 import 'package:pharmacy_app/features/profile/view/profile_screen.dart';
 import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_dashboard_screen.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_orders_screen.dart';
 
 /// Navigation item configuration
 class NavItem {
   final String label;
   final IconData icon;
   final IconData activeIcon;
-  final Widget Function() builder;
+  final Widget Function(WidgetRef ref) builder;
   final String route;
 
   const NavItem({
@@ -32,37 +36,46 @@ class NavItem {
 class UserNavItems {
   UserNavItems._();
 
-  static const List<NavItem> items = [
-    NavItem(
-      label: 'Home',
-      icon: Icons.medical_services_outlined,
-      activeIcon: Icons.medical_services,
-      builder: _buildHome,
-      route: '/home',
-    ),
-    NavItem(
-      label: 'Posts',
-      icon: Icons.article_outlined,
-      activeIcon: Icons.article,
-      builder: _buildPosts,
-      route: '/posts',
-    ),
-    // Center FAB - no regular nav item (index 2 is skipped for FAB)
-    NavItem(
-      label: 'Chat',
-      icon: Icons.chat_bubble_outline,
-      activeIcon: Icons.chat_bubble,
-      builder: _buildChat,
-      route: '/chat',
-    ),
-    NavItem(
-      label: 'Profile',
-      icon: Icons.person_outline,
-      activeIcon: Icons.person,
-      builder: _buildProfile,
-      route: '/profile',
-    ),
-  ];
+  static List<NavItem> items(WidgetRef ref) {
+    final pharmacyModeState = ref.watch(pharmacyModeProvider);
+    final isPharmacyMode = pharmacyModeState.isPharmacyMode;
+
+    return [
+      NavItem(
+        label: isPharmacyMode ? 'Dashboard' : 'Home',
+        icon: isPharmacyMode ? Icons.dashboard_outlined : Icons.medical_services_outlined,
+        activeIcon: isPharmacyMode ? Icons.dashboard : Icons.medical_services,
+        builder: (ref) => isPharmacyMode 
+            ? const PharmacyDashboardScreen() 
+            : const PatientHomeScreen(),
+        route: isPharmacyMode ? '/pharmacy/dashboard' : '/home',
+      ),
+      NavItem(
+        label: 'Posts',
+        icon: Icons.article_outlined,
+        activeIcon: Icons.article,
+        builder: (ref) => const PostsFeedScreen(),
+        route: '/posts',
+      ),
+      // Center FAB - no regular nav item (index 2 is skipped for FAB)
+      NavItem(
+        label: isPharmacyMode ? 'Orders' : 'Chat',
+        icon: isPharmacyMode ? Icons.inventory_2_outlined : Icons.chat_bubble_outline,
+        activeIcon: isPharmacyMode ? Icons.inventory_2 : Icons.chat_bubble,
+        builder: (ref) => isPharmacyMode 
+            ? const PharmacyOrdersScreen() 
+            : const ChatsListScreen(),
+        route: isPharmacyMode ? '/pharmacy/orders' : '/chat',
+      ),
+      NavItem(
+        label: 'Profile',
+        icon: Icons.person_outline,
+        activeIcon: Icons.person,
+        builder: (ref) => const ProfileScreen(),
+        route: '/profile',
+      ),
+    ];
+  }
 
   /// Center FAB configuration
   static const fabNavItem = NavItem(
@@ -81,19 +94,19 @@ class UserNavItems {
   static Widget _buildAdd() => const CreatePostScreen();
 
   /// Get screen by index (accounts for FAB at index 2)
-  static Widget getScreenByIndex(int index) {
-    if (index < 0 || index >= items.length) {
+  static Widget getScreenByIndex(int index, WidgetRef ref) {
+    if (index < 0 || index >= items(ref).length) {
       return const SizedBox.shrink();
     }
-    return items[index].builder();
+    return items(ref)[index].builder(ref);
   }
 
   /// Get route by index
-  static String getRouteByIndex(int index) {
-    if (index < 0 || index >= items.length) {
+  static String getRouteByIndex(int index, WidgetRef ref) {
+    if (index < 0 || index >= items(ref).length) {
       return '/';
     }
-    return items[index].route;
+    return items(ref)[index].route;
   }
 }
 
