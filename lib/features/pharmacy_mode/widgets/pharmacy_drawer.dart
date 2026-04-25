@@ -636,22 +636,8 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
                               )
                             : null,
                         onTap: () {
-                          ref
-                              .read(pharmacyModeProvider.notifier)
-                              .switchToPharmacyMode(pharmacy);
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Switched to ${pharmacy.name}'),
-                              backgroundColor: AppColors.primaryGreen,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.md,
-                                ),
-                              ),
-                            ),
-                          );
+                          _switchPharmacyWithTransition(context, ref, pharmacy);
                         },
                       );
                     },
@@ -705,6 +691,106 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
         ),
       ),
     );
+  }
+
+  /// Switch pharmacy with smooth loading transition (Facebook-style)
+  void _switchPharmacyWithTransition(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic pharmacy,
+  ) {
+    // Show loading overlay
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (dialogContext) => Center(
+        child: Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? DarkColors.surface
+                : LightColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Switching...',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? DarkColors.textPrimary
+                      : LightColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Simulate loading delay then switch
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      // Switch pharmacy mode
+      ref
+          .read(pharmacyModeProvider.notifier)
+          .switchToPharmacyMode(pharmacy);
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(dialogContext).pop();
+
+        // Show success feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: AppColors.primaryGreen,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('Switched to ${pharmacy.name}'),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? DarkColors.surface
+                : LightColors.surface,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    });
   }
 
   void _showSelectPharmacySnackbar(BuildContext context) {

@@ -12,6 +12,7 @@ import 'package:pharmacy_app/features/home/view/widgets/smart_search_bar.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart'
     hide nearbyPharmaciesProvider;
 import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 
 class PatientHomeScreen extends ConsumerStatefulWidget {
   const PatientHomeScreen({super.key});
@@ -28,7 +29,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      drawer: const PharmacyDrawer(null),
+      drawer: PharmacyDrawer(null),
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait<void>([

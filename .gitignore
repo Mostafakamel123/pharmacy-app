@@ -1,46 +1,46 @@
 ```
+# Dependency directories
+.dart_tool/
+.build/
+dependencies/
+
 # Build artifacts
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
+/bin/
+/ios/.symlinks/
+/android/.gradle/
+/android/local.properties
 
-# Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-target/
-.gradle/
-
-# Editor/IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# System files
-.DS_Store
-Thumbs.db
+# Environment variables
 .env
 .env.local
-*.env.*
+.env.*
+!.env.example
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
 
 # Logs
 *.log
+**/logs
 
 # Coverage
 coverage/
-htmlcov/
-.coverage
+*.coverage
 
-# Distribution
-dist/
-build/
+# Temporary files
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Flutter/Dart specific
+pubspec.lock
+*.g.dart
+*.freezed.dart
+
+# Debug files
+debug/
+debugger/
 ```

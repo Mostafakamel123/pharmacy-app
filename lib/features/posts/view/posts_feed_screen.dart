@@ -5,6 +5,8 @@ import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
 import 'package:pharmacy_app/features/posts/view/post_details_screen.dart';
 import 'package:pharmacy_app/features/posts/view/widgets/post_card.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
 
 class PostsFeedScreen extends ConsumerWidget {
   const PostsFeedScreen({super.key});
@@ -12,10 +14,13 @@ class PostsFeedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final postsAsync = ref.watch(postsFeedProvider);
+    final pharmacyModeState = ref.watch(pharmacyModeProvider);
+    final currentPharmacy = pharmacyModeState.currentPharmacy;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
+      drawer: PharmacyDrawer(currentPharmacy),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [

@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/utils/navigation_config.dart';
 import 'package:pharmacy_app/features/navigation/widgets/floating_nav_button.dart';
@@ -17,7 +18,8 @@ import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 /// 
 /// Unified navigation shell for all users.
 /// No role-based navigation - single flow for everyone.
-class PremiumNavShell extends StatefulWidget {
+/// Now supports Pharmacy Mode with dynamic content switching.
+class PremiumNavShell extends ConsumerStatefulWidget {
   final Widget? child;
 
   const PremiumNavShell({
@@ -26,17 +28,17 @@ class PremiumNavShell extends StatefulWidget {
   });
 
   @override
-  State<PremiumNavShell> createState() => _PremiumNavShellState();
+  ConsumerState<PremiumNavShell> createState() => _PremiumNavShellState();
 }
 
-class _PremiumNavShellState extends State<PremiumNavShell>
+class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
     with TickerProviderStateMixin {
   int _currentIndex = 0;
   bool _isNavBarVisible = true;
   final ScrollController _scrollController = ScrollController();
 
-  // Use unified navigation items
-  List<NavItem> get _navItems => UserNavItems.items;
+  // Get navigation items from provider (reactive to mode changes)
+  List<NavItem> get _navItems => UserNavItems.items(ref);
 
   // Always show FAB for all users
   bool get _showFab => true;
@@ -112,7 +114,7 @@ class _PremiumNavShellState extends State<PremiumNavShell>
 
   Widget _buildCurrentScreen() {
     if (_currentIndex < _navItems.length) {
-      return _navItems[_currentIndex].builder();
+      return _navItems[_currentIndex].builder(ref);
     }
     return const SizedBox.shrink();
   }
