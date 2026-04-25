@@ -28,7 +28,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      drawer: const PharmacyDrawer(),
+      drawer: const PharmacyDrawer(null),
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait<void>([

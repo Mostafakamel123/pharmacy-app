@@ -12,9 +12,9 @@ class HomeHeader extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: const EdgeInsets.only(bottom: 16),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -32,172 +32,78 @@ class HomeHeader extends ConsumerWidget {
                 ],
         ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
             color: (isDark ? Colors.black : const Color(0xFF0EA5E9))
-                .withOpacity(isDark ? 0.25 : 0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: (isDark ? Colors.black : const Color(0xFF10B981))
-                .withOpacity(isDark ? 0 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
+                .withOpacity(isDark ? 0.2 : 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: SafeArea(
         bottom: false,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Row 1: Actions & Time-based Greeting
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Left: Greeting
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                _HeaderIconButton(
+                  icon: Icons.menu_rounded,
+                  onTap: () => Scaffold.of(context).openDrawer(),
+                  isDark: isDark,
+                ),
+                // Compact Time-based greeting
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF0EA5E9).withOpacity(0.12)
+                        : const Color(0xFF10B981).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Time-based greeting with icon
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF0EA5E9).withOpacity(0.15)
-                              : const Color(0xFF10B981).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isDark
-                                ? const Color(0xFF0EA5E9).withOpacity(0.25)
-                                : const Color(0xFF10B981).withOpacity(0.2),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _getGreetingIcon(),
-                              size: 13.5,
-                              color: isDark
-                                  ? const Color(0xFF38BDF8)
-                                  : const Color(0xFF10B981),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _getGreeting(),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? const Color(0xFF38BDF8)
-                                    : const Color(0xFF10B981),
-                                letterSpacing: -0.15,
-                              ),
-                            ),
-                          ],
-                        ),
+                      Icon(
+                        _getGreetingIcon(),
+                        size: 12,
+                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF10B981),
                       ),
-                      const SizedBox(height: 12),
-                      // Main greeting
+                      const SizedBox(width: 4),
                       Text(
-                        'Hello, Mostafa',
+                        _getGreeting(),
                         style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF0F172A),
-                          letterSpacing: -1.0,
-                          height: 1.0,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Subtitle
-                      Text(
-                        'Find medicines from the nearest pharmacy',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark
-                              ? const Color(0xFFA4ACBC)
-                              : const Color(0xFF577080),
-                          height: 1.5,
-                          letterSpacing: -0.05,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF10B981),
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Right: Action buttons
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const _NotificationBadge(),
-                    const SizedBox(height: 8),
-                    // Location pill with enhanced styling
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF0EA5E9).withOpacity(0.1)
-                            : Colors.white.withOpacity(0.85),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF0EA5E9).withOpacity(0.2)
-                              : const Color(0xFFE8F5E9),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.location_on_rounded,
-                            size: 13.5,
-                            color: isDark
-                                ? const Color(0xFF38BDF8)
-                                : const Color(0xFF0EA5E9),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            'Assiut',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: isDark
-                                  ? const Color(0xFF38BDF8)
-                                  : const Color(0xFF0F172A),
-                              letterSpacing: -0.1,
-                            ),
-                          ),
-                          SizedBox(width: isDark ? 4 : 3),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 13.5,
-                            color: isDark
-                                ? const Color(0xFF38BDF8)
-                                : const Color(0xFF0EA5E9),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                const _NotificationBadge(),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Row 2: Name & Location (Compact)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Mostafa Kamel',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    letterSpacing: -0.5,
+                  ),
                 ),
+                const _LocationPill(),
               ],
             ),
           ],
@@ -218,6 +124,111 @@ class HomeHeader extends ConsumerWidget {
     if (hour < 12) return Icons.wb_sunny_rounded;
     if (hour < 17) return Icons.wb_cloudy_rounded;
     return Icons.nights_stay_rounded;
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  const _HeaderIconButton({
+    required this.icon,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark
+              ? const Color(0xFF0EA5E9).withOpacity(0.1)
+              : Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark
+                ? const Color(0xFF0EA5E9).withOpacity(0.2)
+                : const Color(0xFFE8F5E9),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isDark ? Colors.black : const Color(0xFF0EA5E9))
+                  .withOpacity(isDark ? 0.1 : 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9),
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationPill extends StatelessWidget {
+  const _LocationPill();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF0EA5E9).withOpacity(0.1)
+            : Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF0EA5E9).withOpacity(0.2)
+              : const Color(0xFFE8F5E9),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.location_on_rounded,
+            size: 13.5,
+            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            'Assiut',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A),
+              letterSpacing: -0.1,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 13.5,
+            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9),
+          ),
+        ],
+      ),
+    );
   }
 }
 

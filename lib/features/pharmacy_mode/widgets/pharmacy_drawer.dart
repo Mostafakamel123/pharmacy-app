@@ -1,9 +1,9 @@
-// ignore_for_file: file_names
+// ignore_for_file: file_names, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/theme/nav_colors.dart';
+import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/view/create_pharmacy/create_pharmacy_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/edit_pharmacy/edit_pharmacy_screen.dart';
@@ -13,85 +13,39 @@ import 'package:pharmacy_app/features/pharmacies/view/pharmacy_admins/pharmacy_a
 /// Pharmacy Drawer - Provides access to pharmacy management features
 /// and allows switching between pharmacy modes
 class PharmacyDrawer extends ConsumerStatefulWidget {
-  const PharmacyDrawer({super.key});
+  const PharmacyDrawer(this.pharmacy, {super.key});
+  final UserPharmacyModel? pharmacy;
 
   @override
   ConsumerState<PharmacyDrawer> createState() => _PharmacyDrawerState();
 }
 
-class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(-0.1, 0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
   @override
   Widget build(BuildContext context) {
     final pharmacyModeState = ref.watch(pharmacyModeProvider);
     final notifier = ref.read(pharmacyModeProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    return Drawer(
       width: MediaQuery.of(context).size.width * 0.85,
-      decoration: BoxDecoration(
-        color: isDark ? DarkColors.surface : LightColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-            blurRadius: 20,
-            offset: const Offset(4, 0),
-          ),
-        ],
-      ),
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: Column(
-            children: [
-              // Header with gradient background
-              _buildHeader(context, pharmacyModeState, isDark),
-              // Mode toggle section
-              _buildModeToggleSection(context, notifier, pharmacyModeState),
-              // Menu items
-              Expanded(
-                child: _buildMenuItems(context, notifier, pharmacyModeState),
-              ),
-              // Footer
-              _buildFooter(context, isDark),
-            ],
-          ),
+      backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
+      elevation: 16,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      child: RepaintBoundary(
+        child: Column(
+          children: [
+            // Header with gradient background
+            _buildHeader(context, pharmacyModeState, isDark),
+            // Mode toggle section
+            _buildModeToggleSection(context, notifier, pharmacyModeState),
+            // Menu items
+            Expanded(
+              child: _buildMenuItems(context, notifier, pharmacyModeState),
+            ),
+            // Footer
+            _buildFooter(context, isDark),
+          ],
         ),
       ),
     );
@@ -219,7 +173,9 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
           const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant,
+              color: isDark
+                  ? DarkColors.surfaceVariant
+                  : LightColors.surfaceVariant,
               borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(
                 color: isDark
@@ -285,13 +241,16 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
                 pageBuilder: (_, __, ___) => const MyPharmaciesScreen(),
                 transitionsBuilder: (_, animation, __, child) {
                   return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 1),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                    )),
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, 1),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
                     child: child,
                   );
                 },
@@ -314,13 +273,16 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
                 pageBuilder: (_, __, ___) => const CreatePharmacyScreen(),
                 transitionsBuilder: (_, animation, __, child) {
                   return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 1),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                    )),
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, 1),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
                     child: child,
                   );
                 },
@@ -329,7 +291,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
           },
         ),
         const SizedBox(height: 8),
-        
+
         // Administration Section
         _buildSectionTitle('Administration', isDark),
         _MenuItem(
@@ -338,22 +300,39 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
           title: 'Pharmacy Admins',
           subtitle: 'Manage administrators',
           iconColor: AppColors.accentPurple,
-          isDark: isDark,
+          isDark: isDark, // Assuming isDark is defined nearby
+          isEnabled: state.isPharmacyMode && state.currentPharmacy != null,
           onTap: () {
+            // Check if pharmacy exists before navigating
+            if (state.currentPharmacy == null) {
+              Navigator.pop(context); // Close drawer
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please select a pharmacy first'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+
             Navigator.pop(context);
             Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (_, __, ___) => const PharmacyAdminsScreen(),
+                pageBuilder: (_, __, ___) =>
+                    PharmacyAdminsScreen(pharmacy: state.currentPharmacy!),
                 transitionsBuilder: (_, animation, __, child) {
                   return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 1),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                    )),
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, 1),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
                     child: child,
                   );
                 },
@@ -375,18 +354,20 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
               Navigator.push(
                 context,
                 PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => EditPharmacyScreen(
-                    pharmacy: state.currentPharmacy!,
-                  ),
+                  pageBuilder: (_, __, ___) =>
+                      EditPharmacyScreen(pharmacy: state.currentPharmacy!),
                   transitionsBuilder: (_, animation, __, child) {
                     return SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 1),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      )),
+                      position:
+                          Tween<Offset>(
+                            begin: const Offset(0, 1),
+                            end: Offset.zero,
+                          ).animate(
+                            CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            ),
+                          ),
                       child: child,
                     );
                   },
@@ -422,7 +403,9 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant,
+          color: isDark
+              ? DarkColors.surfaceVariant
+              : LightColors.surfaceVariant,
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Row(
@@ -449,14 +432,18 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                      color: isDark
+                          ? DarkColors.textPrimary
+                          : LightColors.textPrimary,
                     ),
                   ),
                   Text(
                     'Switch modes to manage pharmacies',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                      color: isDark
+                          ? DarkColors.textSecondary
+                          : LightColors.textSecondary,
                     ),
                   ),
                 ],
@@ -592,18 +579,20 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
                           decoration: BoxDecoration(
                             color: isCurrentPharmacy
                                 ? AppColors.primaryBlue.withOpacity(0.1)
-                                : (Theme.of(context).brightness == Brightness.dark
-                                    ? DarkColors.surfaceVariant
-                                    : LightColors.surfaceVariant),
+                                : (Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? DarkColors.surfaceVariant
+                                      : LightColors.surfaceVariant),
                             borderRadius: BorderRadius.circular(AppRadius.md),
                           ),
                           child: Icon(
                             Icons.business_rounded,
                             color: isCurrentPharmacy
                                 ? AppColors.primaryBlue
-                                : (Theme.of(context).brightness == Brightness.dark
-                                    ? DarkColors.textSecondary
-                                    : LightColors.textSecondary),
+                                : (Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? DarkColors.textSecondary
+                                      : LightColors.textSecondary),
                             size: 24,
                           ),
                         ),
@@ -614,7 +603,8 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
                             fontWeight: isCurrentPharmacy
                                 ? FontWeight.w700
                                 : FontWeight.w600,
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? DarkColors.textPrimary
                                 : LightColors.textPrimary,
                           ),
@@ -623,7 +613,8 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
                           pharmacy.address,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? DarkColors.textSecondary
                                 : LightColors.textSecondary,
                           ),
@@ -655,7 +646,9 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
                               backgroundColor: AppColors.primaryGreen,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
                               ),
                             ),
                           );
@@ -674,16 +667,20 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const CreatePharmacyScreen(),
+                        pageBuilder: (_, __, ___) =>
+                            const CreatePharmacyScreen(),
                         transitionsBuilder: (_, animation, __, child) {
                           return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 1),
-                              end: Offset.zero,
-                            ).animate(CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOutCubic,
-                            )),
+                            position:
+                                Tween<Offset>(
+                                  begin: const Offset(0, 1),
+                                  end: Offset.zero,
+                                ).animate(
+                                  CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                  ),
+                                ),
                             child: child,
                           );
                         },
@@ -755,9 +752,7 @@ class _ModeToggleButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive
-              ? AppColors.primaryBlue
-              : Colors.transparent,
+          color: isActive ? AppColors.primaryBlue : Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Row(
@@ -769,7 +764,9 @@ class _ModeToggleButton extends StatelessWidget {
               size: 18,
               color: isActive
                   ? Colors.white
-                  : (isDark ? DarkColors.textSecondary : LightColors.textSecondary),
+                  : (isDark
+                        ? DarkColors.textSecondary
+                        : LightColors.textSecondary),
             ),
             const SizedBox(width: 6),
             Text(
@@ -779,7 +776,9 @@ class _ModeToggleButton extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: isActive
                     ? Colors.white
-                    : (isDark ? DarkColors.textSecondary : LightColors.textSecondary),
+                    : (isDark
+                          ? DarkColors.textSecondary
+                          : LightColors.textSecondary),
               ),
             ),
             if (badgeCount != null && badgeCount! > 0 && !isActive) ...[
@@ -839,7 +838,9 @@ class _MenuItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: isEnabled
               ? iconColor.withOpacity(0.1)
-              : (isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant),
+              : (isDark
+                    ? DarkColors.surfaceVariant
+                    : LightColors.surfaceVariant),
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Icon(

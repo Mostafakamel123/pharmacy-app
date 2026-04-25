@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';import 'package:pharmacy_app/features/prescription/model/pharmacy_model.dart';import 'package:pharmacy_app/features/prescription/model/pharmacy_model.dart';
+import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';
+import 'package:pharmacy_app/features/prescription/model/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
 
 /// Searching Pharmacies Screen
@@ -74,11 +75,7 @@ class _SearchingPharmaciesScreenState
     final currentPharmacy = routingState?.currentPharmacy;
 
     if (routingState == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     // Check if all pharmacies failed
@@ -113,22 +110,24 @@ class _SearchingPharmaciesScreenState
                 'Looking for the nearest pharmacy...',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 'We\'re automatically contacting pharmacies nearby',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
-                    ),
+                  color: isDark
+                      ? DarkColors.textSecondary
+                      : LightColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 40),
 
               // Current Pharmacy Card
               if (currentPharmacy != null) ...[
-                _buildCurrentPharmacyCard(currentPharmacy as PharmacyModel, context, isDark),
+                _buildCurrentPharmacyCard(currentPharmacy, context, isDark),
                 const SizedBox(height: 24),
               ],
 
@@ -149,7 +148,9 @@ class _SearchingPharmaciesScreenState
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () {
-                    ref.read(routingStateNotifierProvider.notifier).resetRouting();
+                    ref
+                        .read(routingStateNotifierProvider.notifier)
+                        .resetRouting();
                     context.pop();
                   },
                   child: const Text('Cancel Request'),
@@ -173,10 +174,7 @@ class _SearchingPharmaciesScreenState
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: AppColors.primaryBlue.withOpacity(0.2),
-          border: Border.all(
-            color: AppColors.primaryBlue,
-            width: 2,
-          ),
+          border: Border.all(color: AppColors.primaryBlue, width: 2),
         ),
         child: Center(
           child: RotationTransition(
@@ -193,10 +191,15 @@ class _SearchingPharmaciesScreenState
   }
 
   Widget _buildCurrentPharmacyCard(
-      PharmacyModel pharmacy, BuildContext context, bool isDark) {
+    PharmacyModel pharmacy,
+    BuildContext context,
+    bool isDark,
+  ) {
     final bgColor = isDark ? DarkColors.surface : LightColors.surface;
-    final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
-    
+    final textSecondary = isDark
+        ? DarkColors.textSecondary
+        : LightColors.textSecondary;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -220,10 +223,7 @@ class _SearchingPharmaciesScreenState
                   color: AppColors.primaryBlue.withOpacity(isDark ? 0.15 : 0.2),
                 ),
                 child: Center(
-                  child: Icon(
-                    Icons.store,
-                    color: AppColors.primaryBlue,
-                  ),
+                  child: Icon(Icons.store, color: AppColors.primaryBlue),
                 ),
               ),
               const SizedBox(width: 12),
@@ -233,17 +233,16 @@ class _SearchingPharmaciesScreenState
                   children: [
                     Text(
                       'Contacting',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: textSecondary,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: textSecondary),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       pharmacy.name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -253,18 +252,14 @@ class _SearchingPharmaciesScreenState
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(
-                Icons.location_on_outlined,
-                size: 16,
-                color: textSecondary,
-              ),
+              Icon(Icons.location_on_outlined, size: 16, color: textSecondary),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   pharmacy.location,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: textSecondary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: textSecondary),
                 ),
               ),
             ],
@@ -284,25 +279,26 @@ class _SearchingPharmaciesScreenState
                   Text(
                     '${pharmacy.distance}km away',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.primaryBlue,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withOpacity(isDark ? 0.2 : 0.15),
+                  color: AppColors.primaryGreen.withOpacity(
+                    isDark ? 0.2 : 0.15,
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   'Open',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: AppColors.primaryGreen,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -317,7 +313,9 @@ class _SearchingPharmaciesScreenState
     final secs = seconds % 60;
     final surface = isDark ? DarkColors.surface : LightColors.surface;
     final divider = isDark ? DarkColors.divider : LightColors.divider;
-    final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
+    final textSecondary = isDark
+        ? DarkColors.textSecondary
+        : LightColors.textSecondary;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -330,18 +328,18 @@ class _SearchingPharmaciesScreenState
         children: [
           Text(
             'Time remaining for this pharmacy',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: textSecondary),
           ),
           const SizedBox(height: 12),
           Text(
             '$minutes:${secs.toString().padLeft(2, '0')}',
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: AppColors.primaryBlue,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 44,
-                ),
+              color: AppColors.primaryBlue,
+              fontWeight: FontWeight.bold,
+              fontSize: 44,
+            ),
           ),
           const SizedBox(height: 12),
           ClipRRect(
@@ -354,8 +352,8 @@ class _SearchingPharmaciesScreenState
                 seconds > 60
                     ? AppColors.primaryGreen
                     : seconds > 30
-                        ? AppColors.primaryBlue
-                        : AppColors.accentRed,
+                    ? AppColors.primaryBlue
+                    : AppColors.accentRed,
               ),
             ),
           ),
@@ -365,10 +363,15 @@ class _SearchingPharmaciesScreenState
   }
 
   Widget _buildProgressInfo(
-      RoutingStateModel state, BuildContext context, bool isDark) {
-    final surfaceVariant = isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant;
+    RoutingStateModel state,
+    BuildContext context,
+    bool isDark,
+  ) {
+    final surfaceVariant = isDark
+        ? DarkColors.surfaceVariant
+        : LightColors.surfaceVariant;
     final divider = isDark ? DarkColors.divider : LightColors.divider;
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -382,35 +385,25 @@ class _SearchingPharmaciesScreenState
             children: [
               Text(
                 '${state.currentPharmacyIndex + 1}/${state.nearbyPharmacies.length}',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              Text(
-                'Contacting',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text('Contacting', style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
-          Container(
-            width: 1,
-            height: 40,
-            color: divider,
-          ),
+          Container(width: 1, height: 40, color: divider),
           Column(
             children: [
               Text(
                 '${state.failedPharmacyIds.length}',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              Text(
-                'No Response',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text('No Response', style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ],
@@ -419,7 +412,10 @@ class _SearchingPharmaciesScreenState
   }
 
   Widget _buildRemainingPharmacies(
-      RoutingStateModel state, BuildContext context, bool isDark) {
+    RoutingStateModel state,
+    BuildContext context,
+    bool isDark,
+  ) {
     final remaining = state.nearbyPharmacies
         .skip(state.currentPharmacyIndex + 1)
         .toList();
@@ -428,8 +424,12 @@ class _SearchingPharmaciesScreenState
       return const SizedBox.shrink();
     }
 
-    final surfaceVariant = isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant;
-    final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
+    final surfaceVariant = isDark
+        ? DarkColors.surfaceVariant
+        : LightColors.surfaceVariant;
+    final textSecondary = isDark
+        ? DarkColors.textSecondary
+        : LightColors.textSecondary;
     final textHint = isDark ? DarkColors.textHint : LightColors.textHint;
 
     return Column(
@@ -437,9 +437,9 @@ class _SearchingPharmaciesScreenState
       children: [
         Text(
           'Next in queue',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         ListView.separated(
@@ -460,9 +460,9 @@ class _SearchingPharmaciesScreenState
                   Text(
                     '${index + 2}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: textSecondary,
-                        ),
+                      fontWeight: FontWeight.w600,
+                      color: textSecondary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -471,25 +471,19 @@ class _SearchingPharmaciesScreenState
                       children: [
                         Text(
                           pharmacy.name,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '${pharmacy.distance}km away',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: textSecondary,
-                                fontSize: 11,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: textHint,
-                  ),
+                  Icon(Icons.chevron_right, color: textHint),
                 ],
               ),
             );
@@ -500,12 +494,12 @@ class _SearchingPharmaciesScreenState
   }
 
   Widget _buildAllPharmaciesFailedScreen(RoutingStateModel state, bool isDark) {
-    final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
-    
+    final textSecondary = isDark
+        ? DarkColors.textSecondary
+        : LightColors.textSecondary;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search Completed'),
-      ),
+      appBar: AppBar(title: const Text('Search Completed')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -521,23 +515,25 @@ class _SearchingPharmaciesScreenState
               Text(
                 'No Pharmacies Responded',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 'We contacted ${state.failedPharmacyIds.length} pharmacies but none responded. Please try again later or contact manually.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: textSecondary),
               ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    ref.read(routingStateNotifierProvider.notifier).resetRouting();
+                    ref
+                        .read(routingStateNotifierProvider.notifier)
+                        .resetRouting();
                     context.pop();
                   },
                   child: const Text('Try Again'),
@@ -559,12 +555,12 @@ class _SearchingPharmaciesScreenState
   }
 
   Widget _buildPharmacyRespondedScreen(RoutingStateModel state, bool isDark) {
-    final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
-    
+    final textSecondary = isDark
+        ? DarkColors.textSecondary
+        : LightColors.textSecondary;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pharmacy Responded'),
-      ),
+      appBar: AppBar(title: const Text('Pharmacy Responded')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -580,16 +576,16 @@ class _SearchingPharmaciesScreenState
               Text(
                 '${state.lockPharmacyId} Responded!',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Connecting you with the pharmacy...',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: textSecondary),
               ),
               const SizedBox(height: 32),
               const CircularProgressIndicator(),
@@ -602,4 +598,3 @@ class _SearchingPharmaciesScreenState
 }
 
 /// Mock pharmacy model for display
-

@@ -12,7 +12,7 @@ import 'package:pharmacy_app/features/prescription/controller/prescription_provi
 /// Upload Prescription Screen
 /// Allows patient to upload prescription image or enter text
 class UploadPrescriptionScreen extends ConsumerStatefulWidget {
-  const UploadPrescriptionScreen({Key? key}) : super(key: key);
+  const UploadPrescriptionScreen({super.key});
 
   @override
   ConsumerState<UploadPrescriptionScreen> createState() =>
@@ -38,8 +38,11 @@ class _UploadPrescriptionScreenState
   }
 
   void _handleSendRequest() async {
-    final isRequestPending = ref.read(routingStateNotifierProvider)?.isRequestPending ?? false;
-    print('🚀 DEBUG UploadScreen: Checking if pending... isRequestPending=$isRequestPending');
+    final isRequestPending =
+        ref.read(routingStateNotifierProvider)?.isRequestPending ?? false;
+    print(
+      '🚀 DEBUG UploadScreen: Checking if pending... isRequestPending=$isRequestPending',
+    );
     if (isRequestPending) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -51,9 +54,7 @@ class _UploadPrescriptionScreenState
 
     if (_selectedImagePath == null && _descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please upload image or add description'),
-        ),
+        const SnackBar(content: Text('Please upload image or add description')),
       );
       return;
     }
@@ -83,11 +84,13 @@ class _UploadPrescriptionScreenState
 
       // Start routing
       if (mounted) {
-        await ref.read(routingStateNotifierProvider.notifier).startPrescriptionRouting(
-          patientId: 'patient_123',
-          prescription: prescription,
-          pharmacies: pharmacies,
-        );
+        await ref
+            .read(routingStateNotifierProvider.notifier)
+            .startPrescriptionRouting(
+              patientId: 'patient_123',
+              prescription: prescription,
+              pharmacies: pharmacies,
+            );
 
         // Defer navigation to next frame using post-frame callback
         if (mounted) {
@@ -99,9 +102,9 @@ class _UploadPrescriptionScreenState
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
   }
 
@@ -130,8 +133,8 @@ class _UploadPrescriptionScreenState
               Text(
                 'Choose to upload an image or describe your prescription',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: LightColors.textSecondary,
-                    ),
+                  color: LightColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -167,10 +170,7 @@ class _UploadPrescriptionScreenState
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(
-              color: AppColors.primaryBlue,
-              width: 2,
-            ),
+            border: Border.all(color: AppColors.primaryBlue, width: 2),
             borderRadius: BorderRadius.circular(AppRadius.md),
             color: const Color(0xFF0EA5E9).withOpacity(0.05),
           ),
@@ -194,8 +194,8 @@ class _UploadPrescriptionScreenState
                     Text(
                       'Camera • Gallery',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: LightColors.textHint,
-                          ),
+                        color: LightColors.textHint,
+                      ),
                     ),
                   ],
                 ),
@@ -307,8 +307,10 @@ class _UploadPrescriptionScreenState
             hintMaxLines: 6,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md),
-              borderSide:
-                  const BorderSide(color: LightColors.divider, width: 1),
+              borderSide: const BorderSide(
+                color: LightColors.divider,
+                width: 1,
+              ),
             ),
             contentPadding: const EdgeInsets.all(16),
           ),

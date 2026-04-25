@@ -8,11 +8,7 @@ class MessageInputArea extends ConsumerStatefulWidget {
   final String chatId;
   final VoidCallback? onMessageSent;
 
-  const MessageInputArea({
-    Key? key,
-    required this.chatId,
-    this.onMessageSent,
-  }) : super(key: key);
+  const MessageInputArea({super.key, required this.chatId, this.onMessageSent});
 
   @override
   ConsumerState<MessageInputArea> createState() => _MessageInputAreaState();
@@ -44,7 +40,9 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   void _sendMessage() {
     if (_controller.text.trim().isEmpty) return;
 
-    ref.read(chatMessagesProvider(widget.chatId).notifier).sendMessage(_controller.text);
+    ref
+        .read(chatMessagesProvider(widget.chatId).notifier)
+        .sendMessage(_controller.text);
     _controller.clear();
     widget.onMessageSent?.call();
   }
@@ -59,10 +57,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1F2937) : Colors.white,
         border: Border(
-          top: BorderSide(
-            color: const Color(0xFFE5E7EB),
-            width: 1,
-          ),
+          top: BorderSide(color: const Color(0xFFE5E7EB), width: 1),
         ),
       ),
       padding: EdgeInsets.only(
@@ -84,10 +79,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
             },
             icon: const Icon(Icons.attach_file),
             color: const Color(0xFF0EA5E9),
-            constraints: const BoxConstraints(
-              minWidth: 40,
-              minHeight: 40,
-            ),
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
             padding: EdgeInsets.zero,
             tooltip: 'Attach file',
           ),
@@ -100,10 +92,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
             },
             icon: const Icon(Icons.camera_alt),
             color: const Color(0xFF0EA5E9),
-            constraints: const BoxConstraints(
-              minWidth: 40,
-              minHeight: 40,
-            ),
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
             padding: EdgeInsets.zero,
             tooltip: 'Take photo',
           ),
@@ -111,12 +100,11 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF374151) : const Color(0xFFF9FAFB),
+                color: isDark
+                    ? const Color(0xFF374151)
+                    : const Color(0xFFF9FAFB),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFE5E7EB),
-                  width: 1,
-                ),
+                border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
               ),
               child: TextField(
                 controller: _controller,
@@ -124,7 +112,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                 maxLines: null,
                 minLines: 1,
                 onChanged: (_) {
-                  ref.read(messageInputProvider.notifier).state = _controller.text;
+                  ref.read(messageInputProvider.notifier).state =
+                      _controller.text;
                 },
                 decoration: InputDecoration(
                   hintText: 'Type your message...',
@@ -162,10 +151,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                 onPressed: hasText ? _sendMessage : null,
                 icon: const Icon(Icons.send_rounded),
                 color: hasText ? Colors.white : const Color(0xFF9CA3AF),
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                 padding: EdgeInsets.zero,
                 tooltip: 'Send message',
               ),
