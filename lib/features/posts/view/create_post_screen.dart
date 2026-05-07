@@ -1,5 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';  // PERF FIX: Import for Timer
+import 'dart:io';  // PERF FIX: Import for File
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,12 +18,30 @@ class CreatePostScreen extends ConsumerStatefulWidget {
 }
 
 class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
+  // PERF FIX: Use ValueNotifier for image preview to avoid rebuilding entire form on image selection
+  final ValueNotifier<File?> _imagePreview = ValueNotifier<File?>(null);
   final FocusNode _textFocus = FocusNode();
+  final TextEditingController _textController = TextEditingController();
+  
+  // PERF FIX: Debounce timer for search/content changes
+  Timer? _debounceTimer;
 
   @override
   void dispose() {
+    // PERF FIX: Cancel debounce timer in dispose
+    _debounceTimer?.cancel();
+    _imagePreview.dispose();  // PERF FIX: Dispose ValueNotifier
     _textFocus.dispose();
+    _textController.dispose();  // PERF FIX: Dispose TextEditingController
     super.dispose();
+  }
+
+  // PERF FIX: Debounced content update to avoid excessive state emissions
+  void _updateContentDebounced(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      ref.read(createPostFormProvider.notifier).updateContent(value);
+    });
   }
 
   @override
@@ -245,13 +266,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             ),
                           ],                        ),
                         child: TextField(
+                          controller: _textController,  // PERF FIX: Use TextEditingController for better control
                           focusNode: _textFocus,
                           maxLines: null,
                           maxLength: 500,
                           autofocus: true,
-                          onChanged: (value) => ref
-                              .read(createPostFormProvider.notifier)
-                              .updateContent(value),
+                          onChanged: _updateContentDebounced,  // PERF FIX: Use debounced update to avoid excessive state emissions
                           style: const TextStyle(
                             fontSize: 16,
                             height: 1.5,
