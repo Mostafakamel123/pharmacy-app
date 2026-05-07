@@ -67,6 +67,7 @@ class _PostList extends StatelessWidget {
       child: SizedBox(
         height: 220, // PERF FIX: fixed height replaces shrinkWrap
         child: ListView.separated(
+          itemExtent: 88.0, // PERF FIX: fixed height avoids per-item measurement
           physics: const NeverScrollableScrollPhysics(),
           padding: EdgeInsets.zero,
           itemCount: posts.length,
@@ -217,7 +218,7 @@ class _PostCard extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)), // PERF FIX: const Icon with static properties
                     SizedBox(width: 4),
                     Text(
                       'Pharmacy responded',
