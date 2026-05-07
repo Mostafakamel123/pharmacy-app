@@ -1,4 +1,26 @@
 ```
+# Flutter/Dart specific
+**/ios/Flutter/.last_build_id
+**/lib/**
+**/test/**
+**/integration_test/**
+**/android/**
+**/windows/**
+**/linux/**
+**/macos/**
+**/web/**
+
+# Build artifacts
+/build/
+/ios/Build/
+
+# Dependencies
+/pubspec.lock
+/.dart_tool/
+
+# IDE
+.vscode/
+.idea/
 # Build artifacts
 *.dart_tool/
 *.build/
@@ -45,6 +67,10 @@ build/
 *.log
 *.tmp
 
+# OS generated files
+.DS_Store
+Thumbs.db
+```
 # Temporary files
 *.tmp
 .DS_Store

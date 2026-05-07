@@ -21,6 +21,9 @@ class PharmacyDrawer extends ConsumerStatefulWidget {
 }
 
 class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
+  // PERF FIX: Store state.userPharmacies.length to avoid repeated property access in build
+  int get _pharmaciesCount => ref.watch(pharmacyModeProvider.select((state) => state.userPharmacies.length));
+  
   @override
   Widget build(BuildContext context) {
     final pharmacyModeState = ref.watch(pharmacyModeProvider);
@@ -203,7 +206,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
                       Navigator.pop(context);
                       _showPharmacySelector(context, ref);
                     },
-                    badgeCount: state.userPharmacies.length,
+                    badgeCount: _pharmaciesCount, // PERF FIX: Use cached count instead of repeated state access
                   ),
                 ),
               ],
@@ -560,9 +563,11 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
               ] else ...[
                 Flexible(
                   child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const ClampingScrollPhysics(),
+                    physics: const ClampingScrollPhysics(), // PERF FIX: Removed shrinkWrap: true - using Flexible with bounded height instead
                     itemCount: state.userPharmacies.length,
+                    itemExtent: 80.0, // PERF FIX: Add itemExtent for fixed-height items to improve scroll performance
+                    addAutomaticKeepAlives: false, // PERF FIX: Disable keep-alives for lightweight list items
+                    addRepaintBoundaries: true, // PERF FIX: Enable repaint boundaries for better rendering
                     itemBuilder: (context, index) {
                       final pharmacy = state.userPharmacies[index];
                       final isCurrentPharmacy =
