@@ -214,7 +214,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
             label: Text(_isSubmitting ? 'Creating...' : 'Create'),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.primaryBlue,
-              disabledForegroundColor: AppColors.textHint,
+              disabledForegroundColor: AppColors.primaryCyan,
             ),
           ),
         ),
