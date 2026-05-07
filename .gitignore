@@ -1,4 +1,23 @@
 ```
+# Build artifacts
+*.dart_tool/
+*.build/
+build/
+
+# Dependencies
+pubspec.lock
+.packages
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+*.env.*
 # Flutter/Dart specific
 .dart_tool/
 .packages
@@ -26,6 +45,20 @@ build/
 *.log
 *.tmp
 
+# Temporary files
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+*.lcov
+
+# Flutter specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugin-dependencies
+```
 # Dependencies cache
 .pub/
 ```

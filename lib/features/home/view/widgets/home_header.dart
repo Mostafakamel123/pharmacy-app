@@ -237,6 +237,7 @@ class _NotificationBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // PERF FIX: Watch only the notification count instead of entire provider state tree
     final notificationCount = ref.watch(notificationCountProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

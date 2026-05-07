@@ -64,6 +64,14 @@ class _PostList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      child: ListView.separated(
+        // PERF FIX: Remove shrinkWrap - already in a scrollable parent (CustomScrollView)
+        // shrinkWrap removed to avoid unnecessary layout calculations
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: posts.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 6),
+        itemBuilder: (context, index) => _PostCard(post: posts[index]),
       child: SizedBox(
         height: 220, // PERF FIX: fixed height replaces shrinkWrap
         child: ListView.separated(

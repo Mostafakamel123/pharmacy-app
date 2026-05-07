@@ -87,6 +87,12 @@ class _PharmacyList extends StatelessWidget {
     return SizedBox(
       height: 138,
       child: ListView.separated(
+        // PERF FIX: Add itemExtent for fixed-height items to improve scroll performance
+        itemExtent: 138,
+        // PERF FIX: Enable repaint boundaries for better rendering optimization
+        addRepaintBoundaries: true,
+        // PERF FIX: Disable automatic keep-alives since items don't need to preserve state
+        addAutomaticKeepAlives: false,
         itemExtent: 170.0, // PERF FIX: fixed height avoids per-item measurement
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -274,6 +280,12 @@ class _ShimmerLoading extends StatelessWidget {
     return SizedBox(
       height: 138,
       child: ListView.separated(
+        // PERF FIX: Add itemExtent for fixed-height items to improve scroll performance
+        itemExtent: 138,
+        // PERF FIX: Enable repaint boundaries for better rendering optimization
+        addRepaintBoundaries: true,
+        // PERF FIX: Disable automatic keep-alives since items don't need to preserve state
+        addAutomaticKeepAlives: false,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: 3,
