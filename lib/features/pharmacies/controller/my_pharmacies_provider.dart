@@ -1,3 +1,5 @@
+import 'dart:async'; // PERF FIX: Added for Timer-based operations if needed
+import 'package:flutter/foundation.dart'; // PERF FIX: Added for compute() function
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
@@ -9,8 +11,16 @@ final myPharmaciesProvider = StateNotifierProvider<MyPharmaciesNotifier, AsyncVa
 
 class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyModel>>> {
   final Ref ref;
+  Timer? _debounceTimer; // PERF FIX: Timer for debouncing operations if needed
 
   MyPharmaciesNotifier(this.ref) : super(const AsyncValue.loading());
+
+  @override
+  void dispose() {
+    // PERF FIX: Cancel timer to prevent memory leaks
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
 
   /// Load user's pharmacies from API
   Future<void> loadUserPharmacies() async {

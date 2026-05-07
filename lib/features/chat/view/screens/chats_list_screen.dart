@@ -138,6 +138,7 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
                   return ListView.builder(
                     controller: _scrollController,
                     itemCount: chats.length,
+                    itemExtent: 80.0, // PERF FIX: fixed height avoids per-item measurement
                     physics: const BouncingScrollPhysics(),
                     itemBuilder: (context, index) {
                       final chat = chats[index];

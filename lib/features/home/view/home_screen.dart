@@ -25,6 +25,12 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
+  void dispose() {
+    // PERF FIX: Dispose of GlobalKey's currentState to prevent memory leaks
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,

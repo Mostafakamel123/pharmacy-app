@@ -32,8 +32,116 @@ Thumbs.db
 .env.local
 *.env.*
 
+# Dependencies
+**/node_modules/
+**/venv/
+**/.venv/
+**/__pycache__/
+**/.mypy_cache/
+**/.pytest_cache/
+**/target/
+**/.gradle/
+
+# Flutter/Dart specific
+.dart_tool/
+.packages
+.pub/
+build/
+*.g.dart
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+```
+# Flutter/Dart specific
+**/ios/Flutter/.last_build_id
+**/lib/**
+**/test/**
+**/integration_test/**
+**/android/**
+**/windows/**
+**/linux/**
+**/macos/**
+**/web/**
+
+# Build artifacts
+/build/
+/ios/Build/
+
+# Dependencies
+/pubspec.lock
+/.dart_tool/
+
+# IDE
+.vscode/
+.idea/
+# Build artifacts
+*.dart_tool/
+*.build/
+build/
+
+# Dependencies
+pubspec.lock
+.packages
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+*.env.*
+# Flutter/Dart specific
+.dart_tool/
+.packages
+pubspec.lock
+*.g.dart
+*.freezed.dart
+
+# Build outputs
+build/
+**/ios/.generated/
+**/android/.generated/
+
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # Logs
 *.log
+*.tmp
 
 # Coverage
 coverage/
@@ -64,3 +172,25 @@ htmlcov/
 *.tar.xz
 *.tar.zst
 ```
+# OS generated files
+.DS_Store
+Thumbs.db
+```
+# Temporary files
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+*.lcov
+
+# Flutter specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugin-dependencies
+```
+# Dependencies cache
+.pub/
+```
+Nothing should be ignored since the changes only include Dart source files (.dart) which are legitimate source code files and not build artifacts, dependencies, or temporary files.

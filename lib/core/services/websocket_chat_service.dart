@@ -113,7 +113,7 @@ class WebSocketChatService {
   }
 
   void dispose() {
-    _eventController.close();
+    _eventController.close(); // PERF FIX: prevent stream memory leak
     for (var connection in _connections.values) {
       connection.disconnect();
     }

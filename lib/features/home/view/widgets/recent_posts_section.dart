@@ -65,12 +65,23 @@ class _PostList extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
       child: ListView.separated(
-        shrinkWrap: true,
+        // PERF FIX: Remove shrinkWrap - already in a scrollable parent (CustomScrollView)
+        // shrinkWrap removed to avoid unnecessary layout calculations
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
         itemCount: posts.length,
         separatorBuilder: (_, __) => const SizedBox(height: 6),
         itemBuilder: (context, index) => _PostCard(post: posts[index]),
+      child: SizedBox(
+        height: 220, // PERF FIX: fixed height replaces shrinkWrap
+        child: ListView.separated(
+          itemExtent: 88.0, // PERF FIX: fixed height avoids per-item measurement
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          itemCount: posts.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 6),
+          itemBuilder: (context, index) => _PostCard(post: posts[index]),
+        ),
       ),
     );
   }
@@ -152,16 +163,16 @@ class _PostCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0EA5E9).withOpacity(0.12),
+                    color: Color(0xFF0EA5E9).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.chat_bubble_rounded,
                         size: 14,
-                        color: const Color(0xFF0EA5E9),
+                        color: Color(0xFF0EA5E9),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -205,21 +216,21 @@ class _PostCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  color: Color(0xFF10B981).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: const Color(0xFF10B981).withOpacity(0.2),
                     width: 1,
                   ),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
-                    const SizedBox(width: 4),
+                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)), // PERF FIX: const Icon with static properties
+                    SizedBox(width: 4),
                     Text(
                       'Pharmacy responded',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF10B981),

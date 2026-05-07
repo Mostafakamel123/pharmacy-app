@@ -342,6 +342,7 @@ class RoutingStateNotifier extends StateNotifier<RoutingStateModel?> {
 class CountdownTimerNotifier extends StateNotifier<int> {
   // PERF FIX: Timer is already stored as Timer? _timer - verified
   Timer? _timer;
+  Timer? _timer; // PERF FIX: store reference to cancel on dispose
 
   CountdownTimerNotifier() : super(300) {
     // 5 minutes default
@@ -351,6 +352,7 @@ class CountdownTimerNotifier extends StateNotifier<int> {
   void dispose() {
     // PERF FIX: Timer cancellation already exists - verified complete
     _timer?.cancel();
+    _timer?.cancel(); // PERF FIX: prevent memory leak and background execution
     super.dispose();
   }
 

@@ -121,40 +121,49 @@ class PostsFeedScreen extends ConsumerWidget {
           postsAsync.when(
             data: (posts) {
               if (posts.isEmpty) {
-                return SliverFillRemaining(
+                return const SliverFillRemaining(
                   child: _EmptyState(),
                 );
               }
+              // PERF FIX: Add addRepaintBoundaries and addAutomaticKeepAlives to delegate
+              // PERF FIX: Wrap PostCard with RepaintBoundary to isolate repaints
               return SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final post = posts[index];
-                    return PostCard(
-                      post: post,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PostDetailsScreen(post: post),
-                          ),
-                        );
-                      },
-                      onBookmark: () {
-                        final bookmarks = ref
-                            .read(bookmarkedPostsProvider.notifier)
-                            .state;
-                        final updated = Set<String>.from(bookmarks);
-                        if (updated.contains(post.id)) {
-                          updated.remove(post.id);
-                        } else {
-                          updated.add(post.id);
-                        }
-                        ref.read(bookmarkedPostsProvider.notifier).state =
-                            updated;
-                      },
+                    return RepaintBoundary(  // PERF FIX: Isolate repaint for each card
+                      child: PostCard(
+                        key: ValueKey(post.id),  // PERF FIX: Stable key for list items
+                        post: post,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PostDetailsScreen(post: post),
+                            ),
+                          );
+                        },
+                        onBookmark: () {
+                          final bookmarks = ref
+                              .read(bookmarkedPostsProvider.notifier)
+                              .state;
+                          final updated = Set<String>.from(bookmarks);
+                          if (updated.contains(post.id)) {
+                            updated.remove(post.id);
+                          } else {
+                            updated.add(post.id);
+                          }
+                          ref.read(bookmarkedPostsProvider.notifier).state =
+                              updated;
+                        },
+                      ),
                     );
                   },
                   childCount: posts.length,
+                  addRepaintBoundaries: true,  // PERF FIX: Enable repaint boundaries
+                  addAutomaticKeepAlives: false,  // PERF FIX: Disable keep-alive for feed items
+                  addAutomaticKeepAlives: false, // PERF FIX: items don't need keepAlive
+                  addRepaintBoundaries: true,    // PERF FIX: isolate repaints per item
                 ),
               );
             },
@@ -270,6 +279,8 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
