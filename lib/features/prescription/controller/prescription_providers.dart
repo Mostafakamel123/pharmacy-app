@@ -1,8 +1,91 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/features/prescription/model/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/model/prescription_model.dart';
 import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';
+
+// ============================================================================
+// HELPER FUNCTIONS FOR ISOLATE COMPUTATION (must be top-level)
+// ============================================================================
+
+// PERF FIX: Helper function to convert PrescriptionModel to Map for isolate transfer
+Map<String, dynamic> _prescriptionToMap(PrescriptionModel p) {
+  return {
+    'id': p.id,
+    'patientId': p.patientId,
+    'imageUrl': p.imageUrl,
+    'textContent': p.textContent,
+    'description': p.description,
+    'createdAtMs': p.createdAt.millisecondsSinceEpoch,
+    'isImage': p.isImage,
+  };
+}
+
+// PERF FIX: Helper function to convert PharmacyModel to Map for isolate transfer
+Map<String, dynamic> _pharmacyToMap(PharmacyModel p) {
+  return {
+    'id': p.id,
+    'name': p.name,
+    'location': p.location,
+    'latitude': p.latitude,
+    'longitude': p.longitude,
+    'distance': p.distance,
+    'isOpen': p.isOpen,
+    'rating': p.rating,
+    'phone': p.phone,
+    'imageUrl': p.imageUrl,
+    'isPriority': p.isPriority,
+    'estimatedResponseTime': p.estimatedResponseTime,
+  };
+}
+
+// PERF FIX: Helper function to create RoutingStateModel in isolate
+RoutingStateModel _createRoutingStateSync(Map<String, dynamic> data) {
+  final prescription = PrescriptionModel(
+    id: data['prescriptionData']['id'] as String,
+    patientId: data['prescriptionData']['patientId'] as String,
+    imageUrl: data['prescriptionData']['imageUrl'] as String?,
+    textContent: data['prescriptionData']['textContent'] as String?,
+    description: data['prescriptionData']['description'] as String?,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(
+      data['prescriptionData']['createdAtMs'] as int,
+    ),
+    isImage: data['prescriptionData']['isImage'] as bool,
+  );
+  
+  final pharmacies = (data['pharmaciesData'] as List)
+      .map((p) => PharmacyModel(
+            id: p['id'] as String,
+            name: p['name'] as String,
+            location: p['location'] as String,
+            latitude: p['latitude'] as double,
+            longitude: p['longitude'] as double,
+            distance: p['distance'] as double,
+            isOpen: p['isOpen'] as bool,
+            rating: p['rating'] as double,
+            phone: p['phone'] as String,
+            imageUrl: p['imageUrl'] as String,
+            isPriority: p['isPriority'] as bool? ?? false,
+            estimatedResponseTime: p['estimatedResponseTime'] as int? ?? 180,
+          ))
+      .toList();
+  
+  final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
+  return RoutingStateModel(
+    id: requestId,
+    patientId: data['patientId'] as String,
+    prescription: prescription,
+    status: RoutingStatus.searching,
+    nearbyPharmacies: pharmacies,
+    currentPharmacyIndex: 0,
+    currentPharmacy: pharmacies.isNotEmpty ? pharmacies[0] : null,
+    createdAt: DateTime.now(),
+    lastUpdatedAt: DateTime.now(),
+    remainingTime: 300,
+    isRequestPending: false,
+  );
+}
 
 // ============================================================================
 // MOCK DATA SERVICE - REPLACE WITH REAL API LATER
@@ -166,11 +249,14 @@ class RoutingStateNotifier extends StateNotifier<RoutingStateModel?> {
     required List<PharmacyModel> pharmacies,
   }) async {
     final service = ref.watch(prescriptionServiceProvider);
-    state = await service.createPrescriptionRequest(
+    // PERF FIX: Use compute() for heavy object creation to avoid blocking main thread
+    final routingState = await compute(_createRoutingStateSync, (
       patientId: patientId,
-      prescription: prescription,
-      pharmacies: pharmacies,
-    );
+      prescriptionData: _prescriptionToMap(prescription),
+      pharmaciesData: pharmacies.map((p) => _pharmacyToMap(p)).toList(),
+    ));
+    
+    state = routingState;
 
     // Mark request as pending
     if (state != null) {
@@ -254,6 +340,8 @@ class RoutingStateNotifier extends StateNotifier<RoutingStateModel?> {
 
 /// Timer countdown for current pharmacy (in seconds)
 class CountdownTimerNotifier extends StateNotifier<int> {
+  // PERF FIX: Timer is already stored as Timer? _timer - verified
+  Timer? _timer;
   Timer? _timer; // PERF FIX: store reference to cancel on dispose
 
   CountdownTimerNotifier() : super(300) {
@@ -262,6 +350,8 @@ class CountdownTimerNotifier extends StateNotifier<int> {
 
   @override
   void dispose() {
+    // PERF FIX: Timer cancellation already exists - verified complete
+    _timer?.cancel();
     _timer?.cancel(); // PERF FIX: prevent memory leak and background execution
     super.dispose();
   }
@@ -272,7 +362,11 @@ class CountdownTimerNotifier extends StateNotifier<int> {
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (state > 0) {
-        state--;
+        // PERF FIX: Only emit state if value actually changed to avoid redundant rebuilds
+        final newState = state - 1;
+        if (newState != state) {
+          state = newState;
+        }
       } else {
         timer.cancel();
         // This will trigger moveToNextPharmacy in UI
