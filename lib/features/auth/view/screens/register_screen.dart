@@ -1,0 +1,331 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pharmacy_app/core/routing/app_routes.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
+import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
+import 'package:pharmacy_app/features/auth/view/widgets/auth_text_field.dart';
+import 'package:pharmacy_app/features/auth/view/widgets/auth_button.dart';
+
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  String? _nameError;
+  String? _emailError;
+  String? _passwordError;
+  String? _confirmPasswordError;
+
+  bool _acceptTerms = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  bool _validateName(String value) {
+    if (value.trim().length < 2) {
+      setState(() => _nameError = 'Name must be at least 2 characters');
+      return false;
+    }
+    setState(() => _nameError = null);
+    return true;
+  }
+
+  bool _validateEmail(String value) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    if (!emailRegex.hasMatch(value)) {
+      setState(() => _emailError = 'Please enter a valid email');
+      return false;
+    }
+    setState(() => _emailError = null);
+    return true;
+  }
+
+  bool _validatePassword(String value) {
+    if (value.length < 6) {
+      setState(() => _passwordError = 'Password must be at least 6 characters');
+      return false;
+    }
+    setState(() => _passwordError = null);
+    return true;
+  }
+
+  bool _validateConfirmPassword(String value) {
+    if (value != _passwordController.text) {
+      setState(() => _confirmPasswordError = 'Passwords do not match');
+      return false;
+    }
+    setState(() => _confirmPasswordError = null);
+    return true;
+  }
+
+  Future<void> _handleRegister() async {
+    // Validate form
+    if (!_validateName(_nameController.text.trim())) return;
+    if (!_validateEmail(_emailController.text.trim())) return;
+    if (!_validatePassword(_passwordController.text)) return;
+    if (!_validateConfirmPassword(_confirmPasswordController.text)) return;
+
+    if (!_acceptTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please accept the terms and conditions'),
+          backgroundColor: AppColors.accentRed,
+        ),
+      );
+      return;
+    }
+
+    final success = await ref.read(authProvider.notifier).register(
+          _nameController.text.trim(),
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+
+    if (success && mounted) {
+      context.go(AppRoutes.home);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark ? DarkColors.background : LightColors.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Back button
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                      size: 20,
+                    ),
+                    onPressed: () => context.go(AppRoutes.login),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title
+                Text(
+                  'Create Account',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? DarkColors.textPrimary
+                        : LightColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sign up to get started',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark
+                        ? DarkColors.textSecondary
+                        : LightColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Name field
+                AuthTextField(
+                  label: 'Full Name',
+                  hint: 'Enter your full name',
+                  icon: Icons.person_outline_rounded,
+                  controller: _nameController,
+                  errorText: _nameError,
+                  onChanged: (value) => _validateName(value),
+                ),
+                const SizedBox(height: 20),
+
+                // Email field
+                AuthTextField(
+                  label: 'Email',
+                  hint: 'Enter your email',
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  controller: _emailController,
+                  errorText: _emailError,
+                  onChanged: (value) => _validateEmail(value),
+                ),
+                const SizedBox(height: 20),
+
+                // Password field
+                AuthTextField(
+                  label: 'Password',
+                  hint: 'Create a password',
+                  icon: Icons.lock_outline,
+                  isPassword: true,
+                  controller: _passwordController,
+                  errorText: _passwordError,
+                  onChanged: (value) => _validatePassword(value),
+                ),
+                const SizedBox(height: 20),
+
+                // Confirm Password field
+                AuthTextField(
+                  label: 'Confirm Password',
+                  hint: 'Re-enter your password',
+                  icon: Icons.lock_outline,
+                  isPassword: true,
+                  controller: _confirmPasswordController,
+                  errorText: _confirmPasswordError,
+                  onChanged: (value) => _validateConfirmPassword(value),
+                ),
+                const SizedBox(height: 24),
+
+                // Terms and conditions checkbox
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _acceptTerms,
+                      onChanged: (value) {
+                        setState(() => _acceptTerms = value ?? false);
+                      },
+                      activeColor: AppColors.primaryBlue,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() => _acceptTerms = !_acceptTerms);
+                        },
+                        child: RichText(
+                          text: TextSpan(
+                            text: 'I agree to the ',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? DarkColors.textSecondary
+                                  : LightColors.textSecondary,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: 'Terms of Service',
+                                style: const TextStyle(
+                                  color: AppColors.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const TextSpan(text: ' and '),
+                              TextSpan(
+                                text: 'Privacy Policy',
+                                style: const TextStyle(
+                                  color: AppColors.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Error message
+                if (authState.error != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentRed.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      border: Border.all(
+                        color: AppColors.accentRed.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppColors.accentRed,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            authState.error!,
+                            style: const TextStyle(
+                              color: AppColors.accentRed,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (authState.error != null) const SizedBox(height: 16),
+
+                // Register button
+                AuthButton(
+                  text: 'Create Account',
+                  isLoading: authState.isLoading,
+                  onPressed: _handleRegister,
+                ),
+                const SizedBox(height: 24),
+
+                // Login link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Already have an account? ',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark
+                            ? DarkColors.textSecondary
+                            : LightColors.textSecondary,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push(AppRoutes.login),
+                      child: const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

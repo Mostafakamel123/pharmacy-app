@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
 import 'package:pharmacy_app/features/onboarding/view/onboarding_screen.dart';
+import 'package:pharmacy_app/features/auth/view/screens/login_screen.dart';
+import 'package:pharmacy_app/features/auth/view/screens/register_screen.dart';
+import 'package:pharmacy_app/features/auth/view/screens/forgot_password_screen.dart';
+import 'package:pharmacy_app/features/auth/view/screens/reset_password_screen.dart';
+import 'package:pharmacy_app/features/auth/view/screens/email_verification_screen.dart';
 import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
 import 'package:pharmacy_app/features/chat/view/screens/chat_conversation_screen.dart';
 import 'package:pharmacy_app/features/prescription/view/screens/upload_prescription_screen.dart';
@@ -44,9 +49,6 @@ final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.onboarding,
   errorBuilder: (context, state) => const NotFoundScreen(),
   routes: [
-    // Splash Screen
-   
-    
     // Onboarding Screen
     GoRoute(
       path: AppRoutes.onboarding,
@@ -54,32 +56,55 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const OnboardingScreen(),
     ),
     
-    // Auth Routes (placeholder for future implementation)
+    // Auth Routes
     GoRoute(
       path: AppRoutes.auth,
       name: 'auth',
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('Auth Screen')),
-      ),
-      routes: [
-        GoRoute(
-          path: 'login',
-          name: 'login',
-          builder: (context, state) => const Scaffold(
-            body: Center(child: Text('Login Screen')),
-          ),
-        ),
-        GoRoute(
-          path: 'register',
-          name: 'register',
-          builder: (context, state) => const Scaffold(
-            body: Center(child: Text('Register Screen')),
-          ),
-        ),
-      ],
+      redirect: (context, state) => AppRoutes.login,
     ),
     
-    // Home Route - Premium Navigation Shell (unified for all users)
+    // Login Screen
+    GoRoute(
+      path: AppRoutes.login,
+      name: 'login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    
+    // Register Screen
+    GoRoute(
+      path: AppRoutes.register,
+      name: 'register',
+      builder: (context, state) => const RegisterScreen(),
+    ),
+    
+    // Forgot Password Screen
+    GoRoute(
+      path: AppRoutes.forgotPassword,
+      name: 'forgotPassword',
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    
+    // Reset Password Screen
+    GoRoute(
+      path: AppRoutes.resetPassword,
+      name: 'resetPassword',
+      builder: (context, state) {
+        final token = state.pathParameters['token']!;
+        return ResetPasswordScreen(token: token);
+      },
+    ),
+    
+    // Email Verification Screen
+    GoRoute(
+      path: AppRoutes.emailVerification,
+      name: 'emailVerification',
+      builder: (context, state) {
+        final email = state.extra as String?;
+        return EmailVerificationScreen(email: email);
+      },
+    ),
+    
+    // Home Route
     GoRoute(
       path: AppRoutes.home,
       name: 'home',
