@@ -31,31 +31,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  bool _validateEmail(String value) {
+  // Validate without triggering setState on every character
+  // Only show errors on blur or submit
+  bool _validateEmail(String value, {bool showError = true}) {
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
     if (!emailRegex.hasMatch(value)) {
-      setState(() => _emailError = 'Please enter a valid email');
+      if (showError) {
+        setState(() => _emailError = 'Please enter a valid email');
+      }
       return false;
     }
-    setState(() => _emailError = null);
+    if (showError) {
+      setState(() => _emailError = null);
+    }
     return true;
   }
 
-  bool _validatePassword(String value) {
+  bool _validatePassword(String value, {bool showError = true}) {
     if (value.length < 6) {
-      setState(() => _passwordError = 'Password must be at least 6 characters');
+      if (showError) {
+        setState(() => _passwordError = 'Password must be at least 6 characters');
+      }
       return false;
     }
-    setState(() => _passwordError = null);
+    if (showError) {
+      setState(() => _passwordError = null);
+    }
     return true;
   }
 
   Future<void> _handleLogin() async {
-    // Validate form
-    if (!_validateEmail(_emailController.text.trim())) return;
-    if (!_validatePassword(_passwordController.text)) return;
+    // Validate form - always show errors on submit
+    final emailValid = _validateEmail(_emailController.text.trim(), showError: true);
+    final passwordValid = _validatePassword(_passwordController.text, showError: true);
+    
+    if (!emailValid || !passwordValid) return;
 
     final success = await ref.read(authProvider.notifier).login(
           _emailController.text.trim(),
@@ -69,6 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Select only needed properties to minimize rebuilds
     final authState = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -122,7 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // Email field
+                // Email field - use onChanged with showError: false to avoid rebuilds while typing
                 AuthTextField(
                   label: 'Email',
                   hint: 'Enter your email',
@@ -130,7 +143,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   controller: _emailController,
                   errorText: _emailError,
-                  onChanged: (value) => _validateEmail(value),
+                  // Only validate on blur/submit, not on every character
+                  onChanged: null,
                 ),
                 const SizedBox(height: 20),
 
@@ -142,7 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   isPassword: true,
                   controller: _passwordController,
                   errorText: _passwordError,
-                  onChanged: (value) => _validatePassword(value),
+                  onChanged: null,
                 ),
                 const SizedBox(height: 12),
 
