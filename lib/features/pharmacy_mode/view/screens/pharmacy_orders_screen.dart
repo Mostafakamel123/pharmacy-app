@@ -41,9 +41,16 @@ class _PharmacyOrdersScreenState extends ConsumerState<PharmacyOrdersScreen>
     // If no pharmacy selected, show empty state
     if (currentPharmacy == null) {
       return Scaffold(
+        drawer: PharmacyDrawer(null),
         appBar: AppBar(
           title: const Text('Orders'),
           centerTitle: true,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
         ),
         body: _buildEmptyState(context),
       );
@@ -53,6 +60,12 @@ class _PharmacyOrdersScreenState extends ConsumerState<PharmacyOrdersScreen>
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: PharmacyDrawer(currentPharmacy),
       appBar: AppBar(
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         title: const Text('Orders & Requests'),
         centerTitle: true,
         bottom: TabBar(

@@ -165,16 +165,20 @@ class _DashboardHeader extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Icon(
-                      Icons.business_rounded,
-                      color: Colors.white,
-                      size: 28,
+                  // Menu button to open drawer
+                  GestureDetector(
+                    onTap: () => Scaffold.of(context).openDrawer(),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: const Icon(
+                        Icons.menu_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
