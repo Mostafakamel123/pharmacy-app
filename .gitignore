@@ -1,51 +1,53 @@
-# Flutter/Dart/Pub
+```
+# Build artifacts
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
+**/node_modules/
+**/venv/
+**/.venv/
+**/__pycache__/
+**/.mypy_cache/
+**/.pytest_cache/
+**/target/
+**/.gradle/
+
+# Flutter/Dart specific
 .dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
 .packages
 .pub/
 build/
+*.g.dart
 
-# Web related
-lib/generated_plugin_registrant.dart
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio
-.idea/
-*.iml
-
-# VS Code
-.vscode/
-
-# Android
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# iOS
-ios/Flutter/.last_build_id
-
-# macOS
-macos/Flutter/ephemeral/
-
-# Linux
-linux/flutter/ephemeral/
-
-# Windows
-windows/flutter/ephemeral/
-
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.swp
+*.swo
 
-# Environment files
+# Environment variables
 .env
+.env.local
 .env.*
 
-# OS files
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+```
