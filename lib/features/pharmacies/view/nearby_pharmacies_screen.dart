@@ -190,6 +190,8 @@ class NearbyPharmaciesScreen extends ConsumerWidget {
                     );
                   },
                   childCount: pharmacies.length,
+                  addAutomaticKeepAlives: false, // PERF FIX: items don't need keepAlive
+                  addRepaintBoundaries: true,    // PERF FIX: isolate repaints per item
                 ),
               );
             },

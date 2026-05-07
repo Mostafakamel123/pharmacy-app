@@ -270,7 +270,7 @@ class _PharmacyCardState extends State<PharmacyCard>
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.delivery_dining_rounded,
+                                const Icon(Icons.delivery_dining_rounded,
                                     size: 12, color: AppColors.primaryBlue),
                                 const SizedBox(width: 3),
                                 Text(
