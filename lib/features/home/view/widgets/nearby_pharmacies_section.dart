@@ -93,6 +93,7 @@ class _PharmacyList extends StatelessWidget {
         addRepaintBoundaries: true,
         // PERF FIX: Disable automatic keep-alives since items don't need to preserve state
         addAutomaticKeepAlives: false,
+        itemExtent: 170.0, // PERF FIX: fixed height avoids per-item measurement
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: pharmacies.length,
@@ -197,11 +198,11 @@ class _PharmacyCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 // Rating
-                Icon(
+                const Icon(
                   Icons.star_rounded,
                   size: 12,
-                  color: const Color(0xFFF59E0B),
-                ),
+                  color: Color(0xFFF59E0B),
+                ), // PERF FIX: const Icon with static properties
                 const SizedBox(width: 2),
                 Text(
                   pharmacy.rating.toStringAsFixed(1),
@@ -246,14 +247,14 @@ class _PharmacyCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.delivery_dining_rounded, size: 12, color: const Color(0xFF0EA5E9)),
+                        const Icon(Icons.delivery_dining_rounded, size: 12, color: Color(0xFF0EA5E9)), // PERF FIX: const Icon with static properties
                         const SizedBox(width: 3),
                         Text(
                           'Delivery',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF0EA5E9),
+                            color: Color(0xFF0EA5E9),
                           ),
                         ),
                       ],

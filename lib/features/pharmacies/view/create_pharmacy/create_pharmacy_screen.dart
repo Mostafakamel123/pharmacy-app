@@ -277,38 +277,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
             
             const SizedBox(height: 16),
             
-            InkWell(
-              onTap: _selectLocation,
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                decoration: BoxDecoration(
-                  border: Border.all(color: LightColors.divider),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.map, color: AppColors.primaryBlue),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Location Coordinates',
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          Text(
-                            'Lat: $_latitude, Lng: $_longitude',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.edit, size: 16, color: LightColors.textSecondary),
-                  ],
-                ),
-              ),
-            ),
+            _buildLocationDisplay(theme), // PERF FIX: Use extracted widget
             
             const SizedBox(height: 16),
             
@@ -404,6 +373,42 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
       style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
         color: AppColors.primaryBlue,
+      ),
+    );
+  }
+
+  // PERF FIX: Extract location display to separate widget to avoid rebuilds
+  Widget _buildLocationDisplay(ThemeData theme) {
+    return InkWell(
+      onTap: _selectLocation,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          border: Border.all(color: LightColors.divider),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.map, color: AppColors.primaryBlue),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Location Coordinates',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  Text(
+                    'Lat: $_latitude, Lng: $_longitude',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.edit, size: 16, color: LightColors.textSecondary),
+          ],
+        ),
       ),
     );
   }

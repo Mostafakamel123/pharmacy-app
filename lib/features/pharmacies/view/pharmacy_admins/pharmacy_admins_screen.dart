@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async'; // PERF FIX: Added for Timer-based debounce
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
@@ -23,10 +24,12 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
   bool _isLoading = false;
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  Timer? _debounceTimer; // PERF FIX: Timer for debouncing search input
 
   @override
   void dispose() {
     _searchController.dispose();
+    _debounceTimer?.cancel(); // PERF FIX: Cancel timer to prevent memory leaks
     super.dispose();
   }
 
@@ -253,8 +256,14 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
                 ),
               ),
               onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
+                // PERF FIX: Debounce search input to reduce unnecessary rebuilds
+                _debounceTimer?.cancel();
+                _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+                  if (mounted) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  }
                 });
               },
             ),
@@ -267,6 +276,8 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: allAdminIds.length,
+                    addAutomaticKeepAlives: false, // PERF FIX: Items don't need to keep state
+                    addRepaintBoundaries: true, // PERF FIX: Enable repaint isolation
                     itemBuilder: (context, index) {
                       final userId = allAdminIds[index];
                       final isOwnerUser = userId == widget.pharmacy.ownerUserId;
@@ -277,11 +288,13 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
                         return const SizedBox.shrink();
                       }
 
-                      return _buildAdminTile(
-                        userId,
-                        isOwnerUser,
-                        isOwner && !isOwnerUser,
-                        theme,
+                      return RepaintBoundary( // PERF FIX: Isolate each tile's repaints
+                        child: _buildAdminTile(
+                          userId,
+                          isOwnerUser,
+                          isOwner && !isOwnerUser,
+                          theme,
+                        ),
                       );
                     },
                   ),
@@ -320,6 +333,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
 
   Widget _buildAdminTile(String userId, bool isOwnerUser, bool canRemove, ThemeData theme) {
     return Card(
+      key: ValueKey(userId), // PERF FIX: Stable key to preserve widget state
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(

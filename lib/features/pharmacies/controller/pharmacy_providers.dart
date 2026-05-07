@@ -1,3 +1,5 @@
+import 'dart:async'; // PERF FIX: Add Timer for debounce
+import 'package:flutter/foundation.dart'; // PERF FIX: Add compute for heavy operations
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
 
@@ -15,6 +17,13 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
   bool _hasDelivery = false;
   double _maxDistance = 5.0;
   String _searchQuery = '';
+  Timer? _debounceTimer; // PERF FIX: Add debounce timer
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel(); // PERF FIX: Cancel timer on dispose
+    super.dispose();
+  }
 
   Future<void> _loadPharmacies() async {
     try {
@@ -39,13 +48,24 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
             .toList();
       }
 
-      // Sort by distance
-      pharmacies.sort((a, b) => a.distance.compareTo(b.distance));
+      // PERF FIX: Move sorting to compute() for large lists (>20 items)
+      if (pharmacies.length > 20) {
+        pharmacies = await compute(_sortPharmaciesByDistance, pharmacies);
+      } else {
+        // Sort by distance
+        pharmacies.sort((a, b) => a.distance.compareTo(b.distance));
+      }
 
       state = AsyncValue.data(pharmacies);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
+  }
+
+  // PERF FIX: Static helper for compute()
+  static List<PharmacyModel> _sortPharmaciesByDistance(List<PharmacyModel> pharmacies) {
+    pharmacies.sort((a, b) => a.distance.compareTo(b.distance));
+    return pharmacies;
   }
 
   Future<void> refresh() async {
@@ -68,9 +88,13 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
     _loadPharmacies();
   }
 
+  // PERF FIX: Debounce search query to avoid excessive filtering
   void setSearchQuery(String value) {
-    _searchQuery = value;
-    _loadPharmacies();
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _searchQuery = value;
+      _loadPharmacies();
+    });
   }
 }
 

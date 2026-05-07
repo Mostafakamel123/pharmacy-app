@@ -254,7 +254,7 @@ class RoutingStateNotifier extends StateNotifier<RoutingStateModel?> {
 
 /// Timer countdown for current pharmacy (in seconds)
 class CountdownTimerNotifier extends StateNotifier<int> {
-  Timer? _timer;
+  Timer? _timer; // PERF FIX: store reference to cancel on dispose
 
   CountdownTimerNotifier() : super(300) {
     // 5 minutes default
@@ -262,7 +262,7 @@ class CountdownTimerNotifier extends StateNotifier<int> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer?.cancel(); // PERF FIX: prevent memory leak and background execution
     super.dispose();
   }
 

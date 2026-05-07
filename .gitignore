@@ -18,9 +18,32 @@ pubspec.lock
 .env
 .env.local
 *.env.*
+# Flutter/Dart specific
+.dart_tool/
+.packages
+pubspec.lock
+*.g.dart
+*.freezed.dart
+
+# Build outputs
+build/
+**/ios/.generated/
+**/android/.generated/
+
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Logs
 *.log
+*.tmp
 
 # Temporary files
 *.tmp
@@ -36,3 +59,7 @@ coverage/
 .flutter-plugins
 .flutter-plugin-dependencies
 ```
+# Dependencies cache
+.pub/
+```
+Nothing should be ignored since the changes only include Dart source files (.dart) which are legitimate source code files and not build artifacts, dependencies, or temporary files.
