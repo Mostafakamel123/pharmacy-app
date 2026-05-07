@@ -457,6 +457,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
 
   void _showPharmacySelector(BuildContext context, WidgetRef ref) {
     final state = ref.read(pharmacyModeProvider);
+    final pharmacyModeNotifier = ref.read(pharmacyModeProvider.notifier);
 
     showModalBottomSheet(
       context: context,
@@ -636,8 +637,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
                               )
                             : null,
                         onTap: () {
-                          // Read ref BEFORE any navigation
-                          final pharmacyModeNotifier = ref.read(pharmacyModeProvider.notifier);
+                          Navigator.pop(context);
                           _switchPharmacyWithTransition(
                             context,
                             pharmacyModeNotifier,
