@@ -157,6 +157,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: pharmacies.length,
+        itemExtent: 280.0, // PERF FIX: fixed height avoids per-item measurement
         itemBuilder: (context, index) {
           final pharmacy = pharmacies[index];
           return _buildPharmacyCard(context, pharmacy);
@@ -206,6 +207,8 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                         pharmacy.coverImageUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
+                        cacheWidth: 400, // PERF FIX: reduce memory usage with cached resize
+                        cacheHeight: 120, // PERF FIX: reduce memory usage with cached resize
                         errorBuilder: (context, error, stack) {
                           return _buildPlaceholder(pharmacy.name);
                         },
