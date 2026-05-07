@@ -1,83 +1,51 @@
-```
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-*.class
-*.exe
-*.dll
-*.so
-*.a
-*.out
-
-# Dependencies
-node_modules/
-venv/
-.venv/
-.env
-.env.local
-*.env.*
-
-# Build directories
-dist/
+# Flutter/Dart/Pub
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
 build/
-target/
-.gradle/
 
-# Python specific
-*.pyc
-__pycache__/
-*.pyo
-*.pyd
-.Python
-*.so
-.coverage
-coverage/
-htmlcov/
+# Web related
+lib/generated_plugin_registrant.dart
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
+# Symbolication related
+app.*.symbols
 
-# Editors
-.vscode/
+# Obfuscation related
+app.*.map.json
+
+# Android Studio
 .idea/
-*.swp
-*.swo
+*.iml
 
-# System files
+# VS Code
+.vscode/
+
+# Android
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# iOS
+ios/Flutter/.last_build_id
+
+# macOS
+macos/Flutter/ephemeral/
+
+# Linux
+linux/flutter/ephemeral/
+
+# Windows
+windows/flutter/ephemeral/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# OS files
 .DS_Store
 Thumbs.db
-
-# Testing
-.mypy_cache/
-.pytest_cache/
-coverage/
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
-```
