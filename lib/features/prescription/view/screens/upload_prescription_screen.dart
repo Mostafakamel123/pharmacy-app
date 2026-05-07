@@ -22,8 +22,12 @@ class UploadPrescriptionScreen extends ConsumerStatefulWidget {
 class _UploadPrescriptionScreenState
     extends ConsumerState<UploadPrescriptionScreen> {
   late TextEditingController _descriptionController;
-  String? _selectedImagePath;
-  bool _isImage = false;
+  // PERF FIX: Replace setState booleans with ValueNotifier to avoid full widget rebuilds
+  final ValueNotifier<String?> _selectedImagePathNotifier = ValueNotifier<String?>(null);
+  final ValueNotifier<bool> _isImageNotifier = ValueNotifier<bool>(false);
+  
+  String? get _selectedImagePath => _selectedImagePathNotifier.value;
+  bool get _isImage => _isImageNotifier.value;
 
   @override
   void initState() {
@@ -34,6 +38,9 @@ class _UploadPrescriptionScreenState
   @override
   void dispose() {
     _descriptionController.dispose();
+    // PERF FIX: Dispose ValueNotifiers to prevent memory leaks
+    _selectedImagePathNotifier.dispose();
+    _isImageNotifier.dispose();
     super.dispose();
   }
 
@@ -139,7 +146,11 @@ class _UploadPrescriptionScreenState
               const SizedBox(height: 24),
 
               // Upload Image Section
-              _buildImageUploadSection(),
+              ValueListenableBuilder<String?>(
+                valueListenable: _selectedImagePathNotifier,
+                builder: (context, selectedImagePath, _) => 
+                  _buildImageUploadSection(selectedImagePath),
+              ),
               const SizedBox(height: 24),
 
               // Divider
@@ -159,7 +170,7 @@ class _UploadPrescriptionScreenState
     );
   }
 
-  Widget _buildImageUploadSection() {
+  Widget _buildImageUploadSection(String? selectedImagePath) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -200,7 +211,7 @@ class _UploadPrescriptionScreenState
                   ],
                 ),
               ),
-              if (_selectedImagePath != null)
+              if (selectedImagePath != null)
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Container(
@@ -223,10 +234,9 @@ class _UploadPrescriptionScreenState
                           right: 8,
                           child: GestureDetector(
                             onTap: () {
-                              setState(() {
-                                _selectedImagePath = null;
-                                _isImage = false;
-                              });
+                              // PERF FIX: Use ValueNotifier instead of setState
+                              _selectedImagePathNotifier.value = null;
+                              _isImageNotifier.value = false;
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -254,11 +264,10 @@ class _UploadPrescriptionScreenState
                       child: TextButton.icon(
                         onPressed: () {
                           // TODO: Implement camera
-                          setState(() {
-                            _selectedImagePath =
-                                'assets/prescription_sample.jpg';
-                            _isImage = true;
-                          });
+                          // PERF FIX: Use ValueNotifier instead of setState
+                          _selectedImagePathNotifier.value =
+                              'assets/prescription_sample.jpg';
+                          _isImageNotifier.value = true;
                         },
                         icon: const Icon(Icons.camera_alt),
                         label: const Text('Camera'),
@@ -268,11 +277,10 @@ class _UploadPrescriptionScreenState
                       child: TextButton.icon(
                         onPressed: () {
                           // TODO: Implement gallery
-                          setState(() {
-                            _selectedImagePath =
-                                'assets/prescription_sample.jpg';
-                            _isImage = true;
-                          });
+                          // PERF FIX: Use ValueNotifier instead of setState
+                          _selectedImagePathNotifier.value =
+                              'assets/prescription_sample.jpg';
+                          _isImageNotifier.value = true;
                         },
                         icon: const Icon(Icons.photo_library),
                         label: const Text('Gallery'),

@@ -10,11 +10,11 @@ class MedicineStatusIndicator extends StatelessWidget {
   final int? quantity;
 
   const MedicineStatusIndicator({
-    Key? key,
+    super.key,
     required this.status,
     this.price,
     this.quantity,
-  }) : super(key: key);
+  }) : super();
 
   Color _getStatusColor() {
     if (status.contains('✅')) return Colors.green;
@@ -74,12 +74,12 @@ class PharmacyContextCard extends StatelessWidget {
   final double rating;
 
   const PharmacyContextCard({
-    Key? key,
+    super.key,
     required this.pharmacyName,
     required this.location,
     required this.distance,
     required this.rating,
-  }) : super(key: key);
+  }) : super();
 
   @override
   Widget build(BuildContext context) {
@@ -175,11 +175,11 @@ class TimerWidget extends StatelessWidget {
   final VoidCallback? onTimeUp;
 
   const TimerWidget({
-    Key? key,
+    super.key,
     required this.seconds,
     this.totalDuration = const Duration(minutes: 5),
     this.onTimeUp,
-  }) : super(key: key);
+  }) : super();
 
   @override
   Widget build(BuildContext context) {
@@ -236,10 +236,10 @@ class RotatingPharmacyAnimation extends StatefulWidget {
   final Widget child;
 
   const RotatingPharmacyAnimation({
-    Key? key,
+    super.key,
     this.duration = const Duration(seconds: 3),
     required this.child,
-  }) : super(key: key);
+  }) : super();
 
   @override
   State<RotatingPharmacyAnimation> createState() =>
@@ -278,10 +278,10 @@ class PulseAnimation extends StatefulWidget {
   final Duration duration;
 
   const PulseAnimation({
-    Key? key,
+    super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 1500),
-  }) : super(key: key);
+  }) : super();
 
   @override
   State<PulseAnimation> createState() => _PulseAnimationState();
@@ -323,12 +323,12 @@ class PrescriptionRequestCard extends StatelessWidget {
   final String? imagePreview;
 
   const PrescriptionRequestCard({
-    Key? key,
+    super.key,
     required this.prescriptionId,
     required this.createdAt,
     required this.isImage,
     this.imagePreview,
-  }) : super(key: key);
+  }) : super();
 
   @override
   Widget build(BuildContext context) {

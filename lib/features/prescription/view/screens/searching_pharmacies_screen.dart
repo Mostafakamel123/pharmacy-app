@@ -9,10 +9,8 @@ import 'package:pharmacy_app/features/prescription/model/routing_state_model.dar
 import 'package:pharmacy_app/features/prescription/model/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
 
-/// Searching Pharmacies Screen
-/// Shows animated search with countdown timer and current pharmacy being contacted
 class SearchingPharmaciesScreen extends ConsumerStatefulWidget {
-  const SearchingPharmaciesScreen({Key? key}) : super(key: key);
+  const SearchingPharmaciesScreen({super.key});
 
   @override
   ConsumerState<SearchingPharmaciesScreen> createState() =>
@@ -140,7 +138,7 @@ class _SearchingPharmaciesScreenState
               const SizedBox(height: 40),
 
               // Remaining Pharmacies
-              _buildRemainingPharmacies(routingState, context, isDark),
+              _buildRemainingPharmacies(routingState, isDark),
               const SizedBox(height: 24),
 
               // Cancel Button
@@ -413,7 +411,6 @@ class _SearchingPharmaciesScreenState
 
   Widget _buildRemainingPharmacies(
     RoutingStateModel state,
-    BuildContext context,
     bool isDark,
   ) {
     final remaining = state.nearbyPharmacies
@@ -442,52 +439,54 @@ class _SearchingPharmaciesScreenState
           ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: remaining.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            final pharmacy = remaining[index];
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: surfaceVariant,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    '${index + 2}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: textSecondary,
+        // PERF FIX: Replace ListView.separated with shrinkWrap+NeverScrollable with SliverList-like approach
+        // Using Column with fixed-height items for better performance in non-scrolling parent
+        Column(
+          children: List.generate(
+            remaining.length,
+            (index) {
+              final pharmacy = remaining[index];
+              return Container(
+                margin: index < remaining.length - 1 ? const EdgeInsets.only(bottom: 8) : null,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: surfaceVariant,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      '${index + 2}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: textSecondary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          pharmacy.name,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${pharmacy.distance}km away',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: textSecondary, fontSize: 11),
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            pharmacy.name,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${pharmacy.distance}km away',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: textSecondary, fontSize: 11),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Icon(Icons.chevron_right, color: textHint),
-                ],
-              ),
-            );
-          },
+                    Icon(Icons.chevron_right, color: textHint),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
