@@ -15,10 +15,12 @@ import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart
 /// when user is in Pharmacy Mode.
 /// 
 /// Performance Optimizations:
-/// - Uses selective provider watchers to minimize rebuilds
-/// - Extracts static header to const widget where possible
-/// - Minimizes Theme.of() calls by caching values
+/// - Uses ConsumerWidget with selective provider watchers
+/// - Extracts header into separate widget with const constructor
 /// - Uses SliverList for efficient scrolling
+/// - Minimizes rebuilds by isolating state-dependent widgets
+/// - Caches theme values to avoid repeated lookups
+/// - Implements proper empty state handling
 class PharmacyDashboardScreen extends ConsumerWidget {
   const PharmacyDashboardScreen({super.key});
 
@@ -32,33 +34,30 @@ class PharmacyDashboardScreen extends ConsumerWidget {
       return const _EmptyDashboardState();
     }
 
-    // Cache theme brightness to avoid repeated lookups
-    final scaffoldColor = Theme.of(context).scaffoldBackgroundColor;
-
     return Scaffold(
-      backgroundColor: scaffoldColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: PharmacyDrawer(currentPharmacy),
       body: CustomScrollView(
         slivers: [
-          // Header - cached pharmacy name to avoid redundant reads
+          // Header with pharmacy info
           SliverToBoxAdapter(
             child: _DashboardHeader(pharmacyName: currentPharmacy.name),
           ),
-          // Stats Cards - independent widget, won't rebuild on header changes
+          // Stats Cards
           const SliverToBoxAdapter(
             child: PharmacyStatsCard(),
           ),
           const SliverToBoxAdapter(
             child: SizedBox(height: AppSpacing.lg),
           ),
-          // Quick Actions - independent widget
+          // Quick Actions
           const SliverToBoxAdapter(
             child: PharmacyQuickActions(),
           ),
           const SliverToBoxAdapter(
             child: SizedBox(height: AppSpacing.lg),
           ),
-          // Recent Activity - independent widget
+          // Recent Activity
           const SliverToBoxAdapter(
             child: PharmacyRecentActivity(),
           ),
@@ -72,71 +71,82 @@ class PharmacyDashboardScreen extends ConsumerWidget {
   }
 }
 
-/// Extracted empty state widget with const constructor
+/// Empty state widget when no pharmacy is selected
 class _EmptyDashboardState extends StatelessWidget {
   const _EmptyDashboardState();
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final textPrimary = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
     final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
     final textHint = isDark ? DarkColors.textHint : LightColors.textHint;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.business_outlined,
-              size: 80,
-              color: textHint,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No Pharmacy Selected',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Select a pharmacy from the drawer to view dashboard',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: textSecondary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              icon: const Icon(Icons.storefront),
-              label: const Text('Select Pharmacy'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.business_outlined,
+                    size: 80,
+                    color: textHint,
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                const SizedBox(height: AppSpacing.xxl),
+                Text(
+                  'No Pharmacy Selected',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Select a pharmacy from the drawer to view dashboard and manage your pharmacy operations',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxxl),
+                ElevatedButton.icon(
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  icon: const Icon(Icons.storefront),
+                  label: const Text('Select Pharmacy'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xxl,
+                      vertical: AppSpacing.lg,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Extracted header widget to isolate rebuild scope
+/// Dashboard header widget
 /// Only rebuilds when pharmacyName changes
 class _DashboardHeader extends StatelessWidget {
   final String pharmacyName;
@@ -153,7 +163,12 @@ class _DashboardHeader extends StatelessWidget {
         ),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
           decoration: const BoxDecoration(
             gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.only(
@@ -169,7 +184,7 @@ class _DashboardHeader extends StatelessWidget {
                   GestureDetector(
                     onTap: () => Scaffold.of(context).openDrawer(),
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -181,7 +196,7 @@ class _DashboardHeader extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,6 +222,36 @@ class _DashboardHeader extends StatelessWidget {
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
                             letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Notifications icon
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: AppColors.accentRed,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
                       ],
