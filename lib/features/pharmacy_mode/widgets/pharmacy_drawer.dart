@@ -1,5 +1,6 @@
 // ignore_for_file: file_names, deprecated_member_use
 
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -782,7 +783,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
     if (!dialogClosed && dialogContext != null && dialogContext!.mounted) {
       dialogClosed = true;
       
-      // Fade out the dialog
+      // Fade out the dialog - pop returns void so we don't await it
       Navigator.of(dialogContext!).pop();
       
       // Small delay before showing snackbar and navigating
