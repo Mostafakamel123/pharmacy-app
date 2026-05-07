@@ -4,12 +4,28 @@ import 'package:pharmacy_app/core/theme/app_colors.dart';
 /// Pharmacy Recent Activity Widget
 /// 
 /// Shows recent orders, posts, and other pharmacy activities.
+/// 
+/// Performance Optimizations:
+/// - Uses const constructors throughout
+/// - Caches theme values to avoid repeated lookups
+/// - Wraps activity list in RepaintBoundary for independent rasterization
+/// - Pre-computes status colors to avoid redundant calculations
+/// - Uses efficient Divider with proper indent
 class PharmacyRecentActivity extends StatelessWidget {
   const PharmacyRecentActivity({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Cache theme values once at the start of build
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
+    final surfaceColor = isDark ? DarkColors.surface : LightColors.surface;
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.black.withOpacity(0.06);
+    final shadowColor = isDark
+        ? Colors.black.withOpacity(0.2)
+        : Colors.black.withOpacity(0.05);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -24,8 +40,7 @@ class PharmacyRecentActivity extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color:
-                      isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                  color: textPrimary,
                 ),
               ),
               TextButton(
@@ -37,60 +52,57 @@ class PharmacyRecentActivity extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? DarkColors.surface : LightColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withOpacity(0.08)
-                    : Colors.black.withOpacity(0.06),
+          // Activity list container with cached decorations
+          RepaintBoundary(
+            child: Container(
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: shadowColor,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withOpacity(0.2)
-                      : Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                _ActivityItem(
-                  icon: Icons.shopping_bag_rounded,
-                  title: 'New Order #1234',
-                  subtitle: 'Paracetamol 500mg - 2 boxes',
-                  time: '5 min ago',
-                  status: ActivityStatus.pending,
-                  isLast: false,
-                ),
-                _ActivityItem(
-                  icon: Icons.check_circle_rounded,
-                  title: 'Order #1230 Completed',
-                  subtitle: 'Delivered successfully',
-                  time: '1 hour ago',
-                  status: ActivityStatus.completed,
-                  isLast: false,
-                ),
-                _ActivityItem(
-                  icon: Icons.article_rounded,
-                  title: 'New Post Published',
-                  subtitle: 'Health tips for winter season',
-                  time: '3 hours ago',
-                  status: ActivityStatus.info,
-                  isLast: false,
-                ),
-                _ActivityItem(
-                  icon: Icons.people_rounded,
-                  title: 'New Admin Added',
-                  subtitle: 'Dr. Ahmed joined as admin',
-                  time: '1 day ago',
-                  status: ActivityStatus.info,
-                  isLast: true,
-                ),
-              ],
+              child: Column(
+                children: const [
+                  _ActivityItem(
+                    icon: Icons.shopping_bag_rounded,
+                    title: 'New Order #1234',
+                    subtitle: 'Paracetamol 500mg - 2 boxes',
+                    time: '5 min ago',
+                    status: ActivityStatus.pending,
+                    isLast: false,
+                  ),
+                  _ActivityItem(
+                    icon: Icons.check_circle_rounded,
+                    title: 'Order #1230 Completed',
+                    subtitle: 'Delivered successfully',
+                    time: '1 hour ago',
+                    status: ActivityStatus.completed,
+                    isLast: false,
+                  ),
+                  _ActivityItem(
+                    icon: Icons.article_rounded,
+                    title: 'New Post Published',
+                    subtitle: 'Health tips for winter season',
+                    time: '3 hours ago',
+                    status: ActivityStatus.info,
+                    isLast: false,
+                  ),
+                  _ActivityItem(
+                    icon: Icons.people_rounded,
+                    title: 'New Admin Added',
+                    subtitle: 'Dr. Ahmed joined as admin',
+                    time: '1 day ago',
+                    status: ActivityStatus.info,
+                    isLast: true,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -101,6 +113,8 @@ class PharmacyRecentActivity extends StatelessWidget {
 
 enum ActivityStatus { pending, completed, info }
 
+/// Individual activity item widget
+/// Uses const constructor and pre-cached colors for optimal performance
 class _ActivityItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -118,9 +132,30 @@ class _ActivityItem extends StatelessWidget {
     required this.isLast,
   });
 
+  // Pre-compute status color based on enum
+  Color _getStatusColor() {
+    switch (status) {
+      case ActivityStatus.pending:
+        return AppColors.accentYellow;
+      case ActivityStatus.completed:
+        return AppColors.primaryGreen;
+      case ActivityStatus.info:
+        return AppColors.primaryBlue;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Cache theme values once at the start of build
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
+    final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
+    final textHint = isDark ? DarkColors.textHint : LightColors.textHint;
+    final dividerColor = isDark ? DarkColors.divider : LightColors.divider;
+    
+    // Cache status-dependent values
+    final statusColor = _getStatusColor();
+    final statusBgColor = statusColor.withOpacity(0.1);
 
     return Column(
       children: [
@@ -133,17 +168,17 @@ class _ActivityItem extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: _getStatusColor().withOpacity(0.1),
+              color: statusBgColor,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(icon, color: _getStatusColor(), size: 22),
+            child: Icon(icon, color: statusColor, size: 22),
           ),
           title: Text(
             title,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+              color: textPrimary,
             ),
           ),
           subtitle: Padding(
@@ -155,9 +190,7 @@ class _ActivityItem extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark
-                          ? DarkColors.textSecondary
-                          : LightColors.textSecondary,
+                      color: textSecondary,
                     ),
                   ),
                 ),
@@ -165,37 +198,25 @@ class _ActivityItem extends StatelessWidget {
                   time,
                   style: TextStyle(
                     fontSize: 11,
-                    color:
-                        isDark ? DarkColors.textHint : LightColors.textHint,
+                    color: textHint,
                   ),
                 ),
               ],
             ),
           ),
-          trailing: _buildStatusIndicator(),
+          trailing: _buildStatusIndicator(context),
         ),
         if (!isLast)
           Divider(
             height: 1,
             indent: 72,
-            color: isDark ? DarkColors.divider : LightColors.divider,
+            color: dividerColor,
           ),
       ],
     );
   }
 
-  Color _getStatusColor() {
-    switch (status) {
-      case ActivityStatus.pending:
-        return AppColors.accentYellow;
-      case ActivityStatus.completed:
-        return AppColors.primaryGreen;
-      case ActivityStatus.info:
-        return AppColors.primaryBlue;
-    }
-  }
-
-  Widget? _buildStatusIndicator() {
+  Widget? _buildStatusIndicator(BuildContext context) {
     switch (status) {
       case ActivityStatus.pending:
         return Container(
@@ -204,7 +225,7 @@ class _ActivityItem extends StatelessWidget {
             color: AppColors.accentYellow.withOpacity(0.1),
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
-          child: Text(
+          child: const Text(
             'Pending',
             style: TextStyle(
               fontSize: 11,
