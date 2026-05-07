@@ -29,3 +29,4 @@ build/
 # Dependencies cache
 .pub/
 ```
+Nothing should be ignored since the changes only include Dart source files (.dart) which are legitimate source code files and not build artifacts, dependencies, or temporary files.

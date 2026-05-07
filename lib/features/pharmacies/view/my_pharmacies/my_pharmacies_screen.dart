@@ -166,6 +166,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
         itemCount: pharmacies.length,
         addAutomaticKeepAlives: false, // PERF FIX: Items don't need to keep state
         addRepaintBoundaries: true, // PERF FIX: Enable repaint isolation
+        itemExtent: 280.0, // PERF FIX: fixed height avoids per-item measurement
         itemBuilder: (context, index) {
           final pharmacy = pharmacies[index];
           return _buildPharmacyCard(context, pharmacy);
@@ -227,6 +228,24 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                       )
                     : _buildPlaceholder(pharmacy.name),
               ),
+              child: pharmacy.coverImageUrl.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                      child: Image.network(
+                        pharmacy.coverImageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        cacheWidth: 400, // PERF FIX: reduce memory usage with cached resize
+                        cacheHeight: 120, // PERF FIX: reduce memory usage with cached resize
+                        errorBuilder: (context, error, stack) {
+                          return _buildPlaceholder(pharmacy.name);
+                        },
+                      ),
+                    )
+                  : _buildPlaceholder(pharmacy.name),
+            ),
             
             // Content
             Padding(

@@ -281,6 +281,54 @@ class _SearchBarSectionState extends ConsumerState<_SearchBarSection> {
               _debounceTimer = Timer(const Duration(milliseconds: 300), () {
                 ref.read(nearbyPharmaciesProvider.notifier).setSearchQuery(value);
               });
+          // Pharmacies list
+          pharmaciesAsync.when(
+            data: (pharmacies) {
+              if (pharmacies.isEmpty) {
+                return SliverFillRemaining(
+                  child: _EmptyState(
+                    isFiltering: ref.watch(nearbyPharmaciesProvider).asData?.value.isEmpty ?? false,
+                    onClear: () {
+                      ref.read(nearbyPharmaciesProvider.notifier).refresh();
+                    },
+                  ),
+                );
+              }
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final pharmacy = pharmacies[index];
+                    return PharmacyCard(
+                      pharmacy: pharmacy,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PharmacyDetailsScreen(pharmacy: pharmacy),
+                          ),
+                        );
+                      },
+                      onFavorite: () {
+                        final favorites = ref
+                            .read(favoritePharmaciesProvider.notifier)
+                            .state;
+                        final updated = Set<String>.from(favorites);
+                        if (updated.contains(pharmacy.id)) {
+                          updated.remove(pharmacy.id);
+                        } else {
+                          updated.add(pharmacy.id);
+                        }
+                        ref.read(favoritePharmaciesProvider.notifier).state =
+                            updated;
+                      },
+                    );
+                  },
+                  childCount: pharmacies.length,
+                  addAutomaticKeepAlives: false, // PERF FIX: items don't need keepAlive
+                  addRepaintBoundaries: true,    // PERF FIX: isolate repaints per item
+                ),
+              );
             },
             decoration: InputDecoration(
               hintText: 'Search pharmacy or medicine...',

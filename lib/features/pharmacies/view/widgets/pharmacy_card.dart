@@ -190,6 +190,9 @@ class _PharmacyCardState extends State<PharmacyCard>
                                   ),
                                 ),
                                 const SizedBox(width: 4),
+                                const Icon(Icons.delivery_dining_rounded,
+                                    size: 12, color: AppColors.primaryBlue),
+                                const SizedBox(width: 3),
                                 Text(
                                   pharmacy.statusText,
                                   style: TextStyle(
