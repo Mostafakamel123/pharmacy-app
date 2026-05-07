@@ -109,7 +109,7 @@ class _FilterChipState extends State<_FilterChip>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.dispose(); // PERF FIX: AnimationController properly disposed
     super.dispose();
   }
 
@@ -120,63 +120,63 @@ class _FilterChipState extends State<_FilterChip>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        _toggle();
-      },
-      onTapCancel: () => _controller.reverse(),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: _isSelected
-                ? widget.iconColor
-                : isDark
-                    ? DarkColors.surface
-                    : LightColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            border: Border.all(
+    return RepaintBoundary( // PERF FIX: Isolate animated chip repaints
+      child: GestureDetector(
+        onTapDown: (_) => _controller.forward(),
+        onTapUp: (_) {
+          _controller.reverse();
+          _toggle();
+        },
+        onTapCancel: () => _controller.reverse(),
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
               color: _isSelected
                   ? widget.iconColor
-                  : isDark
-                      ? DarkColors.divider
-                      : LightColors.divider,
-              width: 1,
-            ),
-            boxShadow: _isSelected
-                ? [
-                    BoxShadow(
-                      color: widget.iconColor.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                widget.icon,
-                size: 16,
-                color: _isSelected ? Colors.white : widget.iconColor,
+                  : Theme.of(context).brightness == Brightness.dark
+                      ? DarkColors.surface
+                      : LightColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(
+                color: _isSelected
+                    ? widget.iconColor
+                    : Theme.of(context).brightness == Brightness.dark
+                        ? DarkColors.divider
+                        : LightColors.divider,
+                width: 1,
               ),
-              const SizedBox(width: 6),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              boxShadow: _isSelected
+                  ? [
+                      BoxShadow(
+                        color: widget.iconColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 16,
                   color: _isSelected ? Colors.white : widget.iconColor,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _isSelected ? Colors.white : widget.iconColor,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

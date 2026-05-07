@@ -25,13 +25,15 @@ class PharmacyQuickActions extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: AppSpacing.md,
-            crossAxisSpacing: AppSpacing.md,
-            childAspectRatio: 1.8,
+          // PERF FIX: Replace GridView.count with fixed-height GridView to avoid shrinkWrap issues
+          SizedBox(
+            height: 200, // PERF FIX: Fixed height for 4 grid items (2 rows x ~100px each)
+            child: GridView.count(
+              physics: const NeverScrollableScrollPhysics(), // PERF FIX: Disable scrolling since wrapped in SizedBox
+              crossAxisCount: 2,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
+              childAspectRatio: 1.8,
             children: [
               _QuickActionItem(
                 icon: Icons.add_circle_outline,
@@ -79,7 +81,7 @@ class PharmacyQuickActions extends StatelessWidget {
               ),
             ],
           ),
-        ],
+        ), // PERF FIX: Close SizedBox wrapper for GridView
       ),
     );
   }

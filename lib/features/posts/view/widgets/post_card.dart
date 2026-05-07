@@ -332,7 +332,7 @@ class _ReplyBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.chat_bubble_rounded, size: 12, color: AppColors.primaryGreen),
+          const Icon(Icons.chat_bubble_rounded, size: 12, color: AppColors.primaryGreen),
           const SizedBox(width: 3),
           Text(
             '$count',

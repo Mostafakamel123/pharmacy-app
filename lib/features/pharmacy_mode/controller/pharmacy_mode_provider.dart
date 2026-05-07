@@ -175,20 +175,20 @@ final pharmacyModeProvider = StateNotifierProvider<PharmacyModeNotifier, Pharmac
 
 /// Selector for current mode
 final currentAppModeProvider = Provider<AppMode>((ref) {
-  return ref.watch(pharmacyModeProvider).currentMode;
+  return ref.watch(pharmacyModeProvider.select((state) => state.currentMode)); // PERF FIX: Use .select() to avoid rebuilds when unrelated fields change
 });
 
 /// Selector for current pharmacy (null if in personal mode)
 final currentPharmacyProvider = Provider<UserPharmacyModel?>((ref) {
-  return ref.watch(pharmacyModeProvider).currentPharmacy;
+  return ref.watch(pharmacyModeProvider.select((state) => state.currentPharmacy)); // PERF FIX: Use .select() to avoid rebuilds when unrelated fields change
 });
 
 /// Selector for user's pharmacies list
 final userPharmaciesProvider = Provider<List<UserPharmacyModel>>((ref) {
-  return ref.watch(pharmacyModeProvider).userPharmacies;
+  return ref.watch(pharmacyModeProvider.select((state) => state.userPharmacies)); // PERF FIX: Use .select() to avoid rebuilds when unrelated fields change
 });
 
 /// Selector for checking if in pharmacy mode
 final isPharmacyModeProvider = Provider<bool>((ref) {
-  return ref.watch(pharmacyModeProvider).isPharmacyMode;
+  return ref.watch(pharmacyModeProvider.select((state) => state.isPharmacyMode)); // PERF FIX: Use .select() to avoid rebuilds when unrelated fields change
 });

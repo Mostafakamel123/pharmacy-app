@@ -162,6 +162,8 @@ class PostsFeedScreen extends ConsumerWidget {
                   childCount: posts.length,
                   addRepaintBoundaries: true,  // PERF FIX: Enable repaint boundaries
                   addAutomaticKeepAlives: false,  // PERF FIX: Disable keep-alive for feed items
+                  addAutomaticKeepAlives: false, // PERF FIX: items don't need keepAlive
+                  addRepaintBoundaries: true,    // PERF FIX: isolate repaints per item
                 ),
               );
             },

@@ -18,8 +18,8 @@ class PharmacyDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pharmacyModeState = ref.watch(pharmacyModeProvider);
-    final currentPharmacy = pharmacyModeState.currentPharmacy;
+    // PERF FIX: Use .select() to watch only the currentPharmacy field instead of full state
+    final currentPharmacy = ref.watch(pharmacyModeProvider.select((state) => state.currentPharmacy));
 
     // If no pharmacy selected, show empty state
     if (currentPharmacy == null) {
@@ -36,22 +36,22 @@ class PharmacyDashboardScreen extends ConsumerWidget {
             child: _buildHeader(context, currentPharmacy.name),
           ),
           // Stats Cards
-          SliverToBoxAdapter(
-            child: const PharmacyStatsCard(),
+          const SliverToBoxAdapter(
+            child: PharmacyStatsCard(),
           ),
           const SliverToBoxAdapter(
             child: SizedBox(height: AppSpacing.lg),
           ),
           // Quick Actions
-          SliverToBoxAdapter(
-            child: const PharmacyQuickActions(),
+          const SliverToBoxAdapter(
+            child: PharmacyQuickActions(),
           ),
           const SliverToBoxAdapter(
             child: SizedBox(height: AppSpacing.lg),
           ),
           // Recent Activity
-          SliverToBoxAdapter(
-            child: const PharmacyRecentActivity(),
+          const SliverToBoxAdapter(
+            child: PharmacyRecentActivity(),
           ),
           // Bottom padding for nav bar
           const SliverToBoxAdapter(

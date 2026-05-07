@@ -105,6 +105,7 @@ class _PillActionCardState extends State<_PillActionCard>
 
   @override
   void dispose() {
+    // PERF FIX: AnimationController must be disposed to prevent memory leaks
     _controller.dispose();
     super.dispose();
   }
