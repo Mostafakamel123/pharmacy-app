@@ -1,5 +1,6 @@
 // ignore_for_file: file_names, deprecated_member_use
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
@@ -636,8 +637,17 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
                                 ),
                               )
                             : null,
-                        onTap: () {
+                        onTap: () async {
+                          // Close the bottom sheet first
                           Navigator.pop(context);
+                          
+                          // Wait a bit for the animation to complete
+                          await Future.delayed(const Duration(milliseconds: 500));
+                          
+                          // Check if still mounted before proceeding
+                          if (!context.mounted) return;
+                          
+                          // Now switch pharmacy
                           _switchPharmacyWithTransition(
                             context,
                             pharmacyModeNotifier,
@@ -707,11 +717,10 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
     // Cache values before any navigation
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Close drawer first
-    Navigator.pop(context);
-    
     // Use microtask to allow widget tree to update before showing dialog
     Future.microtask(() {
+      if (!context.mounted) return;
+      
       // Show loading overlay
       showDialog(
         context: context,
@@ -759,41 +768,46 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
         // Switch pharmacy mode - ref is already read before disposal
         pharmacyModeNotifier.switchToPharmacyMode(pharmacy);
 
-        // Close loading dialog safely
-        if (mounted && context.mounted) {
-          Navigator.of(context).pop(); // Close dialog
-
-          // Show success feedback
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: AppColors.primaryGreen,
-                      size: 18,
-                    ),
+        // Close loading dialog safely using dialogContext
+        if (dialogContext.mounted) {
+          Navigator.of(dialogContext).pop(); // Close dialog
+          
+          // Show success snackbar after dialog is closed
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final messengerState = ScaffoldMessenger.maybeOf(dialogContext);
+            if (messengerState != null) {
+              messengerState.showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: AppColors.primaryGreen,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text('Switched to ${pharmacy.name}'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text('Switched to ${pharmacy.name}'),
+                  backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                ],
-              ),
-              backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          });
         }
       });
     });
