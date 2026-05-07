@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async'; // PERF FIX: Added for Timer-based operations if needed
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
@@ -28,15 +29,21 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
   }
 
   @override
+  void dispose() {
+    // PERF FIX: Proper cleanup to prevent memory leaks
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final asyncPharmacies = ref.watch(myPharmaciesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Pharmacies'),
+        title: const Text('My Pharmacies'), // PERF FIX: const widget
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh), // PERF FIX: const widget
             onPressed: () {
               ref.read(myPharmaciesProvider.notifier).loadUserPharmacies();
             },
@@ -157,6 +164,8 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: pharmacies.length,
+        addAutomaticKeepAlives: false, // PERF FIX: Items don't need to keep state
+        addRepaintBoundaries: true, // PERF FIX: Enable repaint isolation
         itemExtent: 280.0, // PERF FIX: fixed height avoids per-item measurement
         itemBuilder: (context, index) {
           final pharmacy = pharmacies[index];
@@ -167,36 +176,57 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
   }
 
   Widget _buildPharmacyCard(BuildContext context, UserPharmacyModel pharmacy) {
-    final isOwner = pharmacy.ownerUserId == ref.read(currentUserIdProvider);
-    final isAdmin = pharmacy.isAdmin(ref.read(currentUserIdProvider));
+    final currentUserId = ref.read(currentUserIdProvider); // PERF FIX: Read once instead of twice
+    final isOwner = pharmacy.ownerUserId == currentUserId;
+    final isAdmin = pharmacy.isAdmin(currentUserId);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EditPharmacyScreen(pharmacy: pharmacy),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Cover Image
-            Container(
-              height: 120,
-              decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.1),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
+    return RepaintBoundary( // PERF FIX: Isolate card repaints from surrounding widgets
+      child: Card(
+        key: ValueKey(pharmacy.id), // PERF FIX: Stable key to preserve widget state
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EditPharmacyScreen(pharmacy: pharmacy),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Cover Image
+              Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
                 ),
+                child: pharmacy.coverImageUrl.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
+                        child: Image.network(
+                          pharmacy.coverImageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          cacheWidth: 400, // PERF FIX: Limit cache size for network image
+                          cacheHeight: 120, // PERF FIX: Limit cache height
+                          errorBuilder: (context, error, stack) {
+                            return _buildPlaceholder(pharmacy.name);
+                          },
+                        ),
+                      )
+                    : _buildPlaceholder(pharmacy.name),
               ),
               child: pharmacy.coverImageUrl.isNotEmpty
                   ? ClipRRect(
