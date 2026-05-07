@@ -65,7 +65,8 @@ class _PostList extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
       child: ListView.separated(
-        shrinkWrap: true,
+        // PERF FIX: Remove shrinkWrap - already in a scrollable parent (CustomScrollView)
+        // shrinkWrap removed to avoid unnecessary layout calculations
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
         itemCount: posts.length,
