@@ -32,6 +32,12 @@ class PostsFeedScreen extends ConsumerWidget {
             backgroundColor:
                 isDark ? DarkColors.background : LightColors.background,
             elevation: 0,
+            leading: Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu_rounded),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ),
             title: const Text(
               'Posts',
               style: TextStyle(
