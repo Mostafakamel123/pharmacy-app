@@ -32,20 +32,24 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
       drawer: PharmacyDrawer(null),
       body: RefreshIndicator(
         onRefresh: () async {
-          await Future.wait<void>([
-            ref.read(nearbyPharmaciesProvider.notifier).refresh(),
-            ref.read(recentPostsProvider.notifier).refresh(),
-          ]);
+          // Defer refresh to avoid blocking main thread
+          await Future.delayed(const Duration(milliseconds: 100));
+          if (mounted) {
+            await Future.wait<void>([
+              ref.read(nearbyPharmaciesProvider.notifier).refresh(),
+              ref.read(recentPostsProvider.notifier).refresh(),
+            ]);
+          }
         },
         color: const Color(0xFF0EA5E9),
         child: CustomScrollView(
-          cacheExtent: 500,
+          cacheExtent: 250,
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
           ),
           slivers: [
             // Header
-            const SliverToBoxAdapter(child: RepaintBoundary(child: HomeHeader())),
+            const SliverToBoxAdapter(child: HomeHeader()),
             // Search bar with proper spacing
             const SliverToBoxAdapter(child: SmartSearchBar()),
             const SliverToBoxAdapter(child: SizedBox(height: 0)),
@@ -67,7 +71,6 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
         builder: (context, ref, child) {
           final routingState = ref.watch(routingStateNotifierProvider);
           final isRequestPending = routingState?.isRequestPending ?? false;
-          print('🎯 DEBUG HomeScreen: routingState=${routingState?.id}, isRequestPending=$isRequestPending');
           if (!isRequestPending) return const SizedBox.shrink();
 
           return FloatingActionButton(
