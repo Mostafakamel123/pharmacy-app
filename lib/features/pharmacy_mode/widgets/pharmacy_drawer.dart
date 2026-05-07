@@ -783,7 +783,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
       dialogClosed = true;
       
       // Fade out the dialog
-      await Navigator.of(dialogContext!).pop();
+      Navigator.of(dialogContext!).pop();
       
       // Small delay before showing snackbar and navigating
       await Future.delayed(const Duration(milliseconds: 300));
