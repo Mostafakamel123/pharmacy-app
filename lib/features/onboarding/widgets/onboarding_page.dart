@@ -143,7 +143,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           data: _screens[index],
                           onNext: _nextPage,
                           onGetStarted: () {
-                            context.go(AppRoutes.home);
+                            context.go(AppRoutes.login);
                           },
                         );
                       },
