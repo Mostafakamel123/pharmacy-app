@@ -717,6 +717,8 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
     // Cache values before any navigation
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    BuildContext? dialogContext;
+    
     // Use microtask to allow widget tree to update before showing dialog
     Future.microtask(() {
       if (!context.mounted) return;
@@ -726,41 +728,44 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
         context: context,
         barrierDismissible: false,
         barrierColor: Colors.transparent,
-        builder: (dialogContext) => Center(
-          child: Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: isDark ? DarkColors.surface : LightColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Switching...',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+        builder: (ctx) {
+          dialogContext = ctx;
+          return Center(
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: isDark ? DarkColors.surface : LightColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Switching...',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       );
 
       // Simulate loading delay then switch
@@ -769,12 +774,12 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
         pharmacyModeNotifier.switchToPharmacyMode(pharmacy);
 
         // Close loading dialog safely using dialogContext
-        if (dialogContext.mounted) {
-          Navigator.of(dialogContext).pop(); // Close dialog
+        if (dialogContext != null && dialogContext!.mounted) {
+          Navigator.of(dialogContext!).pop(); // Close dialog
           
           // Show success snackbar after dialog is closed
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            final messengerState = ScaffoldMessenger.maybeOf(dialogContext);
+            final messengerState = ScaffoldMessenger.maybeOf(dialogContext!);
             if (messengerState != null) {
               messengerState.showSnackBar(
                 SnackBar(
