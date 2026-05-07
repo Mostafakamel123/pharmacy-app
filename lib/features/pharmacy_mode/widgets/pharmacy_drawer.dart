@@ -1,8 +1,11 @@
 // ignore_for_file: file_names, deprecated_member_use
 
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
+import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/view/create_pharmacy/create_pharmacy_screen.dart';
@@ -21,6 +24,15 @@ class PharmacyDrawer extends ConsumerStatefulWidget {
 }
 
 class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
+  @override
+  void initState() {
+    super.initState();
+    // Load user's pharmacies when drawer is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(myPharmaciesProvider.notifier).loadUserPharmacies();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final pharmacyModeState = ref.watch(pharmacyModeProvider);
@@ -457,6 +469,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
 
   void _showPharmacySelector(BuildContext context, WidgetRef ref) {
     final state = ref.read(pharmacyModeProvider);
+    final pharmacyModeNotifier = ref.read(pharmacyModeProvider.notifier);
 
     showModalBottomSheet(
       context: context,
@@ -636,8 +649,15 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
                               )
                             : null,
                         onTap: () {
+                          // Close the bottom sheet first
                           Navigator.pop(context);
-                          _switchPharmacyWithTransition(context, ref, pharmacy);
+                          
+                          // Switch pharmacy immediately (don't wait for animation)
+                          _switchPharmacyWithTransition(
+                            context,
+                            pharmacyModeNotifier,
+                            pharmacy,
+                          );
                         },
                       );
                     },
@@ -696,67 +716,81 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
   /// Switch pharmacy with smooth loading transition (Facebook-style)
   void _switchPharmacyWithTransition(
     BuildContext context,
-    WidgetRef ref,
+    dynamic pharmacyModeNotifier, // PharmacyModeNotifier from provider
     dynamic pharmacy,
-  ) {
-    // Show loading overlay
+  ) async {
+    // Cache values before any navigation
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    BuildContext? dialogContext;
+    bool dialogClosed = false;
+    
+    // Show loading overlay immediately
     showDialog(
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.transparent,
-      builder: (_) => Center(
-        child: Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? DarkColors.surface
-                : LightColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(
-                strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Switching...',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? DarkColors.textPrimary
-                      : LightColors.textPrimary,
+      builder: (ctx) {
+        dialogContext = ctx;
+        return Center(
+          child: Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: isDark ? DarkColors.surface : LightColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
-              ),
-            ],
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Switching...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
 
-    // Simulate loading delay then switch
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      // Switch pharmacy mode
-      ref
-          .read(pharmacyModeProvider.notifier)
-          .switchToPharmacyMode(pharmacy);
+    // Wait a bit for dialog to show
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    // Switch pharmacy mode immediately
+    pharmacyModeNotifier.switchToPharmacyMode(pharmacy);
+    
+    // Wait for 3 seconds to simulate loading and show "Switching..." message
+    await Future.delayed(const Duration(seconds: 3));
 
-      // Close loading dialog
+    // Close loading dialog safely using dialogContext with fade out animation
+    if (!dialogClosed && dialogContext != null && dialogContext!.mounted) {
+      dialogClosed = true;
+      
+      // Fade out the dialog - pop returns void so we don't await it
+      Navigator.of(dialogContext!).pop();
+      
+      // Small delay before showing snackbar and navigating
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Show success snackbar after dialog is closed
       if (context.mounted) {
-        Navigator.of(context).pop();
-
-        // Show success feedback
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -779,9 +813,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
                 ),
               ],
             ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? DarkColors.surface
-                : LightColors.surface,
+            backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.md),
@@ -790,7 +822,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
           ),
         );
       }
-    });
+    }
   }
 
   void _showSelectPharmacySnackbar(BuildContext context) {

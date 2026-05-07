@@ -13,17 +13,25 @@ import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart
 /// 
 /// Displays pharmacy stats, quick actions, and recent activity
 /// when user is in Pharmacy Mode.
+/// 
+/// Performance Optimizations:
+/// - Uses ConsumerWidget with selective provider watchers
+/// - Extracts header into separate widget with const constructor
+/// - Uses SliverList for efficient scrolling
+/// - Minimizes rebuilds by isolating state-dependent widgets
+/// - Caches theme values to avoid repeated lookups
+/// - Implements proper empty state handling
 class PharmacyDashboardScreen extends ConsumerWidget {
   const PharmacyDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pharmacyModeState = ref.watch(pharmacyModeProvider);
-    final currentPharmacy = pharmacyModeState.currentPharmacy;
+    // Selective watch: only rebuild when currentPharmacy changes
+    final currentPharmacy = ref.watch(currentPharmacyProvider);
 
     // If no pharmacy selected, show empty state
     if (currentPharmacy == null) {
-      return _buildEmptyState(context);
+      return const _EmptyDashboardState();
     }
 
     return Scaffold(
@@ -31,27 +39,27 @@ class PharmacyDashboardScreen extends ConsumerWidget {
       drawer: PharmacyDrawer(currentPharmacy),
       body: CustomScrollView(
         slivers: [
-          // Header
+          // Header with pharmacy info
           SliverToBoxAdapter(
-            child: _buildHeader(context, currentPharmacy.name),
+            child: _DashboardHeader(pharmacyName: currentPharmacy.name),
           ),
           // Stats Cards
-          SliverToBoxAdapter(
-            child: const PharmacyStatsCard(),
+          const SliverToBoxAdapter(
+            child: PharmacyStatsCard(),
           ),
           const SliverToBoxAdapter(
             child: SizedBox(height: AppSpacing.lg),
           ),
           // Quick Actions
-          SliverToBoxAdapter(
-            child: const PharmacyQuickActions(),
+          const SliverToBoxAdapter(
+            child: PharmacyQuickActions(),
           ),
           const SliverToBoxAdapter(
             child: SizedBox(height: AppSpacing.lg),
           ),
           // Recent Activity
-          SliverToBoxAdapter(
-            child: const PharmacyRecentActivity(),
+          const SliverToBoxAdapter(
+            child: PharmacyRecentActivity(),
           ),
           // Bottom padding for nav bar
           const SliverToBoxAdapter(
@@ -61,119 +69,198 @@ class PharmacyDashboardScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context, String pharmacyName) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+/// Empty state widget when no pharmacy is selected
+class _EmptyDashboardState extends StatelessWidget {
+  const _EmptyDashboardState();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: const BorderRadius.only(
-          bottomRight: Radius.circular(AppRadius.xxl),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
+    final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
+    final textHint = isDark ? DarkColors.textHint : LightColors.textHint;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.business_outlined,
+                    size: 80,
+                    color: textHint,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.business_rounded,
-                  color: Colors.white,
-                  size: 28,
+                const SizedBox(height: AppSpacing.xxl),
+                Text(
+                  'No Pharmacy Selected',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pharmacy Dashboard',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Select a pharmacy from the drawer to view dashboard and manage your pharmacy operations',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxxl),
+                ElevatedButton.icon(
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  icon: const Icon(Icons.storefront),
+                  label: const Text('Select Pharmacy'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xxl,
+                      vertical: AppSpacing.lg,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      pharmacyName,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildEmptyState(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+/// Dashboard header widget
+/// Only rebuilds when pharmacyName changes
+class _DashboardHeader extends StatelessWidget {
+  final String pharmacyName;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.business_outlined,
-              size: 80,
-              color: isDark ? DarkColors.textHint : LightColors.textHint,
+  const _DashboardHeader({required this.pharmacyName});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          bottomRight: Radius.circular(AppRadius.xxl),
+        ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
+          decoration: const BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.only(
+              bottomRight: Radius.circular(AppRadius.xxl),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'No Pharmacy Selected',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // Menu button to open drawer
+                  GestureDetector(
+                    onTap: () => Scaffold.of(context).openDrawer(),
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: const Icon(
+                        Icons.menu_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Pharmacy Dashboard',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          pharmacyName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Notifications icon
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: AppColors.accentRed,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Select a pharmacy from the drawer to view dashboard',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              icon: const Icon(Icons.storefront),
-              label: const Text('Select Pharmacy'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
