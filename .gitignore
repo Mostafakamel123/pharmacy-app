@@ -1,51 +1,38 @@
-# Flutter/Dart/Pub
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub/
-build/
+```
+# Flutter/Dart specific
+**/ios/Flutter/.last_build_id
+**/lib/**
+**/test/**
+**/integration_test/**
+**/android/**
+**/windows/**
+**/linux/**
+**/macos/**
+**/web/**
 
-# Web related
-lib/generated_plugin_registrant.dart
+# Build artifacts
+/build/
+/ios/Build/
 
-# Symbolication related
-app.*.symbols
+# Dependencies
+/pubspec.lock
+/.dart_tool/
 
-# Obfuscation related
-app.*.map.json
-
-# Android Studio
-.idea/
-*.iml
-
-# VS Code
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
 
-# Android
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# iOS
-ios/Flutter/.last_build_id
-
-# macOS
-macos/Flutter/ephemeral/
-
-# Linux
-linux/flutter/ephemeral/
-
-# Windows
-windows/flutter/ephemeral/
+# Environment
+.env
+.env.local
+*.env.*
 
 # Logs
 *.log
 
-# Environment files
-.env
-.env.*
-
-# OS files
+# OS generated files
 .DS_Store
 Thumbs.db
+```

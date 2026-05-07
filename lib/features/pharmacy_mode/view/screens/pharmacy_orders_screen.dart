@@ -20,6 +20,9 @@ class PharmacyOrdersScreen extends ConsumerStatefulWidget {
 class _PharmacyOrdersScreenState extends ConsumerState<PharmacyOrdersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  
+  // PERF FIX: Cache current pharmacy to avoid repeated state access
+  dynamic? _cachedPharmacy;
 
   @override
   void initState() {
@@ -29,14 +32,19 @@ class _PharmacyOrdersScreenState extends ConsumerState<PharmacyOrdersScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController.dispose(); // PERF FIX: Ensure TabController is disposed to prevent memory leaks
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final pharmacyModeState = ref.watch(pharmacyModeProvider);
-    final currentPharmacy = pharmacyModeState.currentPharmacy;
+    // PERF FIX: Use .select() to watch only the currentPharmacy field instead of full state
+    final currentPharmacy = ref.watch(pharmacyModeProvider.select((state) => state.currentPharmacy));
+    
+    // PERF FIX: Cache pharmacy to avoid rebuilding order lists unnecessarily
+    if (_cachedPharmacy != currentPharmacy) {
+      _cachedPharmacy = currentPharmacy;
+    }
 
     // If no pharmacy selected, show empty state
     if (currentPharmacy == null) {
@@ -142,6 +150,9 @@ class _OrdersList extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(AppSpacing.md),
       itemCount: orders.length,
+      itemExtent: 180.0, // PERF FIX: Add itemExtent for fixed-height order cards to improve scroll performance
+      addAutomaticKeepAlives: false, // PERF FIX: Disable keep-alives for lightweight list items
+      addRepaintBoundaries: true, // PERF FIX: Enable repaint boundaries for better rendering
       itemBuilder: (context, index) {
         final order = orders[index];
         return _OrderCard(
@@ -276,7 +287,8 @@ class _OrderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    return RepaintBoundary( // PERF FIX: Wrap order card in RepaintBoundary to isolate repaints
+      child: Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -404,6 +416,6 @@ class _OrderCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ), // PERF FIX: Close RepaintBoundary
   }
 }

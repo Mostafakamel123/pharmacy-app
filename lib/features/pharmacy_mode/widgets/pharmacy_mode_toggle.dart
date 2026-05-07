@@ -8,7 +8,10 @@ class PharmacyModeToggle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pharmacyModeState = ref.watch(pharmacyModeProvider);
+    // PERF FIX: Use .select() to watch only the specific fields needed instead of full state
+    final isPersonalMode = ref.watch(pharmacyModeProvider.select((state) => state.isPersonalMode));
+    final userPharmacies = ref.watch(pharmacyModeProvider.select((state) => state.userPharmacies));
+    final currentPharmacy = ref.watch(pharmacyModeProvider.select((state) => state.currentPharmacy));
     final notifier = ref.read(pharmacyModeProvider.notifier);
 
     return Container(
@@ -25,7 +28,7 @@ class PharmacyModeToggle extends ConsumerWidget {
           _ModeButton(
             label: 'Personal',
             icon: Icons.person_outline,
-            isActive: pharmacyModeState.isPersonalMode,
+            isActive: isPersonalMode,
             onTap: () => notifier.switchToPersonalMode(),
           ),
           const SizedBox(width: 4),
@@ -33,15 +36,15 @@ class PharmacyModeToggle extends ConsumerWidget {
           _ModeButton(
             label: 'Pharmacy',
             icon: Icons.business_outlined,
-            isActive: pharmacyModeState.isPharmacyMode,
+            isActive: !isPersonalMode,
             onTap: () {
-              if (pharmacyModeState.userPharmacies.isEmpty) {
+              if (userPharmacies.isEmpty) {
                 _showNoPharmacyDialog(context, ref);
               } else {
-                _showPharmacySelector(context, ref);
+                _showPharmacySelector(context, ref, userPharmacies, currentPharmacy);
               }
             },
-            badgeCount: pharmacyModeState.userPharmacies.length,
+            badgeCount: userPharmacies.length,
           ),
         ],
       ),
@@ -74,9 +77,7 @@ class PharmacyModeToggle extends ConsumerWidget {
     );
   }
 
-  void _showPharmacySelector(BuildContext context, WidgetRef ref) {
-    final state = ref.read(pharmacyModeProvider);
-    
+  void _showPharmacySelector(BuildContext context, WidgetRef ref, List<dynamic> userPharmacies, dynamic currentPharmacy) {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -97,11 +98,14 @@ class PharmacyModeToggle extends ConsumerWidget {
             const Divider(),
             Flexible(
               child: ListView.builder(
-                itemCount: state.userPharmacies.length,
+                itemCount: userPharmacies.length,
+                itemExtent: 72.0, // PERF FIX: Add itemExtent for fixed-height items to improve scroll performance
+                addAutomaticKeepAlives: false, // PERF FIX: Disable keep-alives for lightweight list items
+                addRepaintBoundaries: true, // PERF FIX: Enable repaint boundaries for better rendering
                 itemBuilder: (context, index) {
-                  final pharmacy = state.userPharmacies[index];
+                  final pharmacy = userPharmacies[index];
                   final isCurrentPharmacy = 
-                      state.currentPharmacy?.id == pharmacy.id;
+                      currentPharmacy?.id == pharmacy.id;
 
                   return ListTile(
                     leading: CircleAvatar(
