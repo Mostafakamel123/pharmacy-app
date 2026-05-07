@@ -118,35 +118,37 @@ class _MapPin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
+    return RepaintBoundary( // PERF FIX: Isolate map pin repaints
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: pharmacy.isOpen
+                  ? AppColors.primaryGreen
+                  : const Color(0xFFF59E0B),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              pharmacy.distance.toStringAsFixed(1),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Icon(
+            Icons.location_on_rounded,
+            size: 24,
             color: pharmacy.isOpen
                 ? AppColors.primaryGreen
                 : const Color(0xFFF59E0B),
-            borderRadius: BorderRadius.circular(6),
           ),
-          child: Text(
-            pharmacy.distance.toStringAsFixed(1),
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Icon(
-          Icons.location_on_rounded,
-          size: 24,
-          color: pharmacy.isOpen
-              ? AppColors.primaryGreen
-              : const Color(0xFFF59E0B),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
