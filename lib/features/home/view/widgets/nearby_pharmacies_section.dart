@@ -240,7 +240,7 @@ class _PharmacyCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.delivery_dining_rounded, size: 12, color: const Color(0xFF0EA5E9)),
+                        const Icon(Icons.delivery_dining_rounded, size: 12, color: const Color(0xFF0EA5E9)),
                         const SizedBox(width: 3),
                         Text(
                           'Delivery',
