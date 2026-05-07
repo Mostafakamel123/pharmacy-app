@@ -775,13 +775,18 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
     // Switch pharmacy mode immediately
     pharmacyModeNotifier.switchToPharmacyMode(pharmacy);
     
-    // Wait a bit more to simulate loading
-    await Future.delayed(const Duration(milliseconds: 800));
+    // Wait for 3 seconds to simulate loading and show "Switching..." message
+    await Future.delayed(const Duration(seconds: 3));
 
-    // Close loading dialog safely using dialogContext
+    // Close loading dialog safely using dialogContext with fade out animation
     if (!dialogClosed && dialogContext != null && dialogContext!.mounted) {
       dialogClosed = true;
-      Navigator.of(dialogContext!).pop(); // Close dialog
+      
+      // Fade out the dialog
+      await Navigator.of(dialogContext!).pop();
+      
+      // Small delay before showing snackbar and navigating
+      await Future.delayed(const Duration(milliseconds: 300));
       
       // Show success snackbar after dialog is closed
       if (context.mounted) {
