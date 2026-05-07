@@ -636,8 +636,13 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
                               )
                             : null,
                         onTap: () {
-                          Navigator.pop(context);
-                          _switchPharmacyWithTransition(context, ref, pharmacy);
+                          // Read ref BEFORE any navigation
+                          final pharmacyModeNotifier = ref.read(pharmacyModeProvider.notifier);
+                          _switchPharmacyWithTransition(
+                            context,
+                            pharmacyModeNotifier,
+                            pharmacy,
+                          );
                         },
                       );
                     },
@@ -696,100 +701,101 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
   /// Switch pharmacy with smooth loading transition (Facebook-style)
   void _switchPharmacyWithTransition(
     BuildContext context,
-    WidgetRef ref,
+    dynamic pharmacyModeNotifier, // PharmacyModeNotifier from provider
     dynamic pharmacy,
   ) {
-    // Show loading overlay
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.transparent,
-      builder: (_) => Center(
-        child: Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? DarkColors.surface
-                : LightColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(
-                strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Switching...',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? DarkColors.textPrimary
-                      : LightColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    // Simulate loading delay then switch
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      // Switch pharmacy mode
-      ref
-          .read(pharmacyModeProvider.notifier)
-          .switchToPharmacyMode(pharmacy);
-
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context).pop();
-
-        // Show success feedback
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    color: AppColors.primaryGreen,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text('Switched to ${pharmacy.name}'),
+    // Cache values before any navigation
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Close drawer first
+    Navigator.pop(context);
+    
+    // Use microtask to allow widget tree to update before showing dialog
+    Future.microtask(() {
+      // Show loading overlay
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+        builder: (dialogContext) => Center(
+          child: Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: isDark ? DarkColors.surface : LightColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? DarkColors.surface
-                : LightColors.surface,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Switching...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
-            duration: const Duration(seconds: 2),
           ),
-        );
-      }
+        ),
+      );
+
+      // Simulate loading delay then switch
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        // Switch pharmacy mode - ref is already read before disposal
+        pharmacyModeNotifier.switchToPharmacyMode(pharmacy);
+
+        // Close loading dialog safely
+        if (mounted && context.mounted) {
+          Navigator.of(context).pop(); // Close dialog
+
+          // Show success feedback
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: AppColors.primaryGreen,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Switched to ${pharmacy.name}'),
+                  ),
+                ],
+              ),
+              backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      });
     });
   }
 

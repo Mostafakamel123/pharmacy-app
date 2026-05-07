@@ -8,9 +8,9 @@ import 'package:pharmacy_app/core/theme/app_colors.dart';
 /// Performance Optimizations:
 /// - Uses const constructors throughout
 /// - Caches theme values to avoid repeated lookups
-/// - Wraps grid items in RepaintBoundary for independent rasterization
-/// - Uses const NeverScrollableScrollPhysics (already optimal)
-/// - Minimizes closure allocations in onTap handlers
+/// - Responsive grid via LayoutBuilder adapts to screen width
+/// - Reduced shadow blur radius for better performance
+/// - Text overflow prevention with ellipsis
 class PharmacyQuickActions extends StatelessWidget {
   const PharmacyQuickActions({super.key});
 
@@ -34,39 +34,51 @@ class PharmacyQuickActions extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: AppSpacing.md,
-            crossAxisSpacing: AppSpacing.md,
-            childAspectRatio: 1.8,
-            children: const [
-              _QuickActionItem(
-                icon: Icons.add_circle_outline,
-                label: 'Add Post',
-                color: AppColors.primaryBlue,
-                actionName: 'Create Post',
-              ),
-              _QuickActionItem(
-                icon: Icons.inventory_2_outlined,
-                label: 'Manage Orders',
-                color: AppColors.primaryGreen,
-                actionName: 'Orders',
-              ),
-              _QuickActionItem(
-                icon: Icons.people_outline,
-                label: 'Admins',
-                color: AppColors.accentPurple,
-                actionName: 'Admins',
-              ),
-              _QuickActionItem(
-                icon: Icons.analytics_outlined,
-                label: 'Analytics',
-                color: AppColors.accentYellow,
-                actionName: 'Analytics',
-              ),
-            ],
+          // Responsive grid that adjusts to screen size
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final availableWidth = constraints.maxWidth;
+              final isSmallScreen = availableWidth < 380;
+              
+              // Adjust grid columns and aspect ratio for small screens
+              final crossAxisCount = isSmallScreen ? 2 : 2;
+              final childAspectRatio = isSmallScreen ? 1.6 : 1.8;
+
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: AppSpacing.md,
+                crossAxisSpacing: AppSpacing.md,
+                childAspectRatio: childAspectRatio,
+                children: const [
+                  _QuickActionItem(
+                    icon: Icons.add_circle_outline,
+                    label: 'Add Post',
+                    color: AppColors.primaryBlue,
+                    actionName: 'Create Post',
+                  ),
+                  _QuickActionItem(
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Manage Orders',
+                    color: AppColors.primaryGreen,
+                    actionName: 'Orders',
+                  ),
+                  _QuickActionItem(
+                    icon: Icons.people_outline,
+                    label: 'Admins',
+                    color: AppColors.accentPurple,
+                    actionName: 'Admins',
+                  ),
+                  _QuickActionItem(
+                    icon: Icons.analytics_outlined,
+                    label: 'Analytics',
+                    color: AppColors.accentYellow,
+                    actionName: 'Analytics',
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -105,11 +117,12 @@ class _QuickActionItem extends StatelessWidget {
         ? Colors.white.withOpacity(0.08)
         : Colors.black.withOpacity(0.06);
     final shadowColor = isDark
-        ? Colors.black.withOpacity(0.2)
-        : Colors.black.withOpacity(0.05);
+        ? Colors.black.withOpacity(0.1)
+        : Colors.black.withOpacity(0.03);
     final textPrimary = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
 
-    return RepaintBoundary(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: GestureDetector(
         onTap: () => _handleTap(context),
         child: Container(
@@ -120,8 +133,8 @@ class _QuickActionItem extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: shadowColor,
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -138,12 +151,16 @@ class _QuickActionItem extends StatelessWidget {
                 child: Icon(icon, color: color, size: 22),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: textPrimary,
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
+                  ),
                 ),
               ),
             ],

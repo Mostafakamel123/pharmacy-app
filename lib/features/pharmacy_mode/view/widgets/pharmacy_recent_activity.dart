@@ -24,8 +24,8 @@ class PharmacyRecentActivity extends StatelessWidget {
         ? Colors.white.withOpacity(0.08)
         : Colors.black.withOpacity(0.06);
     final shadowColor = isDark
-        ? Colors.black.withOpacity(0.2)
-        : Colors.black.withOpacity(0.05);
+        ? Colors.black.withOpacity(0.1)
+        : Colors.black.withOpacity(0.03);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -52,8 +52,9 @@ class PharmacyRecentActivity extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          // Activity list container with cached decorations
-          RepaintBoundary(
+          // Activity list container with cached decorations and clipping
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             child: Container(
               decoration: BoxDecoration(
                 color: surfaceColor,
@@ -62,8 +63,8 @@ class PharmacyRecentActivity extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: shadowColor,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -175,6 +176,9 @@ class _ActivityItem extends StatelessWidget {
           ),
           title: Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -188,6 +192,9 @@ class _ActivityItem extends StatelessWidget {
                 Expanded(
                   child: Text(
                     subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
                     style: TextStyle(
                       fontSize: 12,
                       color: textSecondary,
@@ -196,6 +203,9 @@ class _ActivityItem extends StatelessWidget {
                 ),
                 Text(
                   time,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
                   style: TextStyle(
                     fontSize: 11,
                     color: textHint,
