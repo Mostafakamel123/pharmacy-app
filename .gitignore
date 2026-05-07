@@ -1,51 +1,32 @@
-# Flutter/Dart/Pub
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
+# Dependencies
 .pub/
-build/
-
-# Web related
-lib/generated_plugin_registrant.dart
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio
-.idea/
-*.iml
-
-# VS Code
-.vscode/
-
-# Android
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# iOS
-ios/Flutter/.last_build_id
-
-# macOS
-macos/Flutter/ephemeral/
-
-# Linux
-linux/flutter/ephemeral/
-
-# Windows
-windows/flutter/ephemeral/
+.dart_tool/
+.build/
 
 # Logs
 *.log
 
-# Environment files
+# Environment variables
 .env
-.env.*
+.env.local
+*.env
 
-# OS files
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs
+build/
+dist/
+coverage/
+htmlcov/
+*.tmp
+
+# OS generated files
 .DS_Store
 Thumbs.db
+
+# Original rules preserved
+*.log
