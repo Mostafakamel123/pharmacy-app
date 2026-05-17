@@ -28,24 +28,8 @@ class ProfileScreen extends ConsumerWidget {
               child: ProfileHeader(
                 profile: profile,
                 onEdit: () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const EditProfileScreen(),
-                      transitionsBuilder: (_, animation, __, child) {
-                        return SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 1),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          )),
-                          child: child,
-                        );
-                      },
-                    ),
-                  );
+                  // Use GoRouter for consistent transitions
+                  context.push('/edit-profile');
                 },
               ),
             ),
@@ -67,12 +51,8 @@ class ProfileScreen extends ConsumerWidget {
                     icon: Icons.article_rounded,
                     iconColor: AppColors.primaryBlue,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MyPostsScreen(),
-                        ),
-                      );
+                      // Use GoRouter for consistent transitions
+                      context.push('/my-posts');
                     },
                   ),
                   ProfileActionItem(
@@ -80,12 +60,8 @@ class ProfileScreen extends ConsumerWidget {
                     icon: Icons.bookmark_rounded,
                     iconColor: AppColors.accentYellow,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SavedPostsScreen(),
-                        ),
-                      );
+                      // Use GoRouter for consistent transitions
+                      context.push('/saved-posts');
                     },
                   ),
                   ProfileActionItem(

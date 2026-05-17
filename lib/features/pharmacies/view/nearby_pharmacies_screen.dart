@@ -166,13 +166,8 @@ class NearbyPharmaciesScreen extends ConsumerWidget {
                     return PharmacyCard(
                       pharmacy: pharmacy,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                PharmacyDetailsScreen(pharmacy: pharmacy),
-                          ),
-                        );
+                        // Use GoRouter for consistent transitions
+                        context.push('/pharmacy/${pharmacy.id}', extra: pharmacy);
                       },
                       onFavorite: () {
                         final favorites = ref

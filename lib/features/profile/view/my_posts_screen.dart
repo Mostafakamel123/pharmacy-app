@@ -32,7 +32,7 @@ class MyPostsScreen extends ConsumerWidget {
             Icons.arrow_back_ios_new_rounded,
             color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
       ),
       body: posts.isEmpty
