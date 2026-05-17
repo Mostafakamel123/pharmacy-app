@@ -84,7 +84,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     // Select only needed properties to minimize rebuilds
-    final authState = ref.watch(authProvider);
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    final error = ref.watch(authProvider.select((s) => s.error));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -108,7 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : LightColors.textPrimary,
                       size: 20,
                     ),
-                    onPressed: () => context.go(AppRoutes.onboarding),
+                    onPressed: () => context.pop(),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -179,47 +180,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Error message
-                if (authState.error != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(
-                        color: AppColors.accentRed.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: AppColors.accentRed,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            authState.error!,
-                            style: const TextStyle(
-                              color: AppColors.accentRed,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (authState.error != null) const SizedBox(height: 16),
-
-                // Login button
-                AuthButton(
-                  text: 'Sign In',
-                  isLoading: authState.isLoading,
-                  onPressed: (){context.go(AppRoutes.home);}
-                  
-                 /// _handleLogin,
-                ),
+                // Error message - extracted widget for performance
+                _LoginErrorBanner(error: error),
+                
+                // Login button - extracted widget for performance
+                _LoginButton(isLoading: isLoading, onPressed: _handleLogin),
                 const SizedBox(height: 24),
 
                 // Divider
@@ -334,6 +299,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ============================================================================
+// EXTRACTED WIDGETS FOR PERFORMANCE OPTIMIZATION
+// ============================================================================
+// These widgets are extracted to prevent unnecessary rebuilds of the entire
+// screen when only specific parts (error banner, button) need to update.
+// This is a key Flutter performance best practice.
+// ============================================================================
+
+class _LoginErrorBanner extends StatelessWidget {
+  final String? error;
+  
+  const _LoginErrorBanner({this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    if (error == null) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.accentRed.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(
+              color: AppColors.accentRed.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: AppColors.accentRed,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  error!,
+                  style: const TextStyle(
+                    color: AppColors.accentRed,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _LoginButton extends ConsumerWidget {
+  final bool isLoading;
+  final VoidCallback onPressed;
+  
+  const _LoginButton({required this.isLoading, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return AuthButton(
+      text: 'Sign In',
+      isLoading: isLoading,
+      onPressed: onPressed,
     );
   }
 }
