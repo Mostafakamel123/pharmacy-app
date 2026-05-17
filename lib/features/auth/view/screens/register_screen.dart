@@ -105,7 +105,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Removed ref.watch for authProvider from here!
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -113,166 +112,163 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                      size: 20,
-                    ),
-                    onPressed: () => context.go(AppRoutes.login),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                Text(
-                  'Create Account',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_ios_new_rounded,
                     color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    size: 20,
                   ),
+                  onPressed: () => context.pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sign up to get started',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+              ),
+              const SizedBox(height: 20),
+
+              Text(
+                'Create Account',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sign up to get started',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              AuthTextField(
+                label: 'Full Name',
+                hint: 'Enter your full name',
+                icon: Icons.person_outline_rounded,
+                controller: _nameController,
+                errorText: _nameError,
+                onChanged: (value) => _validateName(value),
+              ),
+              const SizedBox(height: 20),
+
+              AuthTextField(
+                label: 'Email',
+                hint: 'Enter your email',
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                controller: _emailController,
+                errorText: _emailError,
+                onChanged: (value) => _validateEmail(value),
+              ),
+              const SizedBox(height: 20),
+
+              AuthTextField(
+                label: 'Password',
+                hint: 'Create a password',
+                icon: Icons.lock_outline,
+                isPassword: true,
+                controller: _passwordController,
+                errorText: _passwordError,
+                onChanged: (value) => _validatePassword(value),
+              ),
+              const SizedBox(height: 20),
+
+              AuthTextField(
+                label: 'Confirm Password',
+                hint: 'Re-enter your password',
+                icon: Icons.lock_outline,
+                isPassword: true,
+                controller: _confirmPasswordController,
+                errorText: _confirmPasswordError,
+                onChanged: (value) => _validateConfirmPassword(value),
+              ),
+              const SizedBox(height: 24),
+
+              Row(
+                children: [
+                  Checkbox(
+                    value: _acceptTerms,
+                    onChanged: (value) {
+                      setState(() => _acceptTerms = value ?? false);
+                    },
+                    activeColor: AppColors.primaryBlue,
                   ),
-                ),
-                const SizedBox(height: 32),
-
-                AuthTextField(
-                  label: 'Full Name',
-                  hint: 'Enter your full name',
-                  icon: Icons.person_outline_rounded,
-                  controller: _nameController,
-                  errorText: _nameError,
-                  onChanged: (value) => _validateName(value),
-                ),
-                const SizedBox(height: 20),
-
-                AuthTextField(
-                  label: 'Email',
-                  hint: 'Enter your email',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  controller: _emailController,
-                  errorText: _emailError,
-                  onChanged: (value) => _validateEmail(value),
-                ),
-                const SizedBox(height: 20),
-
-                AuthTextField(
-                  label: 'Password',
-                  hint: 'Create a password',
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                  controller: _passwordController,
-                  errorText: _passwordError,
-                  onChanged: (value) => _validatePassword(value),
-                ),
-                const SizedBox(height: 20),
-
-                AuthTextField(
-                  label: 'Confirm Password',
-                  hint: 'Re-enter your password',
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                  controller: _confirmPasswordController,
-                  errorText: _confirmPasswordError,
-                  onChanged: (value) => _validateConfirmPassword(value),
-                ),
-                const SizedBox(height: 24),
-
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _acceptTerms,
-                      onChanged: (value) {
-                        setState(() => _acceptTerms = value ?? false);
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => _acceptTerms = !_acceptTerms);
                       },
-                      activeColor: AppColors.primaryBlue,
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() => _acceptTerms = !_acceptTerms);
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            text: 'I agree to the ',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
-                            ),
-                            children: const [
-                              TextSpan(
-                                text: 'Terms of Service',
-                                style: TextStyle(
-                                  color: AppColors.primaryBlue,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              TextSpan(text: ' and '),
-                              TextSpan(
-                                text: 'Privacy Policy',
-                                style: TextStyle(
-                                  color: AppColors.primaryBlue,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'I agree to the ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                           ),
+                          children: const [
+                            TextSpan(
+                              text: 'Terms of Service',
+                              style: TextStyle(
+                                color: AppColors.primaryBlue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            TextSpan(text: ' and '),
+                            TextSpan(
+                              text: 'Privacy Policy',
+                              style: TextStyle(
+                                color: AppColors.primaryBlue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
 
-                // Extracted Error Banner
-                const _RegisterAuthErrorBanner(),
-                
-                // Extracted Register Button
-                _RegisterButton(onPressed: _handleRegister),
-                
-                const SizedBox(height: 24),
+              // Extracted Error Banner - uses selective watch for performance
+              const _RegisterAuthErrorBanner(),
+              
+              // Extracted Register Button - uses selective watch for performance
+              _RegisterButton(onPressed: _handleRegister),
+              
+              const SizedBox(height: 24),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Already have an account? ',
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Already have an account? ',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.login),
+                    child: const Text(
+                      'Sign In',
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryBlue,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () => context.push(AppRoutes.login),
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryBlue,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

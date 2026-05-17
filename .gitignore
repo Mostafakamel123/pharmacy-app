@@ -1,246 +1,66 @@
-```dart
-# Flutter/Dart specific
-.dart_tool/
-.packages
-flutter/
-*.iws
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.log
-*.tmp
-*.tmp.*
-
-# Build outputs
-build/
-.dart_tool/
-**/ios/.symlinks
-**/android/.gradle
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-
-# Environment files
-.env
-.env.*
-!.env.example
-
-# Coverage
-coverage/
-
-# Temporary files
-*.tmp
-*.temp
-*.log
-*.swp
-*.swo
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Icon?
-!Icon
-
-# Linux
-*~
-
-# Vim
-*.un~
-Session.vim
-.netrwhist
-
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-
-# IntelliJ
-.idea/
-*.iml
-*.iws
-*.jar
-*.class
-*.so
-*.dll
-*.dylib
-*.exe
-*.out
+```
+# Build artifacts
 *.o
-*.a
 *.obj
-*.pyc
-*.pyo
-*.pyd
-*.jar
-*.war
-*.ear
-*.zip
-*.tar
-*.gz
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
-
-# VS Code
-.vscode/
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
+*.exe
+*.dll
 *.so
-.Python
-venv/
-env/
-ENV/
-.venv/
-env.bak/
-venv.bak/
+*.a
+*.out
 
-# Node.js
+# Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnp/
-.pnp.js
-
-# Gradle
-.gradle/
-build/
-
-# MyPy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# PyTest
-.pytest_cache/
-
-# Coverage
-htmlcov/
-.coverage
-.coverage.*
-.cache
-
-# Distribution / packaging
-.Python
-env/
 venv/
-ENV/
 .venv/
-env.bak/
-venv.bak/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# pipenv
-.Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
+__pycache__/
 .mypy_cache/
-.dmypy.json
-dmypy.json
+.pytest_cache/
+target/
+.gradle/
 
-# Pyre type checker
-.pyre/
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
 
-# Local Virtualenv
-venv/
-ENV/
-
-# Compressed archives
-*.zip
-*.tar
-*.gz
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# System files
+.DS_Store
+Thumbs.db
+.env
+.env.local
+*.env.*
 
 # Logs
 *.log
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```
