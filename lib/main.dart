@@ -12,12 +12,14 @@ void main() async {
   // Initialize local storage
   await LocalStorageHelper.init();
 
+  // Enable performance overlay for debugging (optional, disable in production)
+  // WidgetsApp.showPerformanceOverlayOverride = false;
+
   runApp(
     const ProviderScope(
       child: MyApp(),
     ),
   );
-
 
   Future.delayed(const Duration(seconds: 0), () {
     FlutterNativeSplash.remove();
@@ -36,6 +38,17 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
+      // Performance optimizations
+      builder: (context, child) {
+        // Prevent text scaling from breaking layout
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            // Disable text scaling for consistent UI (or limit it)
+            textScaler: TextScaler.linear(1.0),
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }

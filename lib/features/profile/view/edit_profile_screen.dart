@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
 
@@ -51,7 +52,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Icons.arrow_back_ios_new_rounded,
             color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         actions: [
           TextButton(
@@ -71,7 +72,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             phone: phone,
                             location: location,
                           );
-                      if (context.mounted) Navigator.pop(context);
+                      if (context.mounted) context.pop();
                     }
                   },
             child: formState.isSaving

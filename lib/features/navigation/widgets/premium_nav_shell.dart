@@ -72,25 +72,8 @@ class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
 
   void _onFabPressed() async {
     HapticFeedback.mediumImpact();
-    await Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const CreatePostScreen(),
-        transitionsBuilder: (_, animation, __, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 1),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
+    // Use context.push for consistent navigation with transitions
+    context.push('/create-post');
   }
 
   @override

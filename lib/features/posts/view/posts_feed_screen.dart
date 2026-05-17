@@ -138,12 +138,8 @@ class PostsFeedScreen extends ConsumerWidget {
                     return PostCard(
                       post: post,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PostDetailsScreen(post: post),
-                          ),
-                        );
+                        // Use GoRouter for consistent transitions
+                        context.push('/post/${post.id}', extra: post);
                       },
                       onBookmark: () {
                         final bookmarks = ref
