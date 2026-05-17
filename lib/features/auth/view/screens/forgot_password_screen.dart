@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,12 +8,14 @@ import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_text_field.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_button.dart';
 
+// 1. Compile-time constant for Regex
+final _emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() =>
-      _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -26,10 +30,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   bool _validateEmail(String value) {
-    final emailRegex = RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    );
-    if (!emailRegex.hasMatch(value)) {
+    if (!_emailRegex.hasMatch(value)) {
       setState(() => _emailError = 'Please enter a valid email');
       return false;
     }
@@ -51,7 +52,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    // Removed ref.watch(authProvider) from here!
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -62,14 +63,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Back button
               Align(
                 alignment: Alignment.topLeft,
                 child: IconButton(
                   icon: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color:
-                        isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                     size: 20,
                   ),
                   onPressed: () => context.pop(),
@@ -80,7 +79,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               const SizedBox(height: 20),
 
               if (!_isSubmitted) ...[
-                // Icon
                 Container(
                   width: 80,
                   height: 80,
@@ -96,16 +94,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Title
                 Text(
                   'Forgot Password?',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -114,14 +109,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: isDark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary,
+                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // Email field
                 AuthTextField(
                   label: 'Email',
                   hint: 'Enter your email',
@@ -133,47 +125,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Error message
-                if (authState.error != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(
-                        color: AppColors.accentRed.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: AppColors.accentRed,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            authState.error!,
-                            style: const TextStyle(
-                              color: AppColors.accentRed,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (authState.error != null) const SizedBox(height: 16),
-
-                // Submit button
-                AuthButton(
-                  text: 'Send Reset Link',
-                  isLoading: authState.isLoading,
-                  onPressed: _handleSubmit,
-                ),
+                // Extracted Error Banner
+                const _ForgotErrorBanner(),
+                
+                // Extracted Submit Button
+                _ForgotSubmitButton(onPressed: _handleSubmit),
               ] else ...[
-                // Success state
                 const SizedBox(height: 40),
                 Container(
                   width: 80,
@@ -196,9 +153,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -207,9 +162,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: isDark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary,
+                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -219,26 +172,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primaryBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(
-                      color: AppColors.primaryBlue.withOpacity(0.3),
-                    ),
+                    border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: AppColors.primaryBlue,
-                        size: 20,
-                      ),
+                      const Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Didn\'t receive the email? Check your spam folder or try again.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark
-                                ? DarkColors.textPrimary
-                                : LightColors.textPrimary,
+                            color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                           ),
                         ),
                       ),
@@ -247,15 +192,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Resend button
-                AuthButton(
-                  text: 'Resend Email',
-                  isLoading: authState.isLoading,
-                  onPressed: _handleSubmit,
-                ),
+                // Extracted Resend Button
+                _ForgotResendButton(onPressed: _handleSubmit),
                 const SizedBox(height: 16),
 
-                // Back to login button
                 AuthButton(
                   text: 'Back to Login',
                   isLoading: false,
@@ -267,6 +207,71 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// --- Extracted Widgets for Performance ---
+
+class _ForgotSubmitButton extends ConsumerWidget {
+  final VoidCallback onPressed;
+  const _ForgotSubmitButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    return AuthButton(
+      text: 'Send Reset Link',
+      isLoading: isLoading,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _ForgotResendButton extends ConsumerWidget {
+  final VoidCallback onPressed;
+  const _ForgotResendButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    return AuthButton(
+      text: 'Resend Email',
+      isLoading: isLoading,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _ForgotErrorBanner extends ConsumerWidget {
+  const _ForgotErrorBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final error = ref.watch(authProvider.select((s) => s.error));
+    if (error == null) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.accentRed.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(color: AppColors.accentRed.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.accentRed, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(error, style: const TextStyle(color: AppColors.accentRed, fontSize: 13)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

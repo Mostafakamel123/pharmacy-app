@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 
@@ -18,8 +20,6 @@ class AuthButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     if (isOutlined) {
       return SizedBox(
         width: double.infinity,
@@ -27,7 +27,7 @@ class AuthButton extends StatelessWidget {
         child: OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(
+            side: const BorderSide(
               color: AppColors.primaryBlue,
               width: 2,
             ),
@@ -58,6 +58,7 @@ class AuthButton extends StatelessWidget {
       );
     }
 
+    // Filled button
     return Container(
       width: double.infinity,
       height: 50,

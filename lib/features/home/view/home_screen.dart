@@ -12,35 +12,28 @@ import 'package:pharmacy_app/features/home/view/widgets/smart_search_bar.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart'
     hide nearbyPharmaciesProvider;
 import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 
 class PatientHomeScreen extends ConsumerStatefulWidget {
   const PatientHomeScreen({super.key});
 
   @override
-  ConsumerState<PatientHomeScreen> createState() => _PatientHomeScreenState();
+  ConsumerState<PatientHomeScreen> createState() =>
+      _PatientHomeScreenState();
 }
 
 class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  // Removed GlobalKey<ScaffoldState> — it was never referenced.
+  // Scaffold.of(context) in HomeHeader works without it.
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      drawer: PharmacyDrawer(null),
+      drawer: const PharmacyDrawer(null),
       body: RefreshIndicator(
-        onRefresh: () async {
-          // Defer refresh to avoid blocking main thread
-          await Future.delayed(const Duration(milliseconds: 100));
-          if (mounted) {
-            await Future.wait<void>([
-              ref.read(nearbyPharmaciesProvider.notifier).refresh(),
-              ref.read(recentPostsProvider.notifier).refresh(),
-            ]);
-          }
-        },
+        // Extracted to a named method to avoid creating a new closure
+        // on every build invocation.
+        onRefresh: _handleRefresh,
         color: const Color(0xFF0EA5E9),
         child: CustomScrollView(
           cacheExtent: 250,
@@ -50,16 +43,15 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
           slivers: [
             // Header
             const SliverToBoxAdapter(child: HomeHeader()),
-            // Search bar with proper spacing
+            // Search bar
             const SliverToBoxAdapter(child: SmartSearchBar()),
-            const SliverToBoxAdapter(child: SizedBox(height: 0)),
+            // Removed SliverToBoxAdapter(child: SizedBox(height: 0))
+            // — zero-height box is a no-op layout and wastes a sliver slot.
             // Nearby pharmacies
-            const SliverToBoxAdapter(child: NearbyPharmaciesSection()),
+            const SliverToBoxAdapter(
+                child: NearbyPharmaciesSection()),
             // Quick actions
-           
             const SliverToBoxAdapter(child: QuickActionsSection()),
-            // CTA banner
-            // const SliverToBoxAdapter(child: CTABanner()),
             // Recent posts
             const SliverToBoxAdapter(child: RecentPostsSection()),
             // Bottom padding for nav bar
@@ -69,13 +61,14 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
       ),
       floatingActionButton: Consumer(
         builder: (context, ref, child) {
-          final routingState = ref.watch(routingStateNotifierProvider);
-          final isRequestPending = routingState?.isRequestPending ?? false;
+          final routingState =
+              ref.watch(routingStateNotifierProvider);
+          final isRequestPending =
+              routingState?.isRequestPending ?? false;
           if (!isRequestPending) return const SizedBox.shrink();
 
           return FloatingActionButton(
             onPressed: () {
-              // Navigate back to the prescription screen
               context.push('/searching-pharmacies');
             },
             backgroundColor: Theme.of(context).primaryColor,
@@ -84,5 +77,16 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
         },
       ),
     );
+  }
+
+  /// Extracted refresh handler — avoids allocating a new closure on each build.
+  Future<void> _handleRefresh() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (mounted) {
+      await Future.wait<void>([
+        ref.read(nearbyPharmaciesProvider.notifier).refresh(),
+        ref.read(recentPostsProvider.notifier).refresh(),
+      ]);
+    }
   }
 }

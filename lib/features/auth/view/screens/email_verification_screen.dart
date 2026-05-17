@@ -1,5 +1,4 @@
 // ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +27,6 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   }
 
   Future<void> _checkVerificationStatus() async {
-    // Simulate checking verification status
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() => _isChecking = false);
@@ -51,12 +49,10 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   }
 
   Future<void> _handleVerifyNow() async {
-    // Check if email is verified
     final isVerified = await ref.read(authProvider.notifier).checkEmailVerification();
     if (mounted) {
       if (isVerified) {
         setState(() => _isVerified = true);
-        // Navigate to home after a short delay
         await Future.delayed(const Duration(milliseconds: 1500));
         if (mounted) {
           context.go(AppRoutes.home);
@@ -74,7 +70,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    // Removed ref.watch(authProvider) from here!
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final email = widget.email ?? 'your email';
 
@@ -86,7 +82,6 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Back button
               Align(
                 alignment: Alignment.topLeft,
                 child: IconButton(
@@ -103,7 +98,6 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               const SizedBox(height: 20),
 
               if (_isChecking) ...[
-                // Checking state
                 const SizedBox(height: 40),
                 Container(
                   width: 80,
@@ -112,6 +106,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                     color: AppColors.primaryBlue.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
+                  // 2. Added const to alwaysStoppedAnimation 
                   child: const CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                   ),
@@ -123,9 +118,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -134,14 +127,10 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: isDark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary,
+                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                   ),
                 ),
               ] else if (!_isVerified) ...[
-                // Not verified state
-                // Icon
                 Container(
                   width: 80,
                   height: 80,
@@ -157,16 +146,13 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                 ),
                 const SizedBox(height: 24),
 
-                // Title
                 Text(
                   'Verify Your Email',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -175,39 +161,28 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: isDark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary,
+                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // Info box
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.primaryBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(
-                      color: AppColors.primaryBlue.withOpacity(0.3),
-                    ),
+                    border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: AppColors.primaryBlue,
-                        size: 20,
-                      ),
+                      const Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Click the link in the email or tap "I\'ve Verified" below after completing verification.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark
-                                ? DarkColors.textPrimary
-                                : LightColors.textPrimary,
+                            color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                           ),
                         ),
                       ),
@@ -216,71 +191,27 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                 ),
                 const SizedBox(height: 24),
 
-                // Error message
-                if (authState.error != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(
-                        color: AppColors.accentRed.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: AppColors.accentRed,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            authState.error!,
-                            style: const TextStyle(
-                              color: AppColors.accentRed,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (authState.error != null) const SizedBox(height: 16),
-
-                // Verify button
-                AuthButton(
-                  text: 'I\'ve Verified',
-                  isLoading: authState.isLoading,
-                  onPressed: _handleVerifyNow,
-                ),
+                // Extracted Error Banner
+                const _EmailVerifyErrorBanner(),
+                
+                // Extracted Buttons
+                _VerifyButton(onPressed: _handleVerifyNow),
                 const SizedBox(height: 16),
 
-                // Resend email button
-                AuthButton(
-                  text: 'Resend Email',
-                  isLoading: authState.isLoading,
-                  isOutlined: true,
-                  onPressed: _handleResendEmail,
-                ),
+                _ResendButton(onPressed: _handleResendEmail),
                 const SizedBox(height: 16),
 
-                // Skip for now button
                 TextButton(
                   onPressed: () => context.go(AppRoutes.home),
                   child: Text(
                     'Skip for now',
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark
-                          ? DarkColors.textHint
-                          : LightColors.textHint,
+                      color: isDark ? DarkColors.textHint : LightColors.textHint,
                     ),
                   ),
                 ),
               ] else ...[
-                // Success state
                 const SizedBox(height: 40),
                 Container(
                   width: 80,
@@ -303,9 +234,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -314,14 +243,11 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: isDark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary,
+                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // Continue button
                 AuthButton(
                   text: 'Continue to Home',
                   isLoading: false,
@@ -332,6 +258,72 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
           ),
         ),
       ),
+    );
+  }
+}
+
+// --- Extracted Widgets for Performance ---
+
+class _VerifyButton extends ConsumerWidget {
+  final VoidCallback onPressed;
+  const _VerifyButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    return AuthButton(
+      text: 'I\'ve Verified',
+      isLoading: isLoading,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _ResendButton extends ConsumerWidget {
+  final VoidCallback onPressed;
+  const _ResendButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    return AuthButton(
+      text: 'Resend Email',
+      isLoading: isLoading,
+      isOutlined: true,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _EmailVerifyErrorBanner extends ConsumerWidget {
+  const _EmailVerifyErrorBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final error = ref.watch(authProvider.select((s) => s.error));
+    if (error == null) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.accentRed.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(color: AppColors.accentRed.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.accentRed, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(error, style: const TextStyle(color: AppColors.accentRed, fontSize: 13)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

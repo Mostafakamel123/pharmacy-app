@@ -7,6 +7,9 @@ import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_text_field.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_button.dart';
 
+// Using the same top-level regex
+final _emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -47,10 +50,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   bool _validateEmail(String value) {
-    final emailRegex = RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    );
-    if (!emailRegex.hasMatch(value)) {
+    if (!_emailRegex.hasMatch(value)) {
       setState(() => _emailError = 'Please enter a valid email');
       return false;
     }
@@ -77,7 +77,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
-    // Validate form
     if (!_validateName(_nameController.text.trim())) return;
     if (!_validateEmail(_emailController.text.trim())) return;
     if (!_validatePassword(_passwordController.text)) return;
@@ -106,7 +105,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    // Removed ref.watch for authProvider from here!
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -119,7 +118,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Back button
                 Align(
                   alignment: Alignment.topLeft,
                   child: IconButton(
@@ -135,15 +133,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Title
                 Text(
                   'Create Account',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -151,14 +146,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   'Sign up to get started',
                   style: TextStyle(
                     fontSize: 16,
-                    color: isDark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary,
+                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // Name field
                 AuthTextField(
                   label: 'Full Name',
                   hint: 'Enter your full name',
@@ -169,7 +161,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Email field
                 AuthTextField(
                   label: 'Email',
                   hint: 'Enter your email',
@@ -181,7 +172,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Password field
                 AuthTextField(
                   label: 'Password',
                   hint: 'Create a password',
@@ -193,7 +183,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Confirm Password field
                 AuthTextField(
                   label: 'Confirm Password',
                   hint: 'Re-enter your password',
@@ -205,7 +194,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Terms and conditions checkbox
                 Row(
                   children: [
                     Checkbox(
@@ -225,22 +213,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             text: 'I agree to the ',
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark
-                                  ? DarkColors.textSecondary
-                                  : LightColors.textSecondary,
+                              color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                             ),
-                            children: [
+                            children: const [
                               TextSpan(
                                 text: 'Terms of Service',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.primaryBlue,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const TextSpan(text: ' and '),
+                              TextSpan(text: ' and '),
                               TextSpan(
                                 text: 'Privacy Policy',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.primaryBlue,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -254,48 +240,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Error message
-                if (authState.error != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(
-                        color: AppColors.accentRed.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: AppColors.accentRed,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            authState.error!,
-                            style: const TextStyle(
-                              color: AppColors.accentRed,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (authState.error != null) const SizedBox(height: 16),
-
-                // Register button
-                AuthButton(
-                  text: 'Create Account',
-                  isLoading: authState.isLoading,
-                  onPressed: _handleRegister,
-                ),
+                // Extracted Error Banner
+                const _RegisterAuthErrorBanner(),
+                
+                // Extracted Register Button
+                _RegisterButton(onPressed: _handleRegister),
+                
                 const SizedBox(height: 24),
 
-                // Login link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -303,9 +255,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       'Already have an account? ',
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark
-                            ? DarkColors.textSecondary
-                            : LightColors.textSecondary,
+                        color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                       ),
                     ),
                     TextButton(
@@ -326,6 +276,59 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RegisterButton extends ConsumerWidget {
+  final VoidCallback onPressed;
+  const _RegisterButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    return AuthButton(
+      text: 'Create Account',
+      isLoading: isLoading,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _RegisterAuthErrorBanner extends ConsumerWidget {
+  const _RegisterAuthErrorBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final error = ref.watch(authProvider.select((s) => s.error));
+    if (error == null) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.accentRed.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(
+              color: AppColors.accentRed.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.accentRed, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  error,
+                  style: const TextStyle(color: AppColors.accentRed, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

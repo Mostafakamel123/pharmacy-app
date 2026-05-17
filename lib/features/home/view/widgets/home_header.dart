@@ -11,6 +11,19 @@ class HomeHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Compute hour once instead of calling DateTime.now() in two separate methods
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Good Morning'
+        : hour < 17
+            ? 'Good Afternoon'
+            : 'Good Evening';
+    final greetingIcon = hour < 12
+        ? Icons.wb_sunny_rounded
+        : hour < 17
+            ? Icons.wb_cloudy_rounded
+            : Icons.nights_stay_rounded;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       width: double.infinity,
@@ -20,15 +33,15 @@ class HomeHeader extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [
-                  const Color(0xFF0C1B2A),
-                  const Color(0xFF132F3F).withOpacity(0.95),
-                  const Color(0xFF1A3B4F).withOpacity(0.9),
+              ? const [
+                  Color(0xFF0C1B2A),
+                  Color(0xF2132F3F), // replaced withOpacity(0.95)
+                  Color(0xE61A3B4F), // replaced withOpacity(0.9)
                 ]
-              : [
-                  const Color(0xFFF0FAFE),
-                  const Color(0xFFE5F9F3),
-                  const Color(0xFFF5FEF9),
+              : const [
+                  Color(0xFFF0FAFE),
+                  Color(0xFFE5F9F3),
+                  Color(0xFFF5FEF9),
                 ],
         ),
         borderRadius: const BorderRadius.only(
@@ -37,8 +50,9 @@ class HomeHeader extends ConsumerWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: (isDark ? Colors.black : const Color(0xFF0EA5E9))
-                .withOpacity(isDark ? 0.2 : 0.06),
+            color: isDark
+                ? const Color(0x33000000) // black @ 0.2
+                : const Color(0x0F0EA5E9), // blue @ 0.06
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -59,28 +73,34 @@ class HomeHeader extends ConsumerWidget {
                 ),
                 // Compact Time-based greeting
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF0EA5E9).withOpacity(0.12)
-                        : const Color(0xFF10B981).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16),
+                        ? const Color(0x1F0EA5E9) // replaced withOpacity(0.12)
+                        : const Color(0x1410B981), // replaced withOpacity(0.08)
+                    borderRadius:
+                        const BorderRadius.all(Radius.circular(16)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        _getGreetingIcon(),
+                        greetingIcon,
                         size: 12,
-                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF10B981),
+                        color: isDark
+                            ? const Color(0xFF38BDF8)
+                            : const Color(0xFF10B981),
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _getGreeting(),
+                        greeting,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF10B981),
+                          color: isDark
+                              ? const Color(0xFF38BDF8)
+                              : const Color(0xFF10B981),
                         ),
                       ),
                     ],
@@ -111,20 +131,6 @@ class HomeHeader extends ConsumerWidget {
       ),
     );
   }
-
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
-
-  IconData _getGreetingIcon() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return Icons.wb_sunny_rounded;
-    if (hour < 17) return Icons.wb_cloudy_rounded;
-    return Icons.nights_stay_rounded;
-  }
 }
 
 class _HeaderIconButton extends StatelessWidget {
@@ -146,19 +152,20 @@ class _HeaderIconButton extends StatelessWidget {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: isDark
-              ? const Color(0xFF0EA5E9).withOpacity(0.1)
-              : Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
+              ? const Color(0x1A0EA5E9) // replaced withOpacity(0.1)
+              : const Color(0xE6FFFFFF), // replaced white.withOpacity(0.9)
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
           border: Border.all(
             color: isDark
-                ? const Color(0xFF0EA5E9).withOpacity(0.2)
+                ? const Color(0x330EA5E9) // replaced withOpacity(0.2)
                 : const Color(0xFFE8F5E9),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: (isDark ? Colors.black : const Color(0xFF0EA5E9))
-                  .withOpacity(isDark ? 0.1 : 0.06),
+              color: isDark
+                  ? const Color(0x1A000000) // black @ 0.1
+                  : const Color(0x0F0EA5E9), // blue @ 0.06
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -185,20 +192,20 @@ class _LocationPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF0EA5E9).withOpacity(0.1)
-            : Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(20),
+            ? const Color(0x1A0EA5E9) // replaced withOpacity(0.1)
+            : const Color(0xD9FFFFFF), // replaced white.withOpacity(0.85)
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF0EA5E9).withOpacity(0.2)
+              ? const Color(0x330EA5E9) // replaced withOpacity(0.2)
               : const Color(0xFFE8F5E9),
           width: 1,
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Color(0x05000000), // replaced black.withOpacity(0.02)
             blurRadius: 6,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -247,19 +254,20 @@ class _NotificationBadge extends ConsumerWidget {
           padding: const EdgeInsets.all(11),
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF0EA5E9).withOpacity(0.1)
-                : Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(12),
+                ? const Color(0x1A0EA5E9) // replaced withOpacity(0.1)
+                : const Color(0xE6FFFFFF), // replaced white.withOpacity(0.9)
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
             border: Border.all(
               color: isDark
-                  ? const Color(0xFF0EA5E9).withOpacity(0.2)
+                  ? const Color(0x330EA5E9) // replaced withOpacity(0.2)
                   : const Color(0xFFE8F5E9),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: (isDark ? Colors.black : const Color(0xFF0EA5E9))
-                    .withOpacity(isDark ? 0.1 : 0.06),
+                color: isDark
+                    ? const Color(0x1A000000) // black @ 0.1
+                    : const Color(0x0F0EA5E9), // blue @ 0.06
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -280,26 +288,30 @@ class _NotificationBadge extends ConsumerWidget {
             child: Container(
               width: 18,
               height: 18,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEF4444),
+              decoration: const BoxDecoration(
+                color: Color(0xFFEF4444),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFEF4444).withOpacity(0.4),
+                    color: Color(0x66EF4444), // replaced withOpacity(0.4)
                     blurRadius: 6,
                     spreadRadius: 0,
                   ),
                 ],
               ),
-              child: Text(
-                notificationCount > 9 ? '9+' : notificationCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
+              child: Center(
+                child: Text(
+                  notificationCount > 9
+                      ? '9+'
+                      : notificationCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
           ),

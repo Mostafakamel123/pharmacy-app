@@ -11,7 +11,8 @@ class SmartSearchBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surface = isDark ? DarkColors.surface : LightColors.surface;
     final divider = isDark ? DarkColors.divider : LightColors.divider;
-    final iconColor = isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue;
+    final iconColor =
+        isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue;
     final hintColor = isDark ? DarkColors.textHint : LightColors.textHint;
 
     return Padding(
@@ -22,8 +23,10 @@ class SmartSearchBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.xl),
           boxShadow: [
             BoxShadow(
-              color: (isDark ? Colors.black : AppColors.primaryBlue)
-                  .withOpacity(isDark ? 0.3 : 0.08),
+              // Replaced withOpacity with const Color hex values
+              color: isDark
+                  ? const Color(0x4D000000) // black @ 0.3
+                  : const Color(0x140EA5E9), // blue @ 0.08
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -32,8 +35,10 @@ class SmartSearchBar extends StatelessWidget {
         child: TextField(
           decoration: InputDecoration(
             hintText: 'Search for pharmacy, medicine...',
-            hintStyle: TextStyle(color: hintColor, fontSize: AppTypography.body.fontSize),
-            prefixIcon: Icon(Icons.search_rounded, color: iconColor, size: 24),
+            hintStyle: TextStyle(
+                color: hintColor, fontSize: AppTypography.body.fontSize),
+            prefixIcon:
+                Icon(Icons.search_rounded, color: iconColor, size: 24),
             suffixIcon: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -42,16 +47,12 @@ class SmartSearchBar extends StatelessWidget {
                   icon: Icon(Icons.tune_rounded, color: iconColor),
                   onPressed: () {},
                 ),
-                // Container(width: 1, height: 24, color: divider),
-                // IconButton(
-                //   icon: Icon(Icons.mic_none_rounded, color: iconColor),
-                //   onPressed: () {},
-                // ),
                 const SizedBox(width: 4),
               ],
             ),
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
       ),
