@@ -33,7 +33,6 @@ class AuthTextField extends StatefulWidget {
 class _AuthTextFieldState extends State<AuthTextField> {
   bool _obscureText = true;
 
-  // Cache theme lookup to avoid repeated calls during build
   late bool _isDark;
 
   @override
@@ -68,8 +67,6 @@ class _AuthTextFieldState extends State<AuthTextField> {
           ),
         ),
         const SizedBox(height: 8),
-        // Use Container with child TextField instead of decoration prefixIcon
-        // for better performance (avoids rebuilding icon on every change)
         Container(
           decoration: BoxDecoration(
             color: _isDark ? DarkColors.card : LightColors.card,
@@ -85,7 +82,6 @@ class _AuthTextFieldState extends State<AuthTextField> {
             keyboardType: widget.keyboardType,
             onChanged: widget.onChanged,
             onTap: widget.onTap,
-            // Performance: enable suggestions only if needed
             enableSuggestions: !widget.isPassword,
             autocorrect: !widget.isPassword,
             decoration: InputDecoration(
@@ -115,7 +111,6 @@ class _AuthTextFieldState extends State<AuthTextField> {
                           _obscureText = !_obscureText;
                         });
                       },
-                      // Reduce tap target for faster response
                       padding: const EdgeInsets.all(8),
                     )
                   : null,
@@ -124,7 +119,6 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 horizontal: 16,
                 vertical: 14,
               ),
-              // Prevent counter from being built
               counterText: '',
             ),
           ),

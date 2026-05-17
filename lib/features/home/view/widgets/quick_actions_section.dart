@@ -12,8 +12,8 @@ class QuickActionsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
-    final actions = _getActions(context);
+    final textPrimary =
+        isDark ? DarkColors.textPrimary : LightColors.textPrimary;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
@@ -27,9 +27,13 @@ class QuickActionsSection extends StatelessWidget {
                 height: 20,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primaryBlue, AppColors.primaryGreen],
+                    colors: [
+                      AppColors.primaryBlue,
+                      AppColors.primaryGreen,
+                    ],
                   ),
-                  borderRadius: BorderRadius.all(Radius.circular(AppRadius.xs)),
+                  borderRadius:
+                      BorderRadius.all(Radius.circular(AppRadius.xs)),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -46,36 +50,46 @@ class QuickActionsSection extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Row(
-            children: actions
-                .map((action) => Expanded(child: _PillActionCard(action: action)))
+            children: _kActions
+                .map((action) =>
+                    Expanded(child: _PillActionCard(action: action)))
                 .toList(),
           ),
         ],
       ),
     );
   }
-
-  List<QuickActionModel> _getActions(BuildContext context) {
-    return [
-      QuickActionModel(
-        id: '1',
-        title: 'Upload Rx',
-        icon: Icons.document_scanner_rounded,
-        iconColor: AppColors.primaryGreen,
-        gradient: const [AppColors.primaryGreen, Color(0xFF34D399)],
-        onTap: () => context.push(AppRoutes.uploadPrescription),
-      ),
-      QuickActionModel(
-        id: '2',
-        title: 'Ask Now',
-        icon: Icons.chat_bubble_rounded,
-        iconColor: AppColors.primaryBlue,
-        gradient: const [AppColors.primaryBlue, Color(0xFF38BDF8)],
-        onTap: () {},
-      ),
-    ];
-  }
 }
+
+/// Static const action definitions — avoids creating new QuickActionModel
+/// instances on every build. 
+/// 
+/// Because BuildContext is unavailable at compile-time, `onTap` is given 
+/// a no-op `(){}`. The actual navigation is handled securely inside 
+/// `_PillActionCard._handleAction()` where a valid BuildContext exists.
+const _kActions = <QuickActionModel>[
+  QuickActionModel(
+    id: '1',
+    title: 'Upload Rx',
+    icon: Icons.document_scanner_rounded,
+    iconColor: AppColors.primaryGreen,
+    gradient: [AppColors.primaryGreen, Color(0xFF34D399)],
+    onTap: _noop, // No-op to allow const
+  ),
+  QuickActionModel(
+    id: '2',
+    title: 'Ask Now',
+    icon: Icons.chat_bubble_rounded,
+    iconColor: AppColors.primaryBlue,
+    gradient: [AppColors.primaryBlue, Color(0xFF38BDF8)],
+    onTap: _noop, // No-op to allow const
+  ),
+];
+
+/// Top-level no-op function. Defining it as a top-level constant ensures
+/// the exact same function identity is reused, preventing unnecessary
+/// widget rebuilds if Riverpod/Flutter compares callback identities.
+void _noop() {}
 
 class _PillActionCard extends StatefulWidget {
   final QuickActionModel action;
@@ -90,6 +104,21 @@ class _PillActionCardState extends State<_PillActionCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+
+  // Cached objects that are used on every animation frame —
+  // avoids reallocating during the 60fps scale animation.
+  late final LinearGradient _gradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: widget.action.gradient,
+  );
+
+  late final Color _shadowColor = Color.fromRGBO(
+    widget.action.iconColor.red,
+    widget.action.iconColor.green,
+    widget.action.iconColor.blue,
+    0.3,
+  );
 
   @override
   void initState() {
@@ -110,9 +139,25 @@ class _PillActionCardState extends State<_PillActionCard>
   }
 
   void _onTapDown(TapDownDetails details) => _controller.forward();
-  void _onTapUp(TapUpDetails details) =>
-      _controller.reverse().then((_) => widget.action.onTap());
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse().then((_) => _handleAction());
+  }
+
   void _onTapCancel() => _controller.reverse();
+
+  /// Handles the actual navigation using the current BuildContext.
+  /// This safely replaces the compile-time no-op callbacks.
+  void _handleAction() {
+    switch (widget.action.id) {
+      case '1':
+        context.push(AppRoutes.uploadPrescription);
+        break;
+      case '2':
+        // Ask Now — no-op placeholder
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,17 +170,14 @@ class _PillActionCardState extends State<_PillActionCard>
         child: Padding(
           padding: const EdgeInsets.only(right: AppSpacing.sm),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: widget.action.gradient,
-              ),
+              gradient: _gradient,
               borderRadius: BorderRadius.circular(AppRadius.xl),
               boxShadow: [
                 BoxShadow(
-                  color: widget.action.iconColor.withOpacity(0.3),
+                  color: _shadowColor,
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
