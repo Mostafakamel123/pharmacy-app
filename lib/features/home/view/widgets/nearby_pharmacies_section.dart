@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
 import 'package:pharmacy_app/features/pharmacies/view/nearby_pharmacies_screen.dart';
@@ -32,28 +33,9 @@ class NearbyPharmaciesSection extends ConsumerWidget {
                     color: isDark ? Colors.white : const Color(0xFF1F2937),
                   ),
                 ),
-                // Removed unnecessary Builder wrapper — Navigator.of(context)
-                // works fine with the outer context.
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) =>
-                            const NearbyPharmaciesScreen(),
-                        transitionsBuilder: (_, animation, __, child) {
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(1, 0),
-                              end: Offset.zero,
-                            ).animate(CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOutCubic,
-                            )),
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
+                    context.push('/pharmacies');
                   },
                   child: const Text(
                     'View All',
@@ -119,12 +101,7 @@ class _PharmacyCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PharmacyDetailsScreen(pharmacy: pharmacy),
-          ),
-        );
+        context.push('/pharmacy/${pharmacy.id}', extra: pharmacy);
       },
       // Replaced AnimatedContainer with Container — no animated properties exist,
       // so AnimatedContainer's implicit animation machinery is pure overhead.

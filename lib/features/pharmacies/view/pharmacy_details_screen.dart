@@ -4,14 +4,53 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
+import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
 
 class PharmacyDetailsScreen extends StatelessWidget {
-  final PharmacyModel pharmacy;
+  final dynamic pharmacy;
 
   const PharmacyDetailsScreen({super.key, required this.pharmacy});
 
   @override
   Widget build(BuildContext context) {
+    // Handle both PharmacyModel and UserPharmacyModel
+    final PharmacyModel? homePharmacy = pharmacy is PharmacyModel ? (pharmacy as PharmacyModel) : null;
+    final UserPharmacyModel? userPharmacy = pharmacy is UserPharmacyModel ? (pharmacy as UserPharmacyModel) : null;
+    
+    // Use homePharmacy if available, otherwise create from userPharmacy
+    final PharmacyModel effectivePharmacy;
+    if (homePharmacy != null) {
+      effectivePharmacy = homePharmacy;
+    } else if (userPharmacy != null) {
+      effectivePharmacy = PharmacyModel(
+        id: userPharmacy.id,
+        name: userPharmacy.name,
+        address: userPharmacy.address,
+        distance: 0.0,
+        rating: 5.0,
+        reviewCount: 0,
+        isOpen: userPharmacy.isActive,
+        latitude: userPharmacy.latitude,
+        longitude: userPharmacy.longitude,
+        phone: userPharmacy.phone,
+        openingHours: '09:00 AM',
+        closingHours: '10:00 PM',
+      );
+    } else {
+      // Fallback empty pharmacy
+      effectivePharmacy = const PharmacyModel(
+        id: '',
+        name: 'Unknown',
+        address: '',
+        distance: 0,
+        rating: 0,
+        reviewCount: 0,
+        isOpen: false,
+        latitude: 0,
+        longitude: 0,
+      );
+    }
+    
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -23,7 +62,7 @@ class PharmacyDetailsScreen extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             slivers: [
               // Hero header
-              SliverToBoxAdapter(child: _HeroHeader(pharmacy: pharmacy)),
+              SliverToBoxAdapter(child: _HeroHeader(pharmacy: effectivePharmacy)),
               // Spacer after hero
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
               // Info section title
@@ -72,7 +111,7 @@ class PharmacyDetailsScreen extends StatelessWidget {
                         iconColor: AppColors.accentRed,
                         iconBg: AppColors.accentRed.withOpacity(0.1),
                         label: 'Address',
-                        value: pharmacy.address,
+                        value: effectivePharmacy.address,
                       ),
                       const SizedBox(height: 8),
                       _InfoCard(
@@ -80,27 +119,27 @@ class PharmacyDetailsScreen extends StatelessWidget {
                         iconColor: AppColors.primaryGreen,
                         iconBg: AppColors.primaryGreen.withOpacity(0.1),
                         label: 'Working Hours',
-                        value: pharmacy.workingHours,
+                        value: effectivePharmacy.workingHours,
                       ),
-                      if (pharmacy.phone != null) ...[
+                      if (effectivePharmacy.phone != null) ...[
                         const SizedBox(height: 8),
                         _InfoCard(
                           icon: Icons.phone_rounded,
                           iconColor: AppColors.primaryBlue,
                           iconBg: AppColors.primaryBlue.withOpacity(0.1),
                           label: 'Phone',
-                          value: pharmacy.phone!,
+                          value: effectivePharmacy.phone!,
                         ),
                       ],
-                      if (pharmacy.hasDelivery &&
-                          pharmacy.estimatedDeliveryMinutes != null) ...[
+                      if (effectivePharmacy.hasDelivery &&
+                          effectivePharmacy.estimatedDeliveryMinutes != null) ...[
                         const SizedBox(height: 8),
                         _InfoCard(
                           icon: Icons.delivery_dining_rounded,
                           iconColor: AppColors.accentPurple,
                           iconBg: AppColors.accentPurple.withOpacity(0.1),
                           label: 'Estimated Delivery',
-                          value: '~${pharmacy.estimatedDeliveryMinutes} min',
+                          value: '~${effectivePharmacy.estimatedDeliveryMinutes} min',
                         ),
                       ],
                     ],
@@ -213,7 +252,7 @@ class _HeroHeader extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: pharmacy.isOpen
+              colors: effectivePharmacy.isOpen
                   ? [
                       const Color(0xFF06B6D4),
                       const Color(0xFF0EA5E9),
@@ -364,7 +403,7 @@ class _HeroHeader extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        pharmacy.name,
+                        effectivePharmacy.name,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -375,7 +414,7 @@ class _HeroHeader extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (pharmacy.isVerified)
+                    if (effectivePharmacy.isVerified)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -412,7 +451,7 @@ class _HeroHeader extends StatelessWidget {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    _StatusPill(isOpen: pharmacy.isOpen),
+                    _StatusPill(isOpen: effectivePharmacy.isOpen),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -433,7 +472,7 @@ class _HeroHeader extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            pharmacy.rating.toStringAsFixed(1),
+                            effectivePharmacy.rating.toStringAsFixed(1),
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -441,7 +480,7 @@ class _HeroHeader extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            ' (${pharmacy.reviewCount})',
+                            ' (${effectivePharmacy.reviewCount})',
                             style: TextStyle(
                               fontSize: 11,
                               color: isDark
@@ -474,7 +513,7 @@ class _HeroHeader extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${pharmacy.distance.toStringAsFixed(1)} km',
+                            '${effectivePharmacy.distance.toStringAsFixed(1)} km',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
