@@ -14,6 +14,7 @@ import 'package:pharmacy_app/features/chat/view/screens/chat_conversation_screen
 import 'package:pharmacy_app/features/prescription/view/screens/upload_prescription_screen.dart';
 import 'package:pharmacy_app/features/prescription/view/screens/searching_pharmacies_screen.dart';
 import 'package:pharmacy_app/features/posts/view/post_details_screen.dart';
+import 'package:pharmacy_app/features/posts/model/post_model.dart';
 import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/pharmacy_details_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/nearby_pharmacies_screen.dart';
@@ -331,7 +332,7 @@ final GoRouter appRouter = GoRouter(
       name: 'postDetails',
       pageBuilder: (context, state) {
         // Post details would need post data passed via extra
-        final post = state.extra;
+        final post = state.extra as PostModel?;
         if (post == null) {
           return FadeThroughPage(
             child: const SizedBox.shrink(),
