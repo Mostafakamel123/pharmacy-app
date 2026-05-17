@@ -14,14 +14,12 @@ class PharmacyDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Handle both PharmacyModel and UserPharmacyModel
-    final PharmacyModel? homePharmacy = pharmacy is PharmacyModel ? (pharmacy as PharmacyModel) : null;
-    final UserPharmacyModel? userPharmacy = pharmacy is UserPharmacyModel ? (pharmacy as UserPharmacyModel) : null;
-    
-    // Use homePharmacy if available, otherwise create from userPharmacy
     final PharmacyModel effectivePharmacy;
-    if (homePharmacy != null) {
-      effectivePharmacy = homePharmacy;
-    } else if (userPharmacy != null) {
+    
+    if (pharmacy is PharmacyModel) {
+      effectivePharmacy = pharmacy as PharmacyModel;
+    } else if (pharmacy is UserPharmacyModel) {
+      final userPharmacy = pharmacy as UserPharmacyModel;
       effectivePharmacy = PharmacyModel(
         id: userPharmacy.id,
         name: userPharmacy.name,
