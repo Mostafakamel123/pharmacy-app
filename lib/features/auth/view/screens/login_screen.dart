@@ -50,9 +50,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   bool _validatePassword(String value, {bool showError = true}) {
-    if (value.length < 6) {
+    if (value.length < 8) {
       if (showError) {
-        setState(() => _passwordError = 'Password must be at least 6 characters');
+        setState(
+          () => _passwordError = 'Password must be at least 8 characters',
+        );
       }
       return false;
     }
@@ -64,21 +66,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _handleLogin() async {
     // Validate form - always show errors on submit
-    final emailValid = _validateEmail(_emailController.text.trim(), showError: true);
-    final passwordValid = _validatePassword(_passwordController.text, showError: true);
-    
+    final emailValid = _validateEmail(
+      _emailController.text.trim(),
+      showError: true,
+    );
+    final passwordValid = _validatePassword(
+      _passwordController.text,
+      showError: true,
+    );
+
     if (!emailValid || !passwordValid) return;
 
-    final success = await ref.read(authProvider.notifier).login(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
+    final success = await ref
+        .read(authProvider.notifier)
+        .login(_emailController.text.trim(), _passwordController.text);
 
     if (success && mounted) {
       context.go(AppRoutes.home);
     }
-    
-   
   }
 
   @override
@@ -216,9 +221,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 AuthButton(
                   text: 'Sign In',
                   isLoading: authState.isLoading,
-                  onPressed: (){context.go(AppRoutes.home);}
-                  
-                 /// _handleLogin,
+                  onPressed: _handleLogin,
                 ),
                 const SizedBox(height: 24),
 
@@ -227,7 +230,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     Expanded(
                       child: Divider(
-                        color: isDark ? DarkColors.divider : LightColors.divider,
+                        color: isDark
+                            ? DarkColors.divider
+                            : LightColors.divider,
                       ),
                     ),
                     Padding(
@@ -244,7 +249,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     Expanded(
                       child: Divider(
-                        color: isDark ? DarkColors.divider : LightColors.divider,
+                        color: isDark
+                            ? DarkColors.divider
+                            : LightColors.divider,
                       ),
                     ),
                   ],
@@ -256,14 +263,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {
-                        
-                        },
+                        onPressed: () {},
                         icon: const Icon(Icons.g_mobiledata, size: 24),
                         label: const Text('Google'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                          foregroundColor: isDark
+                              ? DarkColors.textPrimary
+                              : LightColors.textPrimary,
                           side: BorderSide(
                             color: isDark
                                 ? DarkColors.divider
@@ -285,8 +291,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         icon: const Icon(Icons.apple, size: 22),
                         label: const Text('Apple'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                          foregroundColor: isDark
+                              ? DarkColors.textPrimary
+                              : LightColors.textPrimary,
                           side: BorderSide(
                             color: isDark
                                 ? DarkColors.divider

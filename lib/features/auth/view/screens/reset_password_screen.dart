@@ -12,7 +12,8 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key, required this.token});
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
@@ -31,8 +32,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   bool _validatePassword(String value) {
-    if (value.length < 6) {
-      setState(() => _passwordError = 'Password must be at least 6 characters');
+    if (value.length < 8) {
+      setState(() => _passwordError = 'Password must be at least 8 characters');
       return false;
     }
     setState(() => _passwordError = null);
@@ -52,10 +53,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     if (!_validatePassword(_passwordController.text)) return;
     if (!_validateConfirmPassword(_confirmPasswordController.text)) return;
 
-    final success = await ref.read(authProvider.notifier).resetPassword(
-          widget.token,
-          _passwordController.text,
-        );
+    final success = await ref
+        .read(authProvider.notifier)
+        .resetPassword(widget.token, _passwordController.text);
 
     if (success && mounted) {
       setState(() => _isSuccess = true);
@@ -81,7 +81,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 child: IconButton(
                   icon: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    color: isDark
+                        ? DarkColors.textPrimary
+                        : LightColors.textPrimary,
                     size: 20,
                   ),
                   onPressed: () => context.pop(),
@@ -161,7 +163,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant,
+                    color: isDark
+                        ? DarkColors.surfaceVariant
+                        : LightColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Column(
@@ -185,7 +189,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       ),
                       _RequirementItem(
                         text: 'Match in both fields',
-                        isValid: _confirmPasswordController.text == _passwordController.text &&
+                        isValid:
+                            _confirmPasswordController.text ==
+                                _passwordController.text &&
                             _passwordController.text.isNotEmpty,
                         isDark: isDark,
                       ),

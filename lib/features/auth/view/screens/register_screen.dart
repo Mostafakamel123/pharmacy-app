@@ -59,8 +59,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   bool _validatePassword(String value) {
-    if (value.length < 6) {
-      setState(() => _passwordError = 'Password must be at least 6 characters');
+    if (value.length < 8) {
+      setState(() => _passwordError = 'Password must be at least 8 characters');
       return false;
     }
     setState(() => _passwordError = null);
@@ -93,7 +93,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    final success = await ref.read(authProvider.notifier).register(
+    final success = await ref
+        .read(authProvider.notifier)
+        .register(
           _nameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text,
@@ -125,7 +127,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: IconButton(
                     icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                      color: isDark
+                          ? DarkColors.textPrimary
+                          : LightColors.textPrimary,
                       size: 20,
                     ),
                     onPressed: () => context.go(AppRoutes.login),

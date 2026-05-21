@@ -1,0 +1,1 @@
+ C:\\Users\\XPRISTO\\Desktop\\pharmacy-app\\.dart_tool\\flutter_build\\c95a5669e16aed730913a505d025472f\\native_assets.json: 
