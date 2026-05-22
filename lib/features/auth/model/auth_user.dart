@@ -7,8 +7,8 @@ class AuthUser {
   final String? lastName;
   final String? phoneNumber;
   final String? role;
-  final bool? emailVerified;
-  final bool? phoneVerified;
+  final bool emailVerified;
+  final bool phoneVerified;
   final String? avatarUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -21,8 +21,8 @@ class AuthUser {
     this.lastName,
     this.phoneNumber,
     this.role,
-    this.emailVerified,
-    this.phoneVerified,
+    this.emailVerified = false,
+    this.phoneVerified = false,
     this.avatarUrl,
     this.createdAt,
     this.updatedAt,
@@ -30,8 +30,15 @@ class AuthUser {
 
   /// Create from JSON - Compatible with Elaaj API response
   factory AuthUser.fromJson(Map<String, dynamic> json) {
+    // Handle ID that could be String or int
+    String? id;
+    final rawId = json['id'] ?? json['userId'];
+    if (rawId != null) {
+      id = rawId.toString();
+    }
+
     return AuthUser(
-      id: json['id'] as String? ?? json['userId'] as String?,
+      id: id,
       email: json['email'] as String?,
       fullName: json['fullName'] as String? ?? 
                 '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim(),
@@ -39,20 +46,41 @@ class AuthUser {
       lastName: json['lastName'] as String?,
       phoneNumber: json['phoneNumber'] as String? ?? json['phone'] as String?,
       role: json['role'] as String? ?? json['userRole'] as String?,
-      emailVerified: json['emailVerified'] as bool? ?? json['is_email_verified'] as bool? ?? false,
-      phoneVerified: json['phoneVerified'] as bool? ?? false,
+      emailVerified: _parseBool(json['emailVerified']) || _parseBool(json['is_email_verified']),
+      phoneVerified: _parseBool(json['phoneVerified']),
       avatarUrl: json['avatarUrl'] as String? ?? json['imageUrl'] as String? ?? json['avatar_url'] as String?,
-      createdAt: json['createdAt'] != null 
-          ? DateTime.tryParse(json['createdAt']) 
-          : json['created_at'] != null 
-              ? DateTime.tryParse(json['created_at']) 
-              : null,
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.tryParse(json['updatedAt']) 
-          : json['updated_at'] != null 
-              ? DateTime.tryParse(json['updated_at']) 
-              : null,
+      createdAt: _parseDateTime(json['createdAt']) ?? _parseDateTime(json['created_at']),
+      updatedAt: _parseDateTime(json['updatedAt']) ?? _parseDateTime(json['updated_at']),
     );
+  }
+
+  /// Helper to parse bool from different types
+  static bool _parseBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is int) return value != 0;
+    if (value is String) {
+      if (value.toLowerCase() == 'true' || value == '1') return true;
+      if (value.toLowerCase() == 'false' || value == '0') return false;
+    }
+    return false;
+  }
+
+  /// Helper to parse DateTime from different formats
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is int) {
+      // Unix timestamp in seconds or milliseconds
+      if (value > 9999999999) {
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      }
+      return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    return null;
   }
 
   /// Convert to JSON
@@ -65,8 +93,8 @@ class AuthUser {
       if (lastName != null) 'lastName': lastName,
       if (phoneNumber != null) 'phoneNumber': phoneNumber,
       if (role != null) 'role': role,
-      if (emailVerified != null) 'emailVerified': emailVerified,
-      if (phoneVerified != null) 'phoneVerified': phoneVerified,
+      'emailVerified': emailVerified,
+      'phoneVerified': phoneVerified,
       if (avatarUrl != null) 'avatarUrl': avatarUrl,
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
@@ -96,8 +124,8 @@ class AuthUser {
       lastName: lastName ?? this.lastName,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       role: role ?? this.role,
-      emailVerified: emailVerified ?? this.emailVerified,
-      phoneVerified: phoneVerified ?? this.phoneVerified,
+      emailVerified: emailVerified != null ? emailVerified : this.emailVerified,
+      phoneVerified: phoneVerified != null ? phoneVerified : this.phoneVerified,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

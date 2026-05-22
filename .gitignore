@@ -5,7 +5,6 @@ __pycache__/
 *.o
 *.obj
 *.class
-*.exe
 *.dll
 *.so
 *.a
@@ -17,16 +16,26 @@ venv/
 .venv/
 .env
 .env.local
-*.env.*
+.env.*
 
-# Build outputs
+# Build directories
 dist/
 build/
 target/
-*.jar
-*.war
-*.zip
-*.tar.gz
+.gradle/
+
+# Python specific
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+htmlcov/
+.coverage.*
+.pytest_cache/
+.mypy_cache/
 
 # Logs and temp files
 *.log
@@ -37,31 +46,10 @@ target/
 # Editors
 .vscode/
 .idea/
-*.iml
-*.ipr
-*.iws
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
+*.swp
+*.swo
 
 # OS generated files
 .DS_Store
 Thumbs.db
-
-# Testing
-.pytest_cache/
-.mypy_cache/
-nyc_output/
-
-# Gradle
-.gradle/
-
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.backup
-
 ```
