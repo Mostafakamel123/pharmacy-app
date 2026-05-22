@@ -63,7 +63,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = AuthState(
           user: user,
           isAuthenticated: true,
-          isEmailVerified: user.emailVerified ?? false,
+          isEmailVerified: user.emailVerified,
           isLoading: false,
         );
       } else {
@@ -87,7 +87,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = AuthState(
           user: user,
           isAuthenticated: true,
-          isEmailVerified: user.emailVerified ?? false,
+          isEmailVerified: user.emailVerified,
           isLoading: false,
         );
         return true;
@@ -124,7 +124,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = AuthState(
           user: user,
           isAuthenticated: true,
-          isEmailVerified: user.emailVerified ?? false,
+          isEmailVerified: user.emailVerified,
           isLoading: false,
         );
         return true;
@@ -244,7 +244,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Update local state
       if (state.user != null) {
         state = state.copyWith(
-          isEmailVerified: true,
           user: state.user!.copyWith(emailVerified: true),
           isLoading: false,
         );
@@ -276,9 +275,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = await _authService.getCurrentUser();
       
       if (user != null) {
-        final isVerified = user.emailVerified ?? false;
+        final isVerified = user.emailVerified;
         state = state.copyWith(
-          isEmailVerified: isVerified,
+          user: user,
           user: user,
           isLoading: false,
         );
