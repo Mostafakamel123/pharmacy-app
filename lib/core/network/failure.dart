@@ -1,6 +1,40 @@
 
 // ignore_for_file: use_super_parameters
 
+import 'package:dio/dio.dart';
+import 'package:pharmacy_app/core/network/network_exception.dart';
+
+/// Helper function to safely execute API calls and handle exceptions
+/// 
+/// Usage:
+/// ```dart
+/// try {
+///   final result = await safeApiCall(() => apiEndpoints.authLogin(
+///     email: 'user@example.com',
+///     password: 'mypassword',
+///   ));
+///   // Handle success
+/// } on NetworkException catch (e) {
+///   // Handle network error
+///   print('Error ${e.statusCode}: ${e.message}');
+/// }
+/// ```
+Future<T> safeApiCall<T>(Future<T> Function() call) async {
+  try {
+    return await call();
+  } on DioException catch (e) {
+    throw NetworkException.fromDioException(e);
+  } catch (e) {
+    if (e is NetworkException) {
+      rethrow;
+    }
+    throw NetworkException(
+      message: 'An unexpected error occurred: $e',
+      code: 'UNKNOWN_ERROR',
+    );
+  }
+}
+
 abstract class Failure {
   final String message;
   final String code;

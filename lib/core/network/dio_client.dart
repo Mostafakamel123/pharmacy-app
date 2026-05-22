@@ -90,15 +90,16 @@ class _AuthInterceptor extends Interceptor {
             await LocalStorageHelper.getString(AppConstants.refreshTokenKey);
 
         if (refreshToken != null && refreshToken.isNotEmpty) {
-          // Make refresh token request
+          // Make refresh token request to Elaaj API
           final dio = DioClient.instance.dio;
           final response = await dio.post(
-            '/auth/refresh-token',
+            '/api/identity/refresh',
             data: {'refreshToken': refreshToken},
+            options: Options(headers: {'Accept': 'application/json'}),
           );
 
           if (response.statusCode == 200) {
-            final newToken = response.data['token'];
+            final newToken = response.data['accessToken'];
             final newRefreshToken = response.data['refreshToken'];
 
             // Save new tokens
