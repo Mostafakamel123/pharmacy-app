@@ -10,16 +10,16 @@ import 'package:pharmacy_app/features/auth/model/auth_user.dart';
 /// Authentication service interface
 abstract class AuthService {
   Future<AuthUser?> login(String email, String password);
-  Future<AuthUser?> register(String name, String email, String password);
+  Future<AuthUser?> register(String fullName, String email, String password);
   Future<void> logout();
-  Future<void> sendPasswordResetEmail(String email);
-  Future<void> resetPassword(String token, String newPassword);
-  Future<void> resendVerificationEmail();
-  Future<void> verifyEmail(String token);
+  Future<void> forgotPassword(String email);
+  Future<void> resetPassword(String email, String resetCode, String newPassword);
+  Future<void> resendConfirmationEmail(String email);
+  Future<void> confirmEmail(String userId, String code);
   Future<AuthUser?> getCurrentUser();
 }
 
-/// Implementation of Auth Service using Dio
+/// Implementation of Auth Service using Dio - Elaaj API
 class AuthServiceImpl implements AuthService {
   final Dio _dio = DioClient.instance.dio;
 
@@ -27,32 +27,43 @@ class AuthServiceImpl implements AuthService {
   Future<AuthUser?> login(String email, String password) async {
     try {
       final response = await _dio.post(
-        '/auth/login',
+        '/api/identity/login',
         data: {
           'email': email,
           'password': password,
         },
+        options: Options(headers: {'Accept': 'application/json'}),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
+        
+        // Handle different response structures
+        final userData = data['user'] ?? data['data']?['user'] ?? data;
+        final accessToken = data['accessToken'] ?? data['access_token'] ?? data['token'];
+        final refreshToken = data['refreshToken'] ?? data['refresh_token'];
 
         // Save tokens
-        if (data['token'] != null) {
+        if (accessToken != null) {
           await LocalStorageHelper.setString(
             AppConstants.authTokenKey,
-            data['token'],
+            accessToken,
           );
         }
-        if (data['refreshToken'] != null) {
+        if (refreshToken != null) {
           await LocalStorageHelper.setString(
             AppConstants.refreshTokenKey,
-            data['refreshToken'],
+            refreshToken,
           );
+        }
+
+        // Save user data
+        if (userData != null && userData is Map<String, dynamic>) {
+          await LocalStorageHelper.setObject(AppConstants.userDataKey, userData);
         }
 
         // Return user
-        return AuthUser.fromJson(data['user'] as Map<String, dynamic>);
+        return AuthUser.fromJson(userData as Map<String, dynamic>);
       } else {
         throw _failureFromResponse(response);
       }
@@ -64,36 +75,46 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<AuthUser?> register(String name, String email, String password) async {
+  Future<AuthUser?> register(String fullName, String email, String password) async {
     try {
       final response = await _dio.post(
-        '/auth/register',
+        '/api/identity/register',
         data: {
-          'name': name,
           'email': email,
           'password': password,
         },
+        options: Options(headers: {'Accept': 'application/json'}),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
+        
+        // Handle different response structures
+        final userData = data['user'] ?? data['data']?['user'] ?? data;
+        final accessToken = data['accessToken'] ?? data['access_token'] ?? data['token'];
+        final refreshToken = data['refreshToken'] ?? data['refresh_token'];
 
         // Save tokens if provided
-        if (data['token'] != null) {
+        if (accessToken != null) {
           await LocalStorageHelper.setString(
             AppConstants.authTokenKey,
-            data['token'],
+            accessToken,
           );
         }
-        if (data['refreshToken'] != null) {
+        if (refreshToken != null) {
           await LocalStorageHelper.setString(
             AppConstants.refreshTokenKey,
-            data['refreshToken'],
+            refreshToken,
           );
+        }
+
+        // Save user data
+        if (userData != null && userData is Map<String, dynamic>) {
+          await LocalStorageHelper.setObject(AppConstants.userDataKey, userData);
         }
 
         // Return user
-        return AuthUser.fromJson(data['user'] as Map<String, dynamic>);
+        return AuthUser.fromJson(userData as Map<String, dynamic>);
       } else {
         throw _failureFromResponse(response);
       }
@@ -107,8 +128,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> logout() async {
     try {
-      // Call logout endpoint to invalidate token
-      await _dio.post('/auth/logout');
+      // Call logout endpoint to invalidate token (optional)
+      await _dio.post('/api/identity/logout').catchError((_) => null);
     } catch (e) {
       // Ignore errors during logout
     } finally {
@@ -120,11 +141,12 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<void> sendPasswordResetEmail(String email) async {
+  Future<void> forgotPassword(String email) async {
     try {
       final response = await _dio.post(
-        '/auth/forgot-password',
+        '/api/identity/forgotPassword',
         data: {'email': email},
+        options: Options(headers: {'Accept': 'application/json'}),
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -138,14 +160,16 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<void> resetPassword(String token, String newPassword) async {
+  Future<void> resetPassword(String email, String resetCode, String newPassword) async {
     try {
       final response = await _dio.post(
-        '/auth/reset-password',
+        '/api/identity/resetPassword',
         data: {
-          'token': token,
-          'password': newPassword,
+          'email': email,
+          'resetCode': resetCode,
+          'newPassword': newPassword,
         },
+        options: Options(headers: {'Accept': 'application/json'}),
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -159,9 +183,13 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<void> resendVerificationEmail() async {
+  Future<void> resendConfirmationEmail(String email) async {
     try {
-      final response = await _dio.post('/auth/resend-verification');
+      final response = await _dio.post(
+        '/api/identity/resendConfirmationEmail',
+        data: {'email': email},
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw _failureFromResponse(response);
@@ -174,11 +202,15 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<void> verifyEmail(String token) async {
+  Future<void> confirmEmail(String userId, String code) async {
     try {
-      final response = await _dio.post(
-        '/auth/verify-email',
-        data: {'token': token},
+      final response = await _dio.get(
+        '/api/identity/confirmEmail',
+        queryParameters: {
+          'userId': userId,
+          'code': code,
+        },
+        options: Options(headers: {'Accept': 'application/json'}),
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -194,11 +226,15 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<AuthUser?> getCurrentUser() async {
     try {
-      final response = await _dio.get('/auth/me');
+      final response = await _dio.get(
+        '/api/identity/profile',
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
 
       if (response.statusCode == 200) {
         final data = response.data;
-        return AuthUser.fromJson(data['user'] as Map<String, dynamic>);
+        final userData = data['user'] ?? data['data'] ?? data;
+        return AuthUser.fromJson(userData as Map<String, dynamic>);
       } else {
         return null;
       }
@@ -220,6 +256,7 @@ Failure _failureFromResponse(Response response) {
   if (data is Map<String, dynamic>) {
     message = data['message'] as String? ??
               data['error'] as String? ??
+              data['title'] as String? ??
               message;
     code = data['code'] as String? ?? code;
   }
