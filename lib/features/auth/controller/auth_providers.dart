@@ -181,6 +181,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Alias for forgotPassword to maintain compatibility with UI
+  Future<bool> sendPasswordResetEmail(String email) async {
+    return forgotPassword(email);
+  }
+
+  /// Resend verification email
+  Future<bool> resendConfirmationEmail(String email) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      await _authService.resendConfirmationEmail(email);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } on Failure catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.message,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Alias for resendConfirmationEmail to maintain compatibility with UI
+  Future<bool> sendVerificationEmail(String email) async {
+    return resendConfirmationEmail(email);
+  }
+
   /// Reset password with email and reset code
   Future<bool> resetPassword(String email, String resetCode, String newPassword) async {
     try {
@@ -242,6 +274,41 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(isLoading: false);
       }
       return true;
+    } on Failure catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.message,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Check email verification status
+  Future<bool> checkEmailVerification() async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      
+      // Get current user from API to check verification status
+      final user = await _authService.getCurrentUser();
+      
+      if (user != null) {
+        final isVerified = user.emailVerified ?? false;
+        state = state.copyWith(
+          isEmailVerified: isVerified,
+          user: user,
+          isLoading: false,
+        );
+        return isVerified;
+      }
+      
+      state = state.copyWith(isLoading: false);
+      return false;
     } on Failure catch (e) {
       state = state.copyWith(
         isLoading: false,
