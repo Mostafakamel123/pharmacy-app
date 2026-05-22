@@ -56,10 +56,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true);
       
-      // First try to get user from API
-      final user = await _authService.getCurrentUser();
+      // Get profile info from API
+      final profileData = await _authService.getProfileInfo();
 
-      if (user != null) {
+      if (profileData != null) {
+        final user = AuthUser.fromJson(profileData);
         state = AuthState(
           user: user,
           isAuthenticated: true,
@@ -114,25 +115,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Register new user
-  Future<bool> register(String fullName, String email, String password) async {
+  Future<bool> register(String fullName, String email, String password, String confirmPassword) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final user = await _authService.register(fullName, email, password);
+      await _authService.register(fullName, email, password, confirmPassword);
 
-      if (user != null) {
-        state = AuthState(
-          user: user,
-          isAuthenticated: true,
-          isEmailVerified: user.emailVerified,
-          isLoading: false,
-        );
-        return true;
-      }
-
+      // Registration successful - user needs to verify email before logging in
       state = state.copyWith(
         isLoading: false,
-        error: 'Registration failed. Please try again.',
+      );
+      return true;
+    } on ValidationFailure catch (e) {
+      // Extract field-specific errors
+      final errorMessage = e.errors != null 
+          ? e.getAllErrorsAsString()
+          : e.message;
+      state = state.copyWith(
+        isLoading: false,
+        error: errorMessage,
       );
       return false;
     } on Failure catch (e) {

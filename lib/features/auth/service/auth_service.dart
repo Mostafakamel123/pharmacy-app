@@ -10,13 +10,17 @@ import 'package:pharmacy_app/features/auth/model/auth_user.dart';
 /// Authentication service interface
 abstract class AuthService {
   Future<AuthUser?> login(String email, String password);
-  Future<AuthUser?> register(String fullName, String email, String password);
+  Future<void> register(String fullName, String email, String password, String confirmPassword);
   Future<void> logout();
   Future<void> forgotPassword(String email);
   Future<void> resetPassword(String email, String resetCode, String newPassword);
   Future<void> resendConfirmationEmail(String email);
-  Future<void> confirmEmail(String userId, String code);
-  Future<AuthUser?> getCurrentUser();
+  Future<void> confirmEmail(String userId, String code, {String? changedEmail});
+  Future<Map<String, dynamic>?> getProfileInfo();
+  Future<void> updateAccountInfo({String? newEmail, String? newPassword, String? oldPassword});
+  Future<void> updateUserDetails({String? fullName, String? dateOfBirth, String? imageUrl, double? latitude, double? longitude});
+  Future<Map<String, dynamic>?> getProfile();
+  Future<Map<String, dynamic>> refreshToken(String refreshTokenValue);
 }
 
 /// Implementation of Auth Service using Dio - Elaaj API
@@ -31,67 +35,50 @@ class AuthServiceImpl implements AuthService {
         data: {
           'email': email,
           'password': password,
+          'twoFactorCode': null,
+          'twoFactorRecoveryCode': null,
         },
         options: Options(headers: {'Accept': 'application/json'}),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
+      if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
         
-        // Handle different response structures - check if it's a success response
-        Map<String, dynamic> userData;
-        String? accessToken;
-        String? refreshToken;
+        // Extract tokens from response
+        final accessToken = data['accessToken'] as String?;
+        final refreshToken = data['refreshToken'] as String?;
+        final expiresIn = data['expiresIn'] as int? ?? 3600;
         
-        // Check if response has success flag
-        if (data is Map<String, dynamic>) {
-          if (data.containsKey('success') && data['success'] == true) {
-            // Response format: {success: true, message: "...", data: {...}}
-            userData = data['data'] as Map<String, dynamic>? ?? data;
-            accessToken = data['accessToken'] ?? data['access_token'] ?? data['token'];
-            refreshToken = data['refreshToken'] ?? data['refresh_token'];
-          } else if (data.containsKey('user')) {
-            // Response format: {user: {...}, accessToken: "..."}
-            userData = data['user'] as Map<String, dynamic>;
-            accessToken = data['accessToken'] ?? data['access_token'] ?? data['token'];
-            refreshToken = data['refreshToken'] ?? data['refresh_token'];
-          } else if (data.containsKey('data') && data['data'] is Map<String, dynamic>) {
-            // Response format: {data: {user: {...}}}
-            final dataObj = data['data'] as Map<String, dynamic>;
-            userData = dataObj['user'] as Map<String, dynamic>? ?? dataObj;
-            accessToken = dataObj['accessToken'] ?? dataObj['access_token'] ?? dataObj['token'];
-            refreshToken = dataObj['refreshToken'] ?? dataObj['refresh_token'];
-          } else {
-            // Assume the whole response is user data
-            userData = data;
-            accessToken = data['accessToken'] ?? data['access_token'] ?? data['token'];
-            refreshToken = data['refreshToken'] ?? data['refresh_token'];
-          }
-        } else {
-          throw AppFailure(message: 'Invalid response format', code: 'LOGIN_ERROR');
+        if (accessToken == null) {
+          throw AppFailure(message: 'No access token received', code: 'LOGIN_ERROR');
         }
 
-        // Save tokens
-        if (accessToken != null) {
-          await LocalStorageHelper.setString(
-            AppConstants.authTokenKey,
-            accessToken,
-          );
-        }
+        // Save tokens with expiry time
+        await LocalStorageHelper.setString(
+          AppConstants.authTokenKey,
+          accessToken,
+        );
         if (refreshToken != null) {
           await LocalStorageHelper.setString(
             AppConstants.refreshTokenKey,
             refreshToken,
           );
         }
+        // Calculate and save expiry time
+        final expiresAt = DateTime.now().add(Duration(seconds: expiresIn)).millisecondsSinceEpoch;
+        await LocalStorageHelper.setString(
+          AppConstants.tokenExpiryKey,
+          expiresAt.toString(),
+        );
 
-        // Save user data
-        if (userData is Map<String, dynamic>) {
-          await LocalStorageHelper.setObject(AppConstants.userDataKey, userData);
+        // Get user info from profile endpoint
+        final profileData = await getProfileInfo();
+        if (profileData != null) {
+          await LocalStorageHelper.setObject(AppConstants.userDataKey, profileData);
+          return AuthUser.fromJson(profileData);
         }
-
-        // Return user
-        return AuthUser.fromJson(userData);
+        
+        return null;
       } else {
         throw _failureFromResponse(response);
       }
@@ -103,74 +90,30 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<AuthUser?> register(String fullName, String email, String password) async {
+  Future<void> register(String fullName, String email, String password, String confirmPassword) async {
     try {
+      // Validate passwords match before sending
+      if (password != confirmPassword) {
+        throw ValidationFailure(
+          message: 'Passwords do not match',
+          errors: {'confirmPassword': ['Passwords do not match']},
+        );
+      }
+
       final response = await _dio.post(
-        '/api/identity/register',
+        '/api/Auth/register',
         data: {
+          'fullName': fullName,
           'email': email,
           'password': password,
+          'confirmPassword': confirmPassword,
         },
         options: Options(headers: {'Accept': 'application/json'}),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
-        
-        // Handle different response structures - check if it's a success response
-        Map<String, dynamic> userData;
-        String? accessToken;
-        String? refreshToken;
-        
-        // Check if response has success flag
-        if (data is Map<String, dynamic>) {
-          if (data.containsKey('success') && data['success'] == true) {
-            // Response format: {success: true, message: "...", data: {...}}
-            userData = data['data'] as Map<String, dynamic>? ?? data;
-            accessToken = data['accessToken'] ?? data['access_token'] ?? data['token'];
-            refreshToken = data['refreshToken'] ?? data['refresh_token'];
-          } else if (data.containsKey('user')) {
-            // Response format: {user: {...}, accessToken: "..."}
-            userData = data['user'] as Map<String, dynamic>;
-            accessToken = data['accessToken'] ?? data['access_token'] ?? data['token'];
-            refreshToken = data['refreshToken'] ?? data['refresh_token'];
-          } else if (data.containsKey('data') && data['data'] is Map<String, dynamic>) {
-            // Response format: {data: {user: {...}}}
-            final dataObj = data['data'] as Map<String, dynamic>;
-            userData = dataObj['user'] as Map<String, dynamic>? ?? dataObj;
-            accessToken = dataObj['accessToken'] ?? dataObj['access_token'] ?? dataObj['token'];
-            refreshToken = dataObj['refreshToken'] ?? dataObj['refresh_token'];
-          } else {
-            // Assume the whole response is user data
-            userData = data;
-            accessToken = data['accessToken'] ?? data['access_token'] ?? data['token'];
-            refreshToken = data['refreshToken'] ?? data['refresh_token'];
-          }
-        } else {
-          throw AppFailure(message: 'Invalid response format', code: 'REGISTER_ERROR');
-        }
-
-        // Save tokens if provided
-        if (accessToken != null) {
-          await LocalStorageHelper.setString(
-            AppConstants.authTokenKey,
-            accessToken,
-          );
-        }
-        if (refreshToken != null) {
-          await LocalStorageHelper.setString(
-            AppConstants.refreshTokenKey,
-            refreshToken,
-          );
-        }
-
-        // Save user data
-        if (userData is Map<String, dynamic>) {
-          await LocalStorageHelper.setObject(AppConstants.userDataKey, userData);
-        }
-
-        // Return user
-        return AuthUser.fromJson(userData);
+      if (response.statusCode == 200) {
+        // Success - empty response body
+        return;
       } else {
         throw _failureFromResponse(response);
       }
@@ -258,13 +201,14 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<void> confirmEmail(String userId, String code) async {
+  Future<void> confirmEmail(String userId, String code, {String? changedEmail}) async {
     try {
       final response = await _dio.get(
         '/api/identity/confirmEmail',
         queryParameters: {
           'userId': userId,
           'code': code,
+          if (changedEmail != null) 'changedEmail': changedEmail,
         },
         options: Options(headers: {'Accept': 'application/json'}),
       );
@@ -280,7 +224,72 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<AuthUser?> getCurrentUser() async {
+  Future<Map<String, dynamic>?> getProfileInfo() async {
+    try {
+      final response = await _dio.get(
+        '/api/identity/manage/info',
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> updateAccountInfo({String? newEmail, String? newPassword, String? oldPassword}) async {
+    try {
+      final response = await _dio.post(
+        '/api/identity/manage/info',
+        data: {
+          if (newEmail != null) 'newEmail': newEmail,
+          if (newPassword != null) 'newPassword': newPassword,
+          if (oldPassword != null) 'oldPassword': oldPassword,
+        },
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw _failureFromResponse(response);
+      }
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'UPDATE_ACCOUNT_ERROR');
+    }
+  }
+
+  @override
+  Future<void> updateUserDetails({String? fullName, String? dateOfBirth, String? imageUrl, double? latitude, double? longitude}) async {
+    try {
+      final response = await _dio.patch(
+        '/api/identity/user',
+        data: {
+          if (fullName != null) 'fullName': fullName,
+          if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
+          if (imageUrl != null) 'imageUrl': imageUrl,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        },
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw _failureFromResponse(response);
+      }
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'UPDATE_USER_ERROR');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getProfile() async {
     try {
       final response = await _dio.get(
         '/api/identity/profile',
@@ -288,32 +297,32 @@ class AuthServiceImpl implements AuthService {
       );
 
       if (response.statusCode == 200) {
-        final data = response.data;
-        
-        // Handle different response structures
-        Map<String, dynamic> userData;
-        
-        if (data is Map<String, dynamic>) {
-          if (data.containsKey('success') && data['success'] == true) {
-            userData = data['data'] as Map<String, dynamic>? ?? data;
-          } else if (data.containsKey('user')) {
-            userData = data['user'] as Map<String, dynamic>;
-          } else if (data.containsKey('data') && data['data'] is Map<String, dynamic>) {
-            final dataObj = data['data'] as Map<String, dynamic>;
-            userData = dataObj['user'] as Map<String, dynamic>? ?? dataObj;
-          } else {
-            userData = data;
-          }
-        } else {
-          return null;
-        }
-        
-        return AuthUser.fromJson(userData);
-      } else {
-        return null;
+        return response.data as Map<String, dynamic>?;
       }
+      return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> refreshToken(String refreshTokenValue) async {
+    try {
+      final response = await _dio.post(
+        '/api/identity/refresh',
+        data: {'refreshToken': refreshTokenValue},
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw _failureFromResponse(response);
+      }
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'REFRESH_TOKEN_ERROR');
     }
   }
 }
@@ -333,6 +342,25 @@ Failure _failureFromResponse(Response response) {
               data['title'] as String? ??
               message;
     code = data['code'] as String? ?? code;
+    
+    // Handle validation errors from Elaaj API
+    if (statusCode == 400 && data.containsKey('errors')) {
+      final errors = data['errors'] as Map<String, dynamic>?;
+      if (errors != null) {
+        final validationErrors = <String, List<String>>{};
+        errors.forEach((key, value) {
+          if (value is List) {
+            validationErrors[key] = value.cast<String>();
+          } else if (value is String) {
+            validationErrors[key] = [value];
+          }
+        });
+        return ValidationFailure(
+          message: message,
+          errors: validationErrors,
+        );
+      }
+    }
   }
 
   if (statusCode == 401) {
@@ -343,7 +371,7 @@ Failure _failureFromResponse(Response response) {
   } else if (statusCode >= 400 && statusCode < 500) {
     return ValidationFailure(
       message: message,
-      errors: data['errors'] as Map<String, List<String>>?,
+      errors: null,
     );
   } else if (statusCode >= 500) {
     return NetworkFailure(

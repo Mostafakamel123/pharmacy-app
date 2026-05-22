@@ -96,10 +96,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _fullNameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text,
+          _confirmPasswordController.text,
         );
 
     if (success && mounted) {
-      context.go(AppRoutes.home);
+      // After successful registration, navigate to email verification or login
+      // According to Elaaj API flow, user must verify email before logging in
+      context.go(AppRoutes.emailVerification, extra: _emailController.text.trim());
     }
   }
 
