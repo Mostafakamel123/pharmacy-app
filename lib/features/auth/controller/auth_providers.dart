@@ -272,10 +272,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
       
-      // Get current user from API to check verification status
-      final user = await _authService.getCurrentUser();
+      // Get profile info from API to check verification status
+      final profileData = await _authService.getProfileInfo();
       
-      if (user != null) {
+      if (profileData != null) {
+        final user = AuthUser.fromJson(profileData);
         final isVerified = user.emailVerified;
         state = state.copyWith(
           user: user,
