@@ -9,27 +9,52 @@ import 'package:pharmacy_app/features/auth/view/widgets/auth_text_field.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_button.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
-  final String token;
+  final String email;
 
-  const ResetPasswordScreen({super.key, required this.token});
+  const ResetPasswordScreen({super.key, required this.email});
 
   @override
   ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
+  final _emailController = TextEditingController();
+  final _resetCodeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  String? _emailError;
+  String? _resetCodeError;
   String? _passwordError;
   String? _confirmPasswordError;
   bool _isSuccess = false;
 
   @override
   void dispose() {
+    _emailController.dispose();
+    _resetCodeController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  bool _validateEmail(String value) {
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(value)) {
+      setState(() => _emailError = 'Please enter a valid email');
+      return false;
+    }
+    setState(() => _emailError = null);
+    return true;
+  }
+
+  bool _validateResetCode(String value) {
+    if (value.isEmpty || value.length < 4) {
+      setState(() => _resetCodeError = 'Please enter a valid reset code');
+      return false;
+    }
+    setState(() => _resetCodeError = null);
+    return true;
   }
 
   bool _validatePassword(String value) {
@@ -51,11 +76,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   Future<void> _handleSubmit() async {
+    if (!_validateEmail(_emailController.text.trim())) return;
+    if (!_validateResetCode(_resetCodeController.text.trim())) return;
     if (!_validatePassword(_passwordController.text)) return;
     if (!_validateConfirmPassword(_confirmPasswordController.text)) return;
 
     final success = await ref.read(authProvider.notifier).resetPassword(
-          widget.token,
+          _emailController.text.trim(),
+          _resetCodeController.text.trim(),
           _passwordController.text,
         );
 
@@ -127,6 +155,28 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                AuthTextField(
+                  label: 'Email',
+                  hint: 'Enter your email',
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  controller: _emailController,
+                  errorText: _emailError,
+                  onChanged: (value) => _validateEmail(value),
+                ),
+                const SizedBox(height: 20),
+
+                AuthTextField(
+                  label: 'Reset Code',
+                  hint: 'Enter the code you received',
+                  icon: Icons.pin_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: _resetCodeController,
+                  errorText: _resetCodeError,
+                  onChanged: (value) => _validateResetCode(value),
+                ),
+                const SizedBox(height: 20),
 
                 AuthTextField(
                   label: 'New Password',

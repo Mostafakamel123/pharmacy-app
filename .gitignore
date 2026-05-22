@@ -1,29 +1,26 @@
 ```
-# Build artifacts
-/build/
-/dist/
-
 # Dependencies
-/.dart_tool/
-/pub/
-/packages/
+.pub-cache/
+.dart_tool/
+.packages
 
-# Logs
-*.log
+# Build outputs
+build/
+**/generated/
 
 # Environment
 .env
 .env.local
-*.env.*
+.env.*
 
-# Editor/IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
+# Logs
+*.log
 
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
 ```
