@@ -51,23 +51,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _checkAuthStatus();
   }
 
-  /// Check authentication status
+  /// Check authentication status from local storage
   Future<void> _checkAuthStatus() async {
     try {
       state = state.copyWith(isLoading: true);
+      
+      // First try to get user from API
       final user = await _authService.getCurrentUser();
 
       if (user != null) {
         state = AuthState(
           user: user,
           isAuthenticated: true,
-          isEmailVerified: user.isEmailVerified,
+          isEmailVerified: user.emailVerified ?? false,
           isLoading: false,
         );
       } else {
+        // No user from API, check local storage
         state = AuthState.initial;
       }
     } catch (e) {
+      // On error, assume not authenticated
       state = AuthState.initial;
     }
   }
@@ -83,7 +87,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = AuthState(
           user: user,
           isAuthenticated: true,
-          isEmailVerified: user.isEmailVerified,
+          isEmailVerified: user.emailVerified ?? false,
           isLoading: false,
         );
         return true;
@@ -110,17 +114,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Register new user
-  Future<bool> register(String name, String email, String password) async {
+  Future<bool> register(String fullName, String email, String password) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final user = await _authService.register(name, email, password);
+      final user = await _authService.register(fullName, email, password);
 
       if (user != null) {
         state = AuthState(
           user: user,
           isAuthenticated: true,
-          isEmailVerified: user.isEmailVerified,
+          isEmailVerified: user.emailVerified ?? false,
           isLoading: false,
         );
         return true;
@@ -155,11 +159,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Send password reset email
-  Future<bool> sendPasswordResetEmail(String email) async {
+  /// Send forgot password email
+  Future<bool> forgotPassword(String email) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      await _authService.sendPasswordResetEmail(email);
+      await _authService.forgotPassword(email);
       state = state.copyWith(isLoading: false);
       return true;
     } on Failure catch (e) {
@@ -177,11 +181,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Reset password with token
-  Future<bool> resetPassword(String token, String newPassword) async {
+  /// Reset password with email and reset code
+  Future<bool> resetPassword(String email, String resetCode, String newPassword) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      await _authService.resetPassword(token, newPassword);
+      await _authService.resetPassword(email, resetCode, newPassword);
       state = state.copyWith(isLoading: false);
       return true;
     } on Failure catch (e) {
@@ -199,11 +203,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Resend verification email
-  Future<bool> resendVerificationEmail() async {
+  /// Resend confirmation email
+  Future<bool> resendConfirmationEmail(String email) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      await _authService.resendVerificationEmail();
+      await _authService.resendConfirmationEmail(email);
       state = state.copyWith(isLoading: false);
       return true;
     } on Failure catch (e) {
@@ -221,79 +225,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Verify email with token
-  Future<bool> verifyEmail(String token) async {
+  /// Verify email with userId and code
+  Future<bool> confirmEmail(String userId, String code) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      await _authService.verifyEmail(token);
+      await _authService.confirmEmail(userId, code);
 
       // Update local state
       if (state.user != null) {
         state = state.copyWith(
           isEmailVerified: true,
-          user: state.user!.copyWith(isEmailVerified: true),
+          user: state.user!.copyWith(emailVerified: true),
           isLoading: false,
         );
       } else {
         state = state.copyWith(isLoading: false);
       }
       return true;
-    } on Failure catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.message,
-      );
-      return false;
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-      return false;
-    }
-  }
-
-  /// Send verification email to specified email address
-  Future<bool> sendVerificationEmail(String email) async {
-    try {
-      state = state.copyWith(isLoading: true, error: null);
-      await _authService.resendVerificationEmail();
-      state = state.copyWith(isLoading: false);
-      return true;
-    } on Failure catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.message,
-      );
-      return false;
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-      return false;
-    }
-  }
-
-  /// Check email verification status
-  Future<bool> checkEmailVerification() async {
-    try {
-      state = state.copyWith(isLoading: true, error: null);
-      
-      // Get current user to check verification status
-      final user = await _authService.getCurrentUser();
-      
-      if (user != null && user.isEmailVerified) {
-        state = state.copyWith(
-          isEmailVerified: true,
-          user: user,
-          isLoading: false,
-        );
-        return true;
-      }
-      
-      state = state.copyWith(isLoading: false);
-      return false;
     } on Failure catch (e) {
       state = state.copyWith(
         isLoading: false,
