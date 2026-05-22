@@ -278,7 +278,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final isVerified = user.emailVerified;
         state = state.copyWith(
           user: user,
-          user: user,
           isLoading: false,
         );
         return isVerified;
