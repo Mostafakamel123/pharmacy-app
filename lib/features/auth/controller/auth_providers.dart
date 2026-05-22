@@ -235,28 +235,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Resend confirmation email
-  Future<bool> resendConfirmationEmail(String email) async {
-    try {
-      state = state.copyWith(isLoading: true, error: null);
-      await _authService.resendConfirmationEmail(email);
-      state = state.copyWith(isLoading: false);
-      return true;
-    } on Failure catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.message,
-      );
-      return false;
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-      return false;
-    }
-  }
-
   /// Verify email with userId and code
   Future<bool> confirmEmail(String userId, String code) async {
     try {
