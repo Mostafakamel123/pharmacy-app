@@ -20,7 +20,6 @@ class EmailVerificationScreen extends ConsumerStatefulWidget {
 class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScreen> {
   final _otpController = TextEditingController();
   bool _isVerified = false;
-  bool _isChecking = false;
   String? _otpError;
 
   @override

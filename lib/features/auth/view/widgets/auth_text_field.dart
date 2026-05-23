@@ -12,6 +12,7 @@ class AuthTextField extends StatefulWidget {
   final String? errorText;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
+  final int? maxLength;
 
   const AuthTextField({
     super.key,
@@ -24,6 +25,7 @@ class AuthTextField extends StatefulWidget {
     this.errorText,
     this.onChanged,
     this.onTap,
+    this.maxLength,
   });
 
   @override
@@ -82,6 +84,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             keyboardType: widget.keyboardType,
             onChanged: widget.onChanged,
             onTap: widget.onTap,
+            maxLength: widget.maxLength,
             enableSuggestions: !widget.isPassword,
             autocorrect: !widget.isPassword,
             decoration: InputDecoration(
