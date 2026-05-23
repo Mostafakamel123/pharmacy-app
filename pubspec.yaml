@@ -43,6 +43,9 @@ dependencies:
   # Network & API
   dio: ^5.4.0
   connectivity_plus: ^6.0.0
+  
+  # Location services
+  geolocator: ^13.0.2
 
 dev_dependencies:
   flutter_test:

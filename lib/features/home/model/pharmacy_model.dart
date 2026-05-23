@@ -37,6 +37,52 @@ class PharmacyModel {
     this.isFavorite = false,
   });
 
+  // Factory constructor to create from JSON (API response)
+  factory PharmacyModel.fromJson(Map<String, dynamic> json) {
+    return PharmacyModel(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Unknown Pharmacy',
+      address: json['address'] as String? ?? '',
+      distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      reviewCount: json['reviewCount'] as int? ?? 0,
+      isOpen: json['isOpen'] as bool? ?? true,
+      hasDelivery: json['hasDelivery'] as bool? ?? false,
+      imageUrl: json['imageUrl'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      phone: json['phone'] as String?,
+      openingHours: json['openingHours'] as String?,
+      closingHours: json['closingHours'] as String?,
+      isVerified: json['isVerified'] as bool? ?? true,
+      estimatedDeliveryMinutes: json['estimatedDeliveryMinutes'] as int?,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+    );
+  }
+
+  // Convert to JSON for API requests
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'address': address,
+      'distance': distance,
+      'rating': rating,
+      'reviewCount': reviewCount,
+      'isOpen': isOpen,
+      'hasDelivery': hasDelivery,
+      'imageUrl': imageUrl,
+      'latitude': latitude,
+      'longitude': longitude,
+      'phone': phone,
+      'openingHours': openingHours,
+      'closingHours': closingHours,
+      'isVerified': isVerified,
+      'estimatedDeliveryMinutes': estimatedDeliveryMinutes,
+      'isFavorite': isFavorite,
+    };
+  }
+
   String get statusText => isOpen ? 'Open' : 'Closed';
 
   String get workingHours {
