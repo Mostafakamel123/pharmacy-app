@@ -21,6 +21,48 @@ class HomePostModel {
     required this.createdAt,
   });
 
+  // Factory constructor to create from JSON (API response)
+  factory HomePostModel.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = json['createdAt'] ?? json['created_at'];
+    DateTime createdAt;
+    if (createdAtRaw is String) {
+      createdAt = DateTime.tryParse(createdAtRaw) ?? DateTime.now();
+    } else if (createdAtRaw is int) {
+      createdAt = DateTime.fromMillisecondsSinceEpoch(createdAtRaw);
+    } else {
+      createdAt = DateTime.now();
+    }
+
+    return HomePostModel(
+      id: json['id'] as String? ?? '',
+      question: json['content'] as String? ?? json['question'] as String? ?? '',
+      preview: json['preview'] as String? ?? '',
+      pharmacyName: json['pharmacyName'] as String? ?? 
+                    json['pharmacy_name'] as String? ?? 
+                    json['userName'] as String? ?? 'Pharmacy',
+      replyCount: json['replyCount'] as int? ?? 
+                  json['reply_count'] as int? ?? 
+                  0,
+      timeAgo: _calculateTimeAgo(createdAt),
+      hasResponse: json['hasResponse'] as bool? ?? 
+                   json['has_response'] as bool? ?? 
+                   (json['replyCount'] as int? ?? 0) > 0,
+      attachmentUrl: json['attachmentUrl'] as String? ?? 
+                     json['attachment_url'] as String? ?? 
+                     json['imageUrl'] as String?,
+      createdAt: createdAt,
+    );
+  }
+
+  static String _calculateTimeAgo(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    if (diff.inDays < 7) return '${diff.inDays}d';
+    return '${(diff.inDays / 7).floor()}w';
+  }
+
   static List<HomePostModel> sample() {
     return [
       HomePostModel(

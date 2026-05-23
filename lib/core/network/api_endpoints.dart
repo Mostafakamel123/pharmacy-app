@@ -393,4 +393,120 @@ class ApiEndpoints {
     );
     return response.data as Map<String, dynamic>;
   }
+
+  // ========================= Posts Endpoints =========================
+
+  /// GET /api/Posts
+  /// Get paginated list of posts
+  /// Query params: pageNumber (int32, default: 1), pageSize (int32, default: 10)
+  Future<List<dynamic>> getPosts({
+    int pageNumber = 1,
+    int pageSize = 10,
+  }) async {
+    final response = await _dio.get(
+      '/api/Posts',
+      queryParameters: {
+        'pageNumber': pageNumber,
+        'pageSize': pageSize,
+      },
+    );
+    // The API might return a pagination wrapper or direct list
+    // Handle both cases
+    final data = response.data;
+    if (data is Map && data.containsKey('items')) {
+      return data['items'] as List;
+    } else if (data is List) {
+      return data;
+    }
+    return [];
+  }
+
+  /// POST /api/Posts
+  /// Create a new post (requires auth token)
+  /// multipart/form-data: Content (string, max 1000), File (binary?)
+  Future<Map<String, dynamic>> createPost({
+    required String content,
+    String? filePath,
+  }) async {
+    FormData formData;
+    
+    if (filePath != null && filePath.isNotEmpty) {
+      // With file upload
+      formData = FormData.fromMap({
+        'Content': content,
+        'File': await MultipartFile.fromFile(filePath),
+      });
+    } else {
+      // Without file
+      formData = FormData.fromMap({
+        'Content': content,
+      });
+    }
+
+    final response = await _dio.post(
+      '/api/Posts',
+      data: formData,
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  // ========================= Prescriptions Endpoints =========================
+
+  /// POST /api/Prescriptions
+  /// Upload a prescription (requires auth token)
+  /// multipart/form-data: File (binary), Notes (string?), Latitude (double), Longitude (double)
+  Future<Map<String, dynamic>> uploadPrescription({
+    required String filePath,
+    String? notes,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final formData = FormData.fromMap({
+      'File': await MultipartFile.fromFile(filePath),
+      if (notes != null && notes.isNotEmpty) 'Notes': notes,
+      'Latitude': latitude,
+      'Longitude': longitude,
+    });
+
+    final response = await _dio.post(
+      '/api/Prescriptions',
+      data: formData,
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// GET /api/Prescriptions/my-prescriptions
+  /// Get current user's prescriptions with pagination
+  Future<List<dynamic>> getMyPrescriptions({
+    int pageNumber = 1,
+    int pageSize = 10,
+  }) async {
+    final response = await _dio.get(
+      '/api/Prescriptions/my-prescriptions',
+      queryParameters: {
+        'pageNumber': pageNumber,
+        'pageSize': pageSize,
+      },
+    );
+    final data = response.data;
+    if (data is Map && data.containsKey('items')) {
+      return data['items'] as List;
+    } else if (data is List) {
+      return data;
+    }
+    return [];
+  }
+
+  /// PATCH /api/Prescriptions/{id}/status
+  /// Update prescription status (requires auth token)
+  /// Body: PrescriptionStatus (Enum int32: 0,1,2,3,4,5)
+  Future<void> updatePrescriptionStatus({
+    required String id,
+    required int status,
+  }) async {
+    await _dio.patch(
+      '/api/Prescriptions/$id/status',
+      data: status,
+    );
+  }
 }

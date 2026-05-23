@@ -1,68 +1,151 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pharmacy_app/core/network/api_endpoints.dart';
 import 'package:pharmacy_app/features/home/model/home_post_model.dart';
 import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
+import 'package:pharmacy_app/features/posts/model/post_model.dart' as post_model;
+import 'package:geolocator/geolocator.dart';
 
-// Simulated loading delay - reduced for better perceived performance
-const _loadingDelay = Duration(milliseconds: 400);
+// ============================================================================
+// LOCATION PROVIDER - Get user's current location
+// ============================================================================
 
-// Nearby pharmacies provider with family modifier for potential future filtering
+final locationProvider = FutureProvider<LocationData?>((ref) async {
+  try {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return null;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return null;
+    }
+
+    if (permission == LocationPermission.deniedForever) return null;
+
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    return LocationData(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+  } catch (e) {
+    // Return default location (Cairo) if geolocation fails
+    return LocationData(latitude: 30.0444, longitude: 31.2357);
+  }
+});
+
+class LocationData {
+  final double latitude;
+  final double longitude;
+
+  LocationData({required this.latitude, required this.longitude});
+}
+
+// ============================================================================
+// NEARBY PHARMACIES PROVIDER - Connected to /api/Pharmacies/nearby
+// ============================================================================
+
 final nearbyPharmaciesProvider = StateNotifierProvider<NearbyPharmaciesNotifier, AsyncValue<List<PharmacyModel>>>((ref) {
-  return NearbyPharmaciesNotifier();
+  return NearbyPharmaciesNotifier(ref);
 });
 
 class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyModel>>> {
-  NearbyPharmaciesNotifier() : super(const AsyncValue.loading()) {
+  final Ref ref;
+  final ApiEndpoints _api = ApiEndpoints();
+
+  NearbyPharmaciesNotifier(this.ref) : super(const AsyncValue.loading()) {
     _loadPharmacies();
   }
 
   Future<void> _loadPharmacies() async {
     try {
-      await Future.delayed(_loadingDelay);
-      state = AsyncValue.data(PharmacyModel.sample());
+      state = const AsyncValue.loading();
+      
+      // Get user location
+      final locationAsync = await ref.read(locationProvider.future);
+      if (locationAsync == null) {
+        state = const AsyncValue.data([]);
+        return;
+      }
+
+      // Call API: GET /api/Pharmacies/nearby
+      final response = await _api.getNearbyPharmacies(
+        lat: locationAsync.latitude,
+        lon: locationAsync.longitude,
+        radius: 5.0,
+      );
+
+      // Map API response to PharmacyModel
+      final pharmacies = (response as List).map((item) {
+        return PharmacyModel.fromJson(item as Map<String, dynamic>);
+      }).toList();
+
+      state = AsyncValue.data(pharmacies);
     } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      // On error, return empty list instead of showing error immediately
+      state = AsyncValue.data([]);
+      print('Error loading nearby pharmacies: $e');
     }
   }
 
   Future<void> refresh() async {
-    // Only refresh if not already loading
     if (state.isLoading) return;
-    
-    state = const AsyncValue.loading();
     await _loadPharmacies();
   }
 }
 
-// Recent posts provider
+// ============================================================================
+// RECENT POSTS PROVIDER - Connected to /api/Posts
+// ============================================================================
+
 final recentPostsProvider = StateNotifierProvider<RecentPostsNotifier, AsyncValue<List<HomePostModel>>>((ref) {
-  return RecentPostsNotifier();
+  return RecentPostsNotifier(ref);
 });
 
 class RecentPostsNotifier extends StateNotifier<AsyncValue<List<HomePostModel>>> {
-  RecentPostsNotifier() : super(const AsyncValue.loading()) {
+  final Ref ref;
+  final ApiEndpoints _api = ApiEndpoints();
+
+  RecentPostsNotifier(this.ref) : super(const AsyncValue.loading()) {
     _loadPosts();
   }
 
   Future<void> _loadPosts() async {
     try {
-      await Future.delayed(_loadingDelay);
-      state = AsyncValue.data(HomePostModel.sample());
+      state = const AsyncValue.loading();
+
+      // Call API: GET /api/Posts?pageNumber=1&pageSize=5
+      final response = await _api.getPosts(pageNumber: 1, pageSize: 5);
+
+      // Map API response to HomePostModel
+      final posts = (response as List).map((item) {
+        return HomePostModel.fromJson(item as Map<String, dynamic>);
+      }).toList();
+
+      state = AsyncValue.data(posts);
     } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      // On error, return empty list
+      state = AsyncValue.data([]);
+      print('Error loading recent posts: $e');
     }
   }
 
   Future<void> refresh() async {
-    // Only refresh if not already loading
     if (state.isLoading) return;
-    
-    state = const AsyncValue.loading();
     await _loadPosts();
   }
 }
 
-// Search query provider with debounce capability
+// ============================================================================
+// SEARCH QUERY PROVIDER
+// ============================================================================
+
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
-// Notification count provider - should be fetched from API in production
-final notificationCountProvider = StateProvider<int>((ref) => 3);
+// ============================================================================
+// NOTIFICATION COUNT PROVIDER - Placeholder for future implementation
+// ============================================================================
+
+final notificationCountProvider = StateProvider<int>((ref) => 0);

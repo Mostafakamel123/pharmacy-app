@@ -31,7 +31,10 @@ class RecentPostsSection extends ConsumerWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    // Navigate to posts feed screen
+                    Navigator.of(context).pushNamed('/posts');
+                  },
                   child: Text(
                     'View All',
                     style: TextStyle(
@@ -95,7 +98,10 @@ class _PostCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        // Navigate to post details screen
+        Navigator.of(context).pushNamed('/post/${post.id}');
+      },
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -258,7 +264,10 @@ class _PostCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Navigate to post details screen
+                  Navigator.of(context).pushNamed('/post/${post.id}');
+                },
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 6),
