@@ -89,8 +89,8 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.resetPassword,
       name: 'resetPassword',
       builder: (context, state) {
-        final token = state.pathParameters['token']!;
-        return ResetPasswordScreen(token: token);
+        final email = state.uri.queryParameters['email'] ?? '';
+        return ResetPasswordScreen(email: email);
       },
     ),
     

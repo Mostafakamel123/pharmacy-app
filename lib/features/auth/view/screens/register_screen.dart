@@ -19,12 +19,12 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  String? _nameError;
+  String? _fullNameError;
   String? _emailError;
   String? _passwordError;
   String? _confirmPasswordError;
@@ -33,19 +33,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  bool _validateName(String value) {
+  bool _validateFullName(String value) {
     if (value.trim().length < 2) {
-      setState(() => _nameError = 'Name must be at least 2 characters');
+      setState(() => _fullNameError = 'Name must be at least 2 characters');
       return false;
     }
-    setState(() => _nameError = null);
+    setState(() => _fullNameError = null);
     return true;
   }
 
@@ -77,7 +77,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
-    if (!_validateName(_nameController.text.trim())) return;
+    if (!_validateFullName(_fullNameController.text.trim())) return;
     if (!_validateEmail(_emailController.text.trim())) return;
     if (!_validatePassword(_passwordController.text)) return;
     if (!_validateConfirmPassword(_confirmPasswordController.text)) return;
@@ -93,13 +93,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     final success = await ref.read(authProvider.notifier).register(
-          _nameController.text.trim(),
+          _fullNameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text,
+          _confirmPasswordController.text,
         );
 
     if (success && mounted) {
-      context.go(AppRoutes.home);
+      // After successful registration, navigate to email verification or login
+      // According to Elaaj API flow, user must verify email before logging in
+      context.go(AppRoutes.emailVerification, extra: _emailController.text.trim());
     }
   }
 
@@ -155,9 +158,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   label: 'Full Name',
                   hint: 'Enter your full name',
                   icon: Icons.person_outline_rounded,
-                  controller: _nameController,
-                  errorText: _nameError,
-                  onChanged: (value) => _validateName(value),
+                  controller: _fullNameController,
+                  errorText: _fullNameError,
+                  onChanged: (value) => _validateFullName(value),
                 ),
                 const SizedBox(height: 20),
 

@@ -50,6 +50,9 @@ class AppConstants {
   /// Key for storing refresh token
   static const String refreshTokenKey = 'refresh_token';
 
+  /// Key for storing token expiry timestamp (milliseconds since epoch)
+  static const String tokenExpiryKey = 'token_expiry';
+
   /// Key for storing user ID
   static const String userIdKey = 'user_id';
 

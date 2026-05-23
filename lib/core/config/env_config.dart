@@ -4,10 +4,10 @@ class EnvConfig {
 
   // ========================= API Configuration =========================
   
-  //
-  static const String apiBaseUrl = 'https://api.pharmacy-app.com';
+  /// Base URL for the Elaaj API
+  static const String apiBaseUrl = 'http://elaaj.runasp.net';
 
-  static const String socketBaseUrl = 'wss://api.pharmacy-app.com';
+  static const String socketBaseUrl = 'ws://elaaj.runasp.net';
 
   // ========================= Timeouts =========================
 

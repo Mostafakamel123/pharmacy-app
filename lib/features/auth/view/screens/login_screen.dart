@@ -77,8 +77,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (success && mounted) {
       context.go(AppRoutes.home);
     }
-    
-   
   }
 
   @override
@@ -216,9 +214,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 AuthButton(
                   text: 'Sign In',
                   isLoading: authState.isLoading,
-                  onPressed: (){context.go(AppRoutes.home);}
-                  
-                 /// _handleLogin,
+                  onPressed: _handleLogin,
                 ),
                 const SizedBox(height: 24),
 
