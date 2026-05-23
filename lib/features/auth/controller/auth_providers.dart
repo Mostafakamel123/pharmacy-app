@@ -236,6 +236,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Verify email with email and code (OTP)
+  Future<bool> verifyEmail(String email, String code) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      await _authService.verifyEmail(email, code);
+
+      // Update local state
+      if (state.user != null) {
+        state = state.copyWith(
+          user: state.user!.copyWith(emailVerified: true),
+          isLoading: false,
+        );
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+      return true;
+    } on Failure catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.message,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
   /// Verify email with userId and code
   Future<bool> confirmEmail(String userId, String code) async {
     try {
