@@ -3,8 +3,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
+import 'package:pharmacy_app/features/auth/service/auth_service.dart';
 import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
+
+/// Provider for user search results
+final userSearchProvider = StateNotifierProvider<UserSearchNotifier, AsyncValue<List<UserSearchResult>>>((ref) {
+  return UserSearchNotifier();
+});
+
+class UserSearchResult {
+  final String userId;
+  final String email;
+  final String? fullName;
+  
+  const UserSearchResult({
+    required this.userId,
+    required this.email,
+    this.fullName,
+  });
+}
+
+class UserSearchNotifier extends StateNotifier<AsyncValue<List<UserSearchResult>>> {
+  UserSearchNotifier() : super(const AsyncValue.data([]));
+  
+  Future<void> searchUsers(String query) async {
+    if (query.isEmpty) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    
+    state = const AsyncValue.loading();
+    
+    try {
+      // TODO: Implement actual user search API
+      // For now, this is a placeholder
+      await Future.delayed(const Duration(milliseconds: 300));
+      state = const AsyncValue.data([]);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+  }
+}
 
 /// Screen for managing pharmacy admins
 class PharmacyAdminsScreen extends ConsumerStatefulWidget {
@@ -23,6 +63,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
   bool _isLoading = false;
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  final AuthService _authService = AuthServiceImpl();
 
   @override
   void dispose() {
@@ -103,46 +144,15 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
   }
 
   Future<void> _addAdmin() async {
-    // TODO: Implement user search and selection
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Admin'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Search User',
-                hintText: 'Enter user email or name',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'User search functionality will be implemented here.',
-              style: TextStyle(color: LightColors.textSecondary),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Add selected user as admin
-            },
-            child: const Text('Add'),
-          ),
-        ],
+      builder: (context) => _AddAdminDialog(
+        pharmacyId: widget.pharmacy.id,
+        authService: _authService,
+        onAdminAdded: () {
+          setState(() {});
+          ref.invalidate(myPharmaciesProvider);
+        },
       ),
     );
   }
@@ -413,6 +423,141 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
               )
             : null,
       ),
+    );
+  }
+}
+
+/// Dialog for adding a new admin to pharmacy
+class _AddAdminDialog extends StatefulWidget {
+  final String pharmacyId;
+  final AuthService authService;
+  final VoidCallback onAdminAdded;
+
+  const _AddAdminDialog({
+    required this.pharmacyId,
+    required this.authService,
+    required this.onAdminAdded,
+  });
+
+  @override
+  State<_AddAdminDialog> createState() => _AddAdminDialogState();
+}
+
+class _AddAdminDialogState extends State<_AddAdminDialog> {
+  final _emailController = TextEditingController();
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() {
+        _error = 'Please enter user email';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // First, we need to get the user ID from email
+      // This requires a user lookup API - for now we'll use the email as userId
+      // In production, you should call an API to get the actual user ID
+      
+      // Call the assign pharmacy admin API
+      await widget.authService.assignPharmacyAdmin(
+        userId: email, // TODO: Replace with actual user ID lookup
+        pharmacyId: widget.pharmacyId,
+      );
+
+      if (mounted) {
+        widget.onAdminAdded();
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Admin added successfully'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add Admin'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'User Email',
+              hintText: 'Enter user email address',
+              prefixIcon: Icon(Icons.email),
+            ),
+            keyboardType: TextInputType.emailAddress,
+            onChanged: (_) => setState(() => _error = null),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: const TextStyle(
+                color: AppColors.accentRed,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          const Text(
+            'Note: Enter the exact email of the user you want to add as admin.',
+            style: TextStyle(
+              fontSize: 12,
+              color: LightColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _submit,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Add'),
+        ),
+      ],
     );
   }
 }
