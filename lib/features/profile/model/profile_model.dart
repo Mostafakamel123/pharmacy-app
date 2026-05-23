@@ -41,6 +41,39 @@ class UserProfileModel {
     return '${months[joinDate.month - 1]} ${joinDate.year}';
   }
 
+  /// Create from API response (Elaaj API)
+  factory UserProfileModel.fromApi(Map<String, dynamic> json) {
+    return UserProfileModel(
+      id: json['id']?.toString() ?? json['userId']?.toString() ?? 'unknown',
+      name: json['fullName'] as String? ?? 
+            '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim() ?? 'User',
+      email: json['email'] as String? ?? '',
+      phone: json['phoneNumber'] as String? ?? json['phone'] as String? ?? '',
+      location: null, // Location not in basic profile, can be extended
+      avatarUrl: json['avatarUrl'] as String? ?? json['imageUrl'] as String?,
+      postsCount: 0, // Can be extended with actual data
+      repliesCount: 0,
+      savedCount: 0,
+      completionPercentage: 0, // Will be calculated
+      joinDate: _parseDateTime(json['createdAt']) ?? DateTime.now(),
+    );
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is int) {
+      if (value > 9999999999) {
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      }
+      return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    return null;
+  }
+
   static UserProfileModel sample() {
     return UserProfileModel(
       id: 'u1',

@@ -1,21 +1,36 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pharmacy_app/core/network/api_endpoints.dart';
+import 'package:pharmacy_app/features/auth/service/auth_service.dart';
 import 'package:pharmacy_app/features/profile/model/profile_model.dart';
 
 // Profile provider
 final profileProvider =
     StateNotifierProvider<ProfileNotifier, AsyncValue<UserProfileModel>>((ref) {
-  return ProfileNotifier();
+  return ProfileNotifier(ref);
 });
 
 class ProfileNotifier extends StateNotifier<AsyncValue<UserProfileModel>> {
-  ProfileNotifier() : super(const AsyncValue.loading()) {
+  final Ref ref;
+  final AuthService _authService = AuthServiceImpl();
+  final ApiEndpoints _apiEndpoints = ApiEndpoints();
+
+  ProfileNotifier(this.ref) : super(const AsyncValue.loading()) {
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 400));
-      state = AsyncValue.data(UserProfileModel.sample());
+      // Get profile from API
+      final profileData = await _authService.getProfile();
+      
+      if (profileData != null) {
+        final userProfile = UserProfileModel.fromApi(profileData);
+        state = AsyncValue.data(userProfile);
+      } else {
+        // Fallback to sample data if API fails
+        await Future.delayed(const Duration(milliseconds: 400));
+        state = AsyncValue.data(UserProfileModel.sample());
+      }
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -31,28 +46,41 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfileModel>> {
     String? phone,
     String? location,
   }) async {
-    final current = state.asData?.value;
-    if (current == null) return false;
+    try {
+      // Call API to update user details
+      await _authService.updateUserDetails(
+        fullName: name,
+        imageUrl: null,
+        latitude: null,
+        longitude: null,
+      );
+      
+      // Update local state
+      final current = state.asData?.value;
+      if (current == null) return false;
 
-    state = AsyncValue.data(UserProfileModel(
-      id: current.id,
-      name: name ?? current.name,
-      email: current.email,
-      phone: phone ?? current.phone,
-      location: location ?? current.location,
-      avatarUrl: current.avatarUrl,
-      postsCount: current.postsCount,
-      repliesCount: current.repliesCount,
-      savedCount: current.savedCount,
-      completionPercentage: _calculateCompletion(
-        name ?? current.name,
-        current.email,
-        phone ?? current.phone,
-        location ?? current.location,
-      ),
-      joinDate: current.joinDate,
-    ));
-    return true;
+      state = AsyncValue.data(UserProfileModel(
+        id: current.id,
+        name: name ?? current.name,
+        email: current.email,
+        phone: phone ?? current.phone,
+        location: location ?? current.location,
+        avatarUrl: current.avatarUrl,
+        postsCount: current.postsCount,
+        repliesCount: current.repliesCount,
+        savedCount: current.savedCount,
+        completionPercentage: _calculateCompletion(
+          name ?? current.name,
+          current.email,
+          phone ?? current.phone,
+          location ?? current.location,
+        ),
+        joinDate: current.joinDate,
+      ));
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   double _calculateCompletion(
