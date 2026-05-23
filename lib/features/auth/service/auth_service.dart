@@ -15,6 +15,7 @@ abstract class AuthService {
   Future<void> forgotPassword(String email);
   Future<void> resetPassword(String email, String resetCode, String newPassword);
   Future<void> resendConfirmationEmail(String email);
+  Future<void> verifyEmail(String email, String code);
   Future<void> confirmEmail(String userId, String code, {String? changedEmail});
   Future<Map<String, dynamic>?> getProfileInfo();
   Future<void> updateAccountInfo({String? newEmail, String? newPassword, String? oldPassword});
@@ -30,10 +31,10 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<AuthUser?> login(String email, String password) async {
     try {
-      // Use /api/identity/login endpoint as per Elaaj API spec
-      // This endpoint returns AccessTokenResponse with accessToken, refreshToken, expiresIn
+      // Use /api/Auth/login endpoint as per Elaaj API spec
+      // LoginDto requires: email (required), password (required)
       final response = await _dio.post(
-        '/api/identity/login',
+        '/api/Auth/login',
         data: {
           'email': email,
           'password': password,
@@ -42,12 +43,18 @@ class AuthServiceImpl implements AuthService {
       );
 
       if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
+        final data = response.data as Map<String, dynamic>?;
         
-        // Extract tokens from AccessTokenResponse
-        final accessToken = data['accessToken'] as String?;
-        final refreshToken = data['refreshToken'] as String?;
-        final expiresIn = data['expiresIn'] as int? ?? 3600;
+        // Extract tokens - the API may return them in different formats
+        String? accessToken;
+        String? refreshToken;
+        int expiresIn = 3600;
+        
+        if (data != null) {
+          accessToken = data['accessToken'] as String? ?? data['token'] as String? ?? data['access_token'] as String?;
+          refreshToken = data['refreshToken'] as String? ?? data['refresh_token'] as String?;
+          expiresIn = data['expiresIn'] as int? ?? data['expires_in'] as int? ?? 3600;
+        }
         
         if (accessToken == null || accessToken.isEmpty) {
           throw AppFailure(message: 'No access token received', code: 'LOGIN_ERROR');
@@ -105,13 +112,15 @@ class AuthServiceImpl implements AuthService {
         );
       }
 
-      // Use /api/identity/register endpoint as per Elaaj API spec
-      // RegisterRequest requires: email, password
+      // Use /api/Auth/register endpoint as per Elaaj API spec
+      // RegisterUserCommand requires: fullName, email, password, confirmPassword
       final response = await _dio.post(
-        '/api/identity/register',
+        '/api/Auth/register',
         data: {
+          'fullName': fullName,
           'email': email,
           'password': password,
+          'confirmPassword': confirmPassword,
         },
         options: Options(headers: {'Accept': 'application/json'}),
       );
@@ -193,10 +202,36 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> resendConfirmationEmail(String email) async {
     try {
-      // Use /api/identity/resendConfirmationEmail POST endpoint
-      // ResendConfirmationEmailRequest: { email: string (required) }\n      final response = await _dio.post(
-        '/api/identity/resendConfirmationEmail',
+      // Use /api/Auth/verify-email POST endpoint to resend verification email
+      // VerifyEmailCommand: { email: string, code: string }
+      // For resending, we just send the email
+      final response = await _dio.post(
+        '/api/Auth/verify-email',
         data: {'email': email},
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw _failureFromResponse(response);
+      }
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'VERIFICATION_ERROR');
+    }
+  }
+
+  @override
+  Future<void> verifyEmail(String email, String code) async {
+    try {
+      // Use /api/Auth/verify-email POST endpoint for OTP verification
+      // VerifyEmailCommand: { email: string, code: string }
+      final response = await _dio.post(
+        '/api/Auth/verify-email',
+        data: {
+          'email': email,
+          'code': code,
+        },
         options: Options(headers: {'Accept': 'application/json'}),
       );
 
