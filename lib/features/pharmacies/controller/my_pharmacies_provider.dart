@@ -140,20 +140,26 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
     }
   }
 
-  /// Add admin to pharmacy
-  Future<bool> addAdmin(String pharmacyId, String userId) async {
+  /// Remove admin from pharmacy
+  Future<bool> removeAdmin(String pharmacyId, String userId) async {
     try {
       // TODO: Replace with actual API call when endpoint is available
       // Example: await _apiEndpoints.addAdmin(pharmacyId, userId);
+      // Call API to remove admin - using AuthService for role management
+      final authService = AuthServiceImpl();
       
-      // Simulate network delay
-      await Future.delayed(const Duration(milliseconds: 600));
+      // Remove the PharmacyAdmin role from the user for this pharmacy
+      // Note: This assumes the backend handles pharmacy-specific admin removal
+      await authService.removeUserRole(
+        userEmail: userId, // This might need to be adjusted based on actual API
+        roleName: 'PharmacyAdmin',
+      );
       
       // Update in local list
       final currentState = state.value ?? [];
       final updatedList = currentState.map((p) {
         if (p.id == pharmacyId) {
-          final updatedAdminIds = List<String>.from(p.adminUserIds)..add(userId);
+          final updatedAdminIds = p.adminUserIds.where((id) => id != userId).toList();
           return p.copyWith(adminUserIds: updatedAdminIds);
         }
         return p;
@@ -168,20 +174,25 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
     }
   }
 
-  /// Remove admin from pharmacy
-  Future<bool> removeAdmin(String pharmacyId, String userId) async {
+  /// Add admin to pharmacy
+  Future<bool> addAdmin(String pharmacyId, String userId) async {
     try {
       // TODO: Replace with actual API call when endpoint is available
       // Example: await _apiEndpoints.removeAdmin(pharmacyId, userId);
+      // Call API to assign pharmacy admin
+      final authService = AuthServiceImpl();
       
-      // Simulate network delay
-      await Future.delayed(const Duration(milliseconds: 600));
+      // Assign PharmacyAdmin role to the user
+      await authService.assignPharmacyAdmin(
+        userId: userId,
+        pharmacyId: pharmacyId,
+      );
       
       // Update in local list
       final currentState = state.value ?? [];
       final updatedList = currentState.map((p) {
         if (p.id == pharmacyId) {
-          final updatedAdminIds = p.adminUserIds.where((id) => id != userId).toList();
+          final updatedAdminIds = List<String>.from(p.adminUserIds)..add(userId);
           return p.copyWith(adminUserIds: updatedAdminIds);
         }
         return p;

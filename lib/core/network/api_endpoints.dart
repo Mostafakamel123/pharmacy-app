@@ -263,7 +263,23 @@ class ApiEndpoints {
     );
   }
 
-  // ========================= Pharmacies Endpoints =========================
+  // ========================= Pharmacy Admins Endpoints =========================
+
+  /// POST /api/PharmacyAdmins/assign
+  /// Assign a user as pharmacy admin (requires auth token)
+  Future<Map<String, dynamic>> assignPharmacyAdmin({
+    required String userId,
+    required String pharmacyId,
+  }) async {
+    final response = await _dio.post(
+      '/api/PharmacyAdmins/assign',
+      data: {
+        'userId': userId,
+        'pharmacyId': pharmacyId,
+      },
+    );
+    return response.data as Map<String, dynamic>;
+  }
 
   /// GET /api/Pharmacies
   /// Get list of all pharmacies

@@ -12,6 +12,26 @@ build/
 *.app
 
 # IDE
+.pub/
+build/
+*.g.dart
+*.freezed.dart
+
+# Dependencies
+node_modules/
+vendor/
+
+# Logs
+*.log
+**/logs
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
 .idea/
 .vscode/
 *.swp
@@ -28,4 +48,7 @@ build/
 # Dependencies
 vendor/
 node_modules/
+# OS generated files
+.DS_Store
+Thumbs.db
 ```
