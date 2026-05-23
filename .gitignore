@@ -2,6 +2,16 @@
 # Flutter/Dart specific
 .dart_tool/
 .packages
+pubspec.lock
+
+# Build outputs
+build/
+*.apk
+*.aab
+*.ipa
+*.app
+
+# IDE
 .pub/
 build/
 *.g.dart
@@ -23,9 +33,21 @@ vendor/
 # IDE
 .vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
 
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Dependencies
+vendor/
+node_modules/
 # OS generated files
 .DS_Store
 Thumbs.db

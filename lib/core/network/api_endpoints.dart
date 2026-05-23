@@ -290,22 +290,60 @@ class ApiEndpoints {
 
   /// POST /api/Pharmacies
   /// Create a new pharmacy (requires auth token)
+  /// Body: CreatePharmacyCommand
   Future<Map<String, dynamic>> createPharmacy({
-    required String name,
+    String? name,
     String? imageUrl,
     required String address,
+    String? workingHours,
+    bool hasDelivery = false,
+    String? contactNumber,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final response = await _dio.post(
+      '/api/Pharmacies',
+      data: {
+        if (name != null) 'name': name,
+        if (imageUrl != null) 'imageUrl': imageUrl,
+        'address': address,
+        if (workingHours != null) 'workingHours': workingHours,
+        'hasDelivery': hasDelivery,
+        if (contactNumber != null) 'contactNumber': contactNumber,
+        'latitude': latitude,
+        'longitude': longitude,
+      },
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// GET /api/Pharmacies/{id}
+  /// Get pharmacy by ID (ID must be a valid GUID)
+  Future<Map<String, dynamic>> getPharmacyById({required String id}) async {
+    final response = await _dio.get('/api/Pharmacies/$id');
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// PUT /api/Pharmacies/{id}
+  /// Update an existing pharmacy (requires auth token)
+  /// Body: UpdatePharmacyCommand (same fields as CreatePharmacyCommand)
+  Future<Map<String, dynamic>> updatePharmacy({
+    required String id,
+    String? name,
+    String? imageUrl,
+    String? address,
     String? workingHours,
     bool? hasDelivery,
     String? contactNumber,
     double? latitude,
     double? longitude,
   }) async {
-    final response = await _dio.post(
-      '/api/Pharmacies',
+    final response = await _dio.put(
+      '/api/Pharmacies/$id',
       data: {
-        'name': name,
-        'address': address,
+        if (name != null) 'name': name,
         if (imageUrl != null) 'imageUrl': imageUrl,
+        if (address != null) 'address': address,
         if (workingHours != null) 'workingHours': workingHours,
         if (hasDelivery != null) 'hasDelivery': hasDelivery,
         if (contactNumber != null) 'contactNumber': contactNumber,
@@ -316,10 +354,43 @@ class ApiEndpoints {
     return response.data as Map<String, dynamic>;
   }
 
-  /// GET /api/Pharmacies/{id}
-  /// Get pharmacy by ID (ID must be a valid GUID)
-  Future<Map<String, dynamic>> getPharmacyById({required String id}) async {
-    final response = await _dio.get('/api/Pharmacies/$id');
+  /// DELETE /api/Pharmacies/{id}
+  /// Delete a pharmacy (requires auth token)
+  Future<void> deletePharmacy({required String id}) async {
+    await _dio.delete('/api/Pharmacies/$id');
+  }
+
+  /// GET /api/Pharmacies/nearby
+  /// Get pharmacies near a location
+  /// Query params: lat (double), lon (double), radius (double, default: 5)
+  Future<List<dynamic>> getNearbyPharmacies({
+    required double lat,
+    required double lon,
+    double radius = 5.0,
+  }) async {
+    final response = await _dio.get(
+      '/api/Pharmacies/nearby',
+      queryParameters: {
+        'lat': lat,
+        'lon': lon,
+        'radius': radius,
+      },
+    );
+    return response.data as List;
+  }
+
+  /// POST /api/Pharmacies/toggle-favorite
+  /// Toggle pharmacy favorite status (requires auth token)
+  /// Body: ToggleFavoriteCommand
+  Future<Map<String, dynamic>> toggleFavorite({
+    required String pharmacyId,
+  }) async {
+    final response = await _dio.post(
+      '/api/Pharmacies/toggle-favorite',
+      data: {
+        'pharmacyId': pharmacyId,
+      },
+    );
     return response.data as Map<String, dynamic>;
   }
 }

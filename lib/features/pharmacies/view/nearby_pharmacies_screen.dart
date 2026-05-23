@@ -175,17 +175,9 @@ class NearbyPharmaciesScreen extends ConsumerWidget {
                         );
                       },
                       onFavorite: () {
-                        final favorites = ref
+                        ref
                             .read(favoritePharmaciesProvider.notifier)
-                            .state;
-                        final updated = Set<String>.from(favorites);
-                        if (updated.contains(pharmacy.id)) {
-                          updated.remove(pharmacy.id);
-                        } else {
-                          updated.add(pharmacy.id);
-                        }
-                        ref.read(favoritePharmaciesProvider.notifier).state =
-                            updated;
+                            .toggleFavorite(pharmacy.id);
                       },
                     );
                   },
