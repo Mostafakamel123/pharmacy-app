@@ -30,13 +30,13 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<AuthUser?> login(String email, String password) async {
     try {
+      // Use /api/identity/login endpoint as per Elaaj API spec
+      // This endpoint returns AccessTokenResponse with accessToken, refreshToken, expiresIn
       final response = await _dio.post(
         '/api/identity/login',
         data: {
           'email': email,
           'password': password,
-          'twoFactorCode': null,
-          'twoFactorRecoveryCode': null,
         },
         options: Options(headers: {'Accept': 'application/json'}),
       );
@@ -44,12 +44,12 @@ class AuthServiceImpl implements AuthService {
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
         
-        // Extract tokens from response
+        // Extract tokens from AccessTokenResponse
         final accessToken = data['accessToken'] as String?;
         final refreshToken = data['refreshToken'] as String?;
         final expiresIn = data['expiresIn'] as int? ?? 3600;
         
-        if (accessToken == null) {
+        if (accessToken == null || accessToken.isEmpty) {
           throw AppFailure(message: 'No access token received', code: 'LOGIN_ERROR');
         }
 
@@ -58,7 +58,7 @@ class AuthServiceImpl implements AuthService {
           AppConstants.authTokenKey,
           accessToken,
         );
-        if (refreshToken != null) {
+        if (refreshToken != null && refreshToken.isNotEmpty) {
           await LocalStorageHelper.setString(
             AppConstants.refreshTokenKey,
             refreshToken,
@@ -71,14 +71,19 @@ class AuthServiceImpl implements AuthService {
           expiresAt.toString(),
         );
 
-        // Get user info from profile endpoint
-        final profileData = await getProfileInfo();
+        // Get user info from profile endpoint after successful login
+        final profileData = await getProfile();
         if (profileData != null) {
           await LocalStorageHelper.setObject(AppConstants.userDataKey, profileData);
           return AuthUser.fromJson(profileData);
         }
         
-        return null;
+        // Fallback: create minimal user object from login context
+        final user = AuthUser(
+          email: email,
+          emailVerified: false, // Will be verified later via manage/info
+        );
+        return user;
       } else {
         throw _failureFromResponse(response);
       }
@@ -100,19 +105,19 @@ class AuthServiceImpl implements AuthService {
         );
       }
 
+      // Use /api/identity/register endpoint as per Elaaj API spec
+      // RegisterRequest requires: email, password
       final response = await _dio.post(
-        '/api/Auth/register',
+        '/api/identity/register',
         data: {
-          'fullName': fullName,
           'email': email,
           'password': password,
-          'confirmPassword': confirmPassword,
         },
         options: Options(headers: {'Accept': 'application/json'}),
       );
 
       if (response.statusCode == 200) {
-        // Success - empty response body
+        // Success - registration complete, user should verify email
         return;
       } else {
         throw _failureFromResponse(response);
@@ -127,8 +132,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> logout() async {
     try {
-      // Call logout endpoint to invalidate token (optional)
-      await _dio.post('/api/identity/logout').catchError((_) => null);
+      // Note: Elaaj API doesn't have a dedicated logout endpoint in /api/identity
+      // Logout is handled client-side by clearing tokens
     } catch (e) {
       // Ignore errors during logout
     } finally {
@@ -142,6 +147,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> forgotPassword(String email) async {
     try {
+      // Use /api/identity/forgotPassword POST endpoint
+      // ForgotPasswordRequest: { email: string (required) }
       final response = await _dio.post(
         '/api/identity/forgotPassword',
         data: {'email': email},
@@ -161,6 +168,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> resetPassword(String email, String resetCode, String newPassword) async {
     try {
+      // Use /api/identity/resetPassword POST endpoint
+      // ResetPasswordRequest: { email: string, resetCode: string, newPassword: string }
       final response = await _dio.post(
         '/api/identity/resetPassword',
         data: {
@@ -184,7 +193,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> resendConfirmationEmail(String email) async {
     try {
-      final response = await _dio.post(
+      // Use /api/identity/resendConfirmationEmail POST endpoint
+      // ResendConfirmationEmailRequest: { email: string (required) }\n      final response = await _dio.post(
         '/api/identity/resendConfirmationEmail',
         data: {'email': email},
         options: Options(headers: {'Accept': 'application/json'}),
@@ -203,6 +213,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> confirmEmail(String userId, String code, {String? changedEmail}) async {
     try {
+      // Use /api/identity/confirmEmail GET endpoint
+      // Query params: userId (required), code (required), changedEmail (optional)
       final response = await _dio.get(
         '/api/identity/confirmEmail',
         queryParameters: {
@@ -226,6 +238,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<Map<String, dynamic>?> getProfileInfo() async {
     try {
+      // Use /api/identity/manage/info GET endpoint to get email and isEmailConfirmed
+      // Returns InfoResponse: { email: string, isEmailConfirmed: bool }
       final response = await _dio.get(
         '/api/identity/manage/info',
         options: Options(headers: {'Accept': 'application/json'}),
@@ -243,6 +257,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> updateAccountInfo({String? newEmail, String? newPassword, String? oldPassword}) async {
     try {
+      // Use /api/identity/manage/info POST endpoint to update email/password
+      // InfoRequest: { newEmail?, newPassword?, oldPassword? }
       final response = await _dio.post(
         '/api/identity/manage/info',
         data: {
@@ -266,6 +282,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> updateUserDetails({String? fullName, String? dateOfBirth, String? imageUrl, double? latitude, double? longitude}) async {
     try {
+      // Use /api/identity/user PATCH endpoint to update user details
+      // UpdateUserDetailsCommand: { fullName?, dateOfBirth?, imageUrl?, latitude?, longitude? }
       final response = await _dio.patch(
         '/api/identity/user',
         data: {
@@ -291,6 +309,8 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<Map<String, dynamic>?> getProfile() async {
     try {
+      // Use /api/identity/profile endpoint to get user profile details
+      // This returns comprehensive user information
       final response = await _dio.get(
         '/api/identity/profile',
         options: Options(headers: {'Accept': 'application/json'}),
