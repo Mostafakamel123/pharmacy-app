@@ -22,6 +22,13 @@ abstract class AuthService {
   Future<void> updateUserDetails({String? fullName, String? dateOfBirth, String? imageUrl, double? latitude, double? longitude});
   Future<Map<String, dynamic>?> getProfile();
   Future<Map<String, dynamic>> refreshToken(String refreshTokenValue);
+  
+  // User Role Management
+  Future<void> assignUserRole({required String userEmail, required String roleName});
+  Future<void> removeUserRole({required String userEmail, required String roleName});
+  
+  // Pharmacy Admin Management
+  Future<Map<String, dynamic>> assignPharmacyAdmin({required String userId, required String pharmacyId});
 }
 
 /// Implementation of Auth Service using Dio - Elaaj API
@@ -378,6 +385,80 @@ class AuthServiceImpl implements AuthService {
       rethrow;
     } catch (e) {
       throw AppFailure(message: e.toString(), code: 'REFRESH_TOKEN_ERROR');
+    }
+  }
+
+  @override
+  Future<void> assignUserRole({required String userEmail, required String roleName}) async {
+    try {
+      // Use /api/identity/userRole POST endpoint to assign a role to a user
+      // AssignUserRoleCommand: { userEmail: string, roleName: string }
+      final response = await _dio.post(
+        '/api/identity/userRole',
+        data: {
+          'userEmail': userEmail,
+          'roleName': roleName,
+        },
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw _failureFromResponse(response);
+      }
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'ASSIGN_ROLE_ERROR');
+    }
+  }
+
+  @override
+  Future<void> removeUserRole({required String userEmail, required String roleName}) async {
+    try {
+      // Use /api/identity/userRole DELETE endpoint to remove a role from a user
+      // UnAssignUserRoleCommand: { userEmail: string, roleName: string }
+      final response = await _dio.delete(
+        '/api/identity/userRole',
+        data: {
+          'userEmail': userEmail,
+          'roleName': roleName,
+        },
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw _failureFromResponse(response);
+      }
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'REMOVE_ROLE_ERROR');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> assignPharmacyAdmin({required String userId, required String pharmacyId}) async {
+    try {
+      // Use /api/PharmacyAdmins/assign POST endpoint to assign a user as pharmacy admin
+      // AssignPharmacyAdminCommand: { userId: string, pharmacyId: uuid }
+      final response = await _dio.post(
+        '/api/PharmacyAdmins/assign',
+        data: {
+          'userId': userId,
+          'pharmacyId': pharmacyId,
+        },
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw _failureFromResponse(response);
+      }
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'ASSIGN_PHARMACY_ADMIN_ERROR');
     }
   }
 }
