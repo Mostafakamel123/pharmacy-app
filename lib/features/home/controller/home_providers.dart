@@ -1,8 +1,9 @@
+// ignore_for_file: unused_catch_stack
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/api_endpoints.dart';
 import 'package:pharmacy_app/features/home/model/home_post_model.dart';
 import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
-import 'package:pharmacy_app/features/posts/model/post_model.dart' as post_model;
 import 'package:geolocator/geolocator.dart';
 
 // ============================================================================
@@ -78,7 +79,7 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
       );
 
       // Map API response to PharmacyModel
-      final pharmacies = (response as List).map((item) {
+      final pharmacies = (response).map((item) {
         return PharmacyModel.fromJson(item as Map<String, dynamic>);
       }).toList();
 
@@ -120,7 +121,7 @@ class RecentPostsNotifier extends StateNotifier<AsyncValue<List<HomePostModel>>>
       final response = await _api.getPosts(pageNumber: 1, pageSize: 5);
 
       // Map API response to HomePostModel
-      final posts = (response as List).map((item) {
+      final posts = (response).map((item) {
         return HomePostModel.fromJson(item as Map<String, dynamic>);
       }).toList();
 

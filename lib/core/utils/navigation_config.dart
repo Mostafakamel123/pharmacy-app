@@ -2,6 +2,7 @@
 /// 
 /// The app now has a single navigation flow regardless of user type.
 /// Pharmacy management is handled through pharmacy mode toggle.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

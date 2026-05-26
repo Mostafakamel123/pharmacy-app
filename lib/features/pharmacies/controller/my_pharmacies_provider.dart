@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/api_endpoints.dart';
+import 'package:pharmacy_app/features/auth/service/auth_service.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 
