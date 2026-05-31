@@ -1,7 +1,10 @@
 // ignore_for_file: use_super_parameters, unused_result
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pharmacy_app/core/config/env_config.dart';
+import 'package:pharmacy_app/features/chat/model/chat_model.dart';
 import '../../controller/chat_providers.dart';
 import '../widgets/chat_widgets.dart';
 import '../widgets/message_bubble.dart';
@@ -24,6 +27,7 @@ class ChatConversationScreen extends ConsumerStatefulWidget {
 class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen> {
   late ScrollController _scrollController;
   int _lastMessageCount = 0;
+  bool _isContextExpanded = true;
 
   @override
   void initState() {
@@ -63,6 +67,20 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    
+    // Resolve current chat context dynamically from chatsProvider
+    final chatsAsync = ref.watch(chatsProvider);
+    final chatModel = chatsAsync.maybeWhen(
+      data: (list) {
+        try {
+          return list.firstWhere((c) => c.id == widget.chatId);
+        } catch (_) {
+          return null;
+        }
+      },
+      orElse: () => null,
+    );
+
     final messagesAsync = ref.watch(chatMessagesProvider(widget.chatId));
     final chatUserAsync = ref.watch(currentChatUserProvider(widget.chatId));
 
@@ -159,6 +177,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       body: SafeArea(
         child: Column(
           children: [
+            if (chatModel != null && chatModel.prescriptionId != null)
+              _buildPrescriptionContextBanner(chatModel, isDark),
             Expanded(
               child: messagesAsync.when(
                 data: (messages) {
@@ -273,6 +293,231 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPrescriptionContextBanner(ChatModel chat, bool isDark) {
+    final textPrimary = isDark ? const Color(0xFFF3F4F6) : const Color(0xFF111827);
+    final textSecondary = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563);
+    final cardBg = isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6);
+    final borderCol = isDark ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB);
+    
+    final price = chat.prescriptionPrice ?? 0.0;
+    final notes = chat.prescriptionNotes ?? 'لا توجد ملاحظات';
+    final imageUrl = chat.prescriptionImage;
+    
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderCol),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.15 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header toggler
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isContextExpanded = !_isContextExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.assignment_rounded, color: Color(0xFF0EA5E9), size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Prescription Context / تفاصيل الروشتة',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF10B981).withOpacity(0.24)),
+                        ),
+                        child: Text(
+                          '$price EGP',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF10B981),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        _isContextExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                        color: textSecondary,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          if (_isContextExpanded) ...[
+            Divider(height: 1, thickness: 1, color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image preview thumbnail
+                  if (imageUrl != null && imageUrl.isNotEmpty) ...[
+                    GestureDetector(
+                      onTap: () => _showContextImage(imageUrl),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: 54,
+                          height: 54,
+                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                          child: imageUrl.startsWith('assets/')
+                              ? Image.asset(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                )
+                              : imageUrl.startsWith('/images')
+                              ? Image.network(
+                                  '${EnvConfig.apiBaseUrl}$imageUrl',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.broken_image_rounded, size: 20, color: Colors.grey);
+                                  },
+                                )
+                              : Image.file(
+                                  File(imageUrl),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.broken_image_rounded, size: 20, color: Colors.grey);
+                                  },
+                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  
+                  // Description / Notes
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          notes,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: textPrimary,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        const Row(
+                          children: [
+                            Icon(Icons.verified_user_rounded, size: 12, color: Color(0xFF10B981)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Offer Accepted & Preparing / تم قبول العرض وجاري التجهيز',
+                              style: TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showContextImage(String imageUrl) {
+    final String fullUrl = imageUrl.startsWith('assets/') 
+        ? imageUrl 
+        : imageUrl.startsWith('/images') 
+        ? '${EnvConfig.apiBaseUrl}$imageUrl' 
+        : imageUrl;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'Prescription Zoom / تكبير الروشتة',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              centerTitle: true,
+            ),
+            body: Center(
+              child: InteractiveViewer(
+                maxScale: 6.0,
+                minScale: 1.0,
+                child: fullUrl.startsWith('assets/')
+                    ? Image.asset(fullUrl, fit: BoxFit.contain, width: double.infinity, height: double.infinity)
+                    : fullUrl.startsWith('http')
+                    ? Image.network(
+                        fullUrl,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: CircularProgressIndicator(color: Colors.white));
+                        },
+                      )
+                    : Image.file(
+                        File(fullUrl),
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

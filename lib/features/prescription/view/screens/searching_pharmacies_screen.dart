@@ -9,6 +9,7 @@ import 'package:pharmacy_app/features/prescription/model/routing_state_model.dar
 import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
 import 'package:pharmacy_app/features/prescription/controller/patient_prescription_providers.dart';
+import 'package:pharmacy_app/features/chat/controller/chat_providers.dart';
 
 /// Searching Pharmacies Screen
 /// Shows animated search with countdown timer and current pharmacy being contacted
@@ -136,7 +137,6 @@ class _SearchingPharmaciesScreenState
     // Completely case-insensitive status retrieval
     final rawStatus = currentPres != null ? _getVal(currentPres, 'status') : null;
     final int serverStatus = (rawStatus is num) ? rawStatus.toInt() : 0;
-    final bool isExplicitlyRejected = serverStatus == 4;
 
     // ELAAJ REAL-TIME DEBUG LOGGING
     print('------------------ ELAAJ PRESCRIPTION REAL-TIME DEBUG ------------------');
@@ -166,6 +166,28 @@ class _SearchingPharmaciesScreenState
     }
     print('------------------------------------------------------------------------');
 
+    // Check if pharmacy responded and we have a chat ID - trigger automatic navigation
+    if (routingState.status == RoutingStatus.pharmacyResponded && routingState.chatId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final chatId = routingState.chatId!;
+          String displayName = 'Pharmacy / صيدلية قريبة';
+          if (routingState.lockPharmacyId != null) {
+            final matchingReply = replies.firstWhere(
+              (r) => _getVal(r, 'pharmacyId')?.toString() == routingState.lockPharmacyId,
+              orElse: () => null,
+            );
+            if (matchingReply != null) {
+              displayName = _getVal(matchingReply, 'pharmacyName')?.toString() ?? displayName;
+            }
+          }
+          // Reset routing state so patient doesn't get stuck if they press back
+          ref.read(routingStateNotifierProvider.notifier).resetRouting();
+          context.replace('/chat/$chatId', extra: displayName);
+        }
+      });
+    }
+
     // Pause countdown timer and stop animations if there are replies, then show Offers Dashboard
     if (replies.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -176,14 +198,16 @@ class _SearchingPharmaciesScreenState
       return _buildOffersDashboardScreen(replies, routingState, isDark);
     }
 
+    final bool isExplicitlyRejectedOrCancelled = serverStatus == 4 || serverStatus == 5;
+
     // Check if all pharmacies failed or explicitly rejected
-    if (routingState.status == RoutingStatus.allPharmaciesFailed || isExplicitlyRejected) {
-      return _buildAllPharmaciesFailedScreen(routingState, isDark, isExplicitlyRejected: isExplicitlyRejected);
+    if (routingState.status == RoutingStatus.allPharmaciesFailed || isExplicitlyRejectedOrCancelled) {
+      return _buildAllPharmaciesFailedScreen(routingState, isDark, isExplicitlyRejected: isExplicitlyRejectedOrCancelled);
     }
 
     // Check if pharmacy responded
     if (routingState.status == RoutingStatus.pharmacyResponded) {
-      return _buildPharmacyRespondedScreen(routingState, isDark);
+      return _buildPharmacyRespondedScreen(routingState, isDark, replies);
     }
 
     return Scaffold(
@@ -408,15 +432,15 @@ class _SearchingPharmaciesScreenState
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'صيدلية قريبة',
-                                      style: TextStyle(
+                                    Text(
+                                      _getVal(reply, 'pharmacyName')?.toString() ?? 'صيدلية قريبة',
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,
                                       ),
                                     ),
                                     Text(
-                                      'Nearby Pharmacy',
+                                      _getVal(reply, 'pharmacyName') != null ? 'Pharmacy' : 'Nearby Pharmacy',
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: textSec,
@@ -518,10 +542,25 @@ class _SearchingPharmaciesScreenState
                                     }
 
                                     if (success && mounted) {
+                                      final newChatId = 'chat_${DateTime.now().millisecondsSinceEpoch}';
+                                      final pName = _getVal(reply, 'pharmacyName')?.toString() ?? 'Nearby Pharmacy / صيدلية قريبة';
+                                      
+                                      // Dynamically seed the chat session inside chatsProvider
+                                      ref.read(chatsProvider.notifier).createPrescriptionChat(
+                                            chatId: newChatId,
+                                            pharmacyId: pharmId,
+                                            pharmacyName: pName,
+                                            price: price,
+                                            message: msg,
+                                            prescriptionId: routingState.id,
+                                            prescriptionImage: routingState.prescription.imageUrl,
+                                            prescriptionNotes: routingState.prescription.textContent ?? routingState.prescription.description,
+                                          );
+
                                       // Lock locally and transition to pharmacy responded chat screen
                                       ref.read(routingStateNotifierProvider.notifier).handlePharmacyResponse(
                                             pharmId,
-                                            'chat_${DateTime.now().millisecondsSinceEpoch}',
+                                            newChatId,
                                           );
                                     }
                                   },
@@ -1026,10 +1065,21 @@ class _SearchingPharmaciesScreenState
     );
   }
 
-  Widget _buildPharmacyRespondedScreen(RoutingStateModel state, bool isDark) {
+  Widget _buildPharmacyRespondedScreen(RoutingStateModel state, bool isDark, List<dynamic> replies) {
     final textSecondary = isDark
         ? DarkColors.textSecondary
         : LightColors.textSecondary;
+
+    String displayName = 'Pharmacy';
+    if (state.lockPharmacyId != null) {
+      final matchingReply = replies.firstWhere(
+        (r) => _getVal(r, 'pharmacyId')?.toString() == state.lockPharmacyId,
+        orElse: () => null,
+      );
+      if (matchingReply != null) {
+        displayName = _getVal(matchingReply, 'pharmacyName')?.toString() ?? 'Pharmacy';
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Pharmacy Responded')),
@@ -1046,7 +1096,7 @@ class _SearchingPharmaciesScreenState
               ),
               const SizedBox(height: 24),
               Text(
-                '${state.lockPharmacyId} Responded!',
+                '$displayName Responded!',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),

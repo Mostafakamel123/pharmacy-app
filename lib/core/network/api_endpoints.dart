@@ -329,7 +329,7 @@ class ApiEndpoints {
   /// Body: CreatePharmacyCommand
   Future<Map<String, dynamic>> createPharmacy({
     String? name,
-    String? imageUrl,
+    String? imagePath,
     required String address,
     String? workingHours,
     bool hasDelivery = false,
@@ -337,18 +337,31 @@ class ApiEndpoints {
     required double latitude,
     required double longitude,
   }) async {
+    final formDataMap = {
+      if (name != null) 'Name': name,
+      'Address': address,
+      if (workingHours != null) 'WorkingHours': workingHours,
+      'HasDelivery': hasDelivery.toString(),
+      if (contactNumber != null) 'ContactNumber': contactNumber,
+      'Latitude': latitude.toString(),
+      'Longitude': longitude.toString(),
+    };
+
+    final formData = FormData.fromMap(formDataMap);
+
+    if (imagePath != null && imagePath.isNotEmpty) {
+      formData.files.add(MapEntry(
+        'ImageUrl',
+        await MultipartFile.fromFile(
+          imagePath,
+          filename: imagePath.split('/').last,
+        ),
+      ));
+    }
+
     final response = await _dio.post(
       '/api/Pharmacies',
-      data: {
-        if (name != null) 'name': name,
-        if (imageUrl != null) 'imageUrl': imageUrl,
-        'address': address,
-        if (workingHours != null) 'workingHours': workingHours,
-        'hasDelivery': hasDelivery,
-        if (contactNumber != null) 'contactNumber': contactNumber,
-        'latitude': latitude,
-        'longitude': longitude,
-      },
+      data: formData,
     );
     return _safeParseMap(response.data);
   }
@@ -366,7 +379,7 @@ class ApiEndpoints {
   Future<Map<String, dynamic>> updatePharmacy({
     required String id,
     String? name,
-    String? imageUrl,
+    String? imagePath,
     String? address,
     String? workingHours,
     bool? hasDelivery,
@@ -374,18 +387,31 @@ class ApiEndpoints {
     double? latitude,
     double? longitude,
   }) async {
+    final formDataMap = {
+      if (name != null) 'Name': name,
+      if (address != null) 'Address': address,
+      if (workingHours != null) 'WorkingHours': workingHours,
+      if (hasDelivery != null) 'HasDelivery': hasDelivery.toString(),
+      if (contactNumber != null) 'ContactNumber': contactNumber,
+      if (latitude != null) 'Latitude': latitude.toString(),
+      if (longitude != null) 'Longitude': longitude.toString(),
+    };
+
+    final formData = FormData.fromMap(formDataMap);
+
+    if (imagePath != null && imagePath.isNotEmpty && !imagePath.startsWith('http') && !imagePath.startsWith('/images')) {
+      formData.files.add(MapEntry(
+        'ImageUrl',
+        await MultipartFile.fromFile(
+          imagePath,
+          filename: imagePath.split('/').last,
+        ),
+      ));
+    }
+
     final response = await _dio.put(
       '/api/Pharmacies/$id',
-      data: {
-        if (name != null) 'name': name,
-        if (imageUrl != null) 'imageUrl': imageUrl,
-        if (address != null) 'address': address,
-        if (workingHours != null) 'workingHours': workingHours,
-        if (hasDelivery != null) 'hasDelivery': hasDelivery,
-        if (contactNumber != null) 'contactNumber': contactNumber,
-        if (latitude != null) 'latitude': latitude,
-        if (longitude != null) 'longitude': longitude,
-      },
+      data: formData,
     );
     return _safeParseMap(response.data);
   }

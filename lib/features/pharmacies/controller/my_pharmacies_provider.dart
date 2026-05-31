@@ -61,7 +61,7 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
       // Call API to create pharmacy
       final response = await _apiEndpoints.createPharmacy(
         name: pharmacy.name,
-        imageUrl: pharmacy.logoUrl,
+        imagePath: pharmacy.logoUrl,
         address: pharmacy.address,
         latitude: pharmacy.latitude,
         longitude: pharmacy.longitude,
@@ -90,13 +90,13 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
   }
 
   /// Update an existing pharmacy
-  Future<bool> updatePharmacy(UserPharmacyModel updatedPharmacy) async {
+  Future<bool> updatePharmacy(UserPharmacyModel updatedPharmacy, {String? imagePath}) async {
     try {
       // Call API to update pharmacy
       await _apiEndpoints.updatePharmacy(
         id: updatedPharmacy.id,
         name: updatedPharmacy.name,
-        imageUrl: updatedPharmacy.logoUrl,
+        imagePath: imagePath ?? updatedPharmacy.logoUrl,
         address: updatedPharmacy.address,
         latitude: updatedPharmacy.latitude,
         longitude: updatedPharmacy.longitude,

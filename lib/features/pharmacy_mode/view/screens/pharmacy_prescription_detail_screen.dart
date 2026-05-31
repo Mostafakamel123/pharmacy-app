@@ -160,7 +160,7 @@ class _PharmacyPrescriptionDetailScreenState
                   if (isRejected)
                     _buildRejectedIndicator(isDark)
                   else if (localOffer != null)
-                    _buildSubmittedOfferCard(isDark, localOffer, statusVal)
+                    _buildSubmittedOfferCard(isDark, localOffer, statusVal, id)
                   else
                     _buildOfferForm(isDark, id),
                   
@@ -714,7 +714,7 @@ class _PharmacyPrescriptionDetailScreenState
     );
   }
 
-  Widget _buildSubmittedOfferCard(bool isDark, Map<String, dynamic> offer, int statusVal) {
+  Widget _buildSubmittedOfferCard(bool isDark, Map<String, dynamic> offer, int statusVal, String prescriptionId) {
     final double price = (offer['price'] as num?)?.toDouble() ?? 0.0;
     final String message = offer['message'] as String? ?? '';
     final bool available = offer['isAvailable'] as bool? ?? true;
@@ -846,6 +846,40 @@ class _PharmacyPrescriptionDetailScreenState
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final success = await ref.read(pharmacyActionsProvider).changeStatus(
+                    prescriptionId: prescriptionId,
+                    status: 3,
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success 
+                            ? 'Order marked as ready / تم تجهيز الطلب بنجاح' 
+                            : 'Error updating order / حدث خطأ أثناء التحديث'),
+                      ),
+                    );
+                    if (success) {
+                      Navigator.pop(context);
+                    }
+                  }
+                },
+                icon: const Icon(Icons.delivery_dining_rounded, size: 20),
+                label: const Text('Mark as Ready / Completed (تم التجهيز والتوصيل)', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                ),
               ),
             ),
           ],

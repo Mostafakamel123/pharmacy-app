@@ -22,6 +22,7 @@ class AppRoutes {
   static const String prescription = '/prescription';
   static const String uploadPrescription = '/prescription/upload';
   static const String searchingPharmacies = '/prescription/searching';
+  static const String myPrescriptions = '/prescription/my-prescriptions';
   
   // Error
   static const String notFound = '/404';

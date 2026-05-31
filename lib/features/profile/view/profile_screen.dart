@@ -9,6 +9,7 @@ import 'package:pharmacy_app/features/profile/view/widgets/profile_actions.dart'
 import 'package:pharmacy_app/features/profile/view/widgets/profile_header.dart';
 import 'package:pharmacy_app/features/profile/view/widgets/quick_stats.dart';
 import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
+import 'package:pharmacy_app/features/prescription/view/screens/my_prescriptions_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -85,6 +86,19 @@ class ProfileScreen extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const SavedPostsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ProfileActionItem(
+                    title: 'My Prescriptions',
+                    icon: Icons.assignment_outlined,
+                    iconColor: AppColors.primaryBlue,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MyPrescriptionsScreen(),
                         ),
                       );
                     },

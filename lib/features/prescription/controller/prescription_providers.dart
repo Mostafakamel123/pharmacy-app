@@ -228,6 +228,11 @@ class RoutingStateNotifier extends StateNotifier<RoutingStateModel?> {
 
   RoutingStateNotifier(this.ref) : super(null);
 
+  /// Manually update or load a state (e.g. from history list)
+  void updateState(RoutingStateModel? newState) {
+    state = newState;
+  }
+
   /// Initialize prescription routing
   Future<void> startPrescriptionRouting({
     required String patientId,

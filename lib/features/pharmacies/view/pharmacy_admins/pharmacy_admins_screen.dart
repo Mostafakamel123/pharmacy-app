@@ -1,15 +1,16 @@
-// ignore_for_file: deprecated_member_use
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/auth/service/auth_service.dart';
+import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
 
 /// Provider for user search results
 final userSearchProvider = StateNotifierProvider<UserSearchNotifier, AsyncValue<List<UserSearchResult>>>((ref) {
-  return UserSearchNotifier();
+  final authService = ref.read(authServiceProvider);
+  return UserSearchNotifier(authService);
 });
 
 class UserSearchResult {
@@ -22,13 +23,23 @@ class UserSearchResult {
     required this.email,
     this.fullName,
   });
+
+  factory UserSearchResult.fromJson(Map<String, dynamic> json) {
+    return UserSearchResult(
+      userId: (json['id'] ?? json['userId'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      fullName: json['fullName'] as String?,
+    );
+  }
 }
 
 class UserSearchNotifier extends StateNotifier<AsyncValue<List<UserSearchResult>>> {
-  UserSearchNotifier() : super(const AsyncValue.data([]));
+  final AuthService _authService;
+
+  UserSearchNotifier(this._authService) : super(const AsyncValue.data([]));
   
   Future<void> searchUsers(String query) async {
-    if (query.isEmpty) {
+    if (query.trim().isEmpty) {
       state = const AsyncValue.data([]);
       return;
     }
@@ -36,10 +47,9 @@ class UserSearchNotifier extends StateNotifier<AsyncValue<List<UserSearchResult>
     state = const AsyncValue.loading();
     
     try {
-      // TODO: Implement actual user search API
-      // For now, this is a placeholder
-      await Future.delayed(const Duration(milliseconds: 300));
-      state = const AsyncValue.data([]);
+      final results = await _authService.searchUsers(query: query.trim());
+      final mappedResults = results.map((e) => UserSearchResult.fromJson(e)).toList();
+      state = AsyncValue.data(mappedResults);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -198,8 +208,8 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final allAdminIds = widget.pharmacy.allAdminIds;
-    final currentUserId = ref.read(currentUserIdProvider);
-    final isOwner = widget.pharmacy.ownerUserId == currentUserId;
+    final currentUserId = ref.watch(currentUserIdProvider);
+    final isOwner = widget.pharmacy.ownerUserId == currentUserId || widget.pharmacy.ownerUserId.isEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -428,7 +438,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen> {
 }
 
 /// Dialog for adding a new admin to pharmacy
-class _AddAdminDialog extends StatefulWidget {
+class _AddAdminDialog extends ConsumerStatefulWidget {
   final String pharmacyId;
   final AuthService authService;
   final VoidCallback onAdminAdded;
@@ -440,42 +450,43 @@ class _AddAdminDialog extends StatefulWidget {
   });
 
   @override
-  State<_AddAdminDialog> createState() => _AddAdminDialogState();
+  ConsumerState<_AddAdminDialog> createState() => _AddAdminDialogState();
 }
 
-class _AddAdminDialogState extends State<_AddAdminDialog> {
-  final _emailController = TextEditingController();
+class _AddAdminDialogState extends ConsumerState<_AddAdminDialog> {
+  final _searchController = TextEditingController();
   bool _isLoading = false;
   String? _error;
+  Timer? _debounce;
+  String _selectedUserId = '';
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      setState(() {
-        _error = 'Please enter user email';
-      });
-      return;
-    }
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        ref.read(userSearchProvider.notifier).searchUsers(query);
+      }
+    });
+  }
 
+  Future<void> _submit(UserSearchResult user) async {
     setState(() {
       _isLoading = true;
+      _selectedUserId = user.userId;
       _error = null;
     });
 
     try {
-      // First, we need to get the user ID from email
-      // This requires a user lookup API - for now we'll use the email as userId
-      // In production, you should call an API to get the actual user ID
-      
-      // Call the assign pharmacy admin API
+      // Call the assign pharmacy admin API with actual user ID
       await widget.authService.assignPharmacyAdmin(
-        userId: email, // TODO: Replace with actual user ID lookup
+        userId: user.userId,
         pharmacyId: widget.pharmacyId,
       );
 
@@ -483,8 +494,8 @@ class _AddAdminDialogState extends State<_AddAdminDialog> {
         widget.onAdminAdded();
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Admin added successfully'),
+          SnackBar(
+            content: Text('${user.fullName ?? user.email} added as admin successfully'),
             backgroundColor: AppColors.primaryGreen,
           ),
         );
@@ -499,6 +510,7 @@ class _AddAdminDialogState extends State<_AddAdminDialog> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _selectedUserId = '';
         });
       }
     }
@@ -506,56 +518,186 @@ class _AddAdminDialogState extends State<_AddAdminDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final searchResultState = ref.watch(userSearchProvider);
+    final theme = Theme.of(context);
+
     return AlertDialog(
-      title: const Text('Add Admin'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: _emailController,
-            decoration: const InputDecoration(
-              labelText: 'User Email',
-              hintText: 'Enter user email address',
-              prefixIcon: Icon(Icons.email),
+      title: const Text('Add Pharmacy Admin'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Search User',
+                hintText: 'Enter user name or email...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          ref.read(userSearchProvider.notifier).searchUsers('');
+                          setState(() {});
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onChanged: (val) {
+                setState(() {});
+                _onSearchChanged(val);
+              },
             ),
-            keyboardType: TextInputType.emailAddress,
-            onChanged: (_) => setState(() => _error = null),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: const TextStyle(
-                color: AppColors.accentRed,
-                fontSize: 12,
+            const SizedBox(height: AppSpacing.md),
+            
+            // Search results area
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 240,
+                minHeight: 100,
+              ),
+              child: searchResultState.when(
+                data: (users) {
+                  if (_searchController.text.trim().isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.person_search_outlined,
+                            size: 48,
+                            color: AppColors.primaryBlue.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'Search for users by name or email',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: LightColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  
+                  if (users.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: AppColors.accentRed.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'No users found matching "${_searchController.text}"',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: LightColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: users.length,
+                    itemBuilder: (context, index) {
+                      final user = users[index];
+                      final isAssigningThis = _isLoading && _selectedUserId == user.userId;
+                      final initials = (user.fullName ?? user.email).trim().substring(0, 1).toUpperCase();
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        elevation: 0.5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color: Colors.grey.withOpacity(0.15),
+                          ),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: 4,
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryBlue,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            user.fullName ?? 'No Name',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            user.email,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: LightColors.textSecondary,
+                            ),
+                          ),
+                          trailing: isAssigningThis
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : ElevatedButton(
+                                  onPressed: _isLoading ? null : () => _submit(user),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    minimumSize: const Size(60, 32),
+                                  ),
+                                  child: const Text('Add'),
+                                ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                error: (error, stack) => Center(
+                  child: Text(
+                    'Error: $error',
+                    style: const TextStyle(color: AppColors.accentRed),
+                  ),
+                ),
               ),
             ),
+            
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                _error!,
+                style: const TextStyle(
+                  color: AppColors.accentRed,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ],
-          const SizedBox(height: 8),
-          const Text(
-            'Note: Enter the exact email of the user you want to add as admin.',
-            style: TextStyle(
-              fontSize: 12,
-              color: LightColors.textSecondary,
-            ),
-          ),
-        ],
+        ),
       ),
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _submit,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Add'),
         ),
       ],
     );

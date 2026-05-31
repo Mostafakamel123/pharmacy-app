@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pharmacy_app/core/routing/app_routes.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 import 'package:pharmacy_app/features/home/view/widgets/home_header.dart';
 import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
@@ -74,7 +75,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
 
           return FloatingActionButton(
             onPressed: () {
-              context.push('/searching-pharmacies');
+              context.push(AppRoutes.searchingPharmacies);
             },
             backgroundColor: Theme.of(context).primaryColor,
             child: const Icon(Icons.assignment, color: Colors.white),

@@ -8,6 +8,12 @@ class ChatModel {
   final int unreadCount;
   final bool isMuted;
   final bool isArchived;
+  
+  // Prescription context metadata
+  final String? prescriptionId;
+  final String? prescriptionImage;
+  final String? prescriptionNotes;
+  final double? prescriptionPrice;
 
   ChatModel({
     required this.id,
@@ -17,6 +23,10 @@ class ChatModel {
     this.unreadCount = 0,
     this.isMuted = false,
     this.isArchived = false,
+    this.prescriptionId,
+    this.prescriptionImage,
+    this.prescriptionNotes,
+    this.prescriptionPrice,
   });
 
   ChatModel copyWith({
@@ -27,6 +37,10 @@ class ChatModel {
     int? unreadCount,
     bool? isMuted,
     bool? isArchived,
+    String? prescriptionId,
+    String? prescriptionImage,
+    String? prescriptionNotes,
+    double? prescriptionPrice,
   }) {
     return ChatModel(
       id: id ?? this.id,
@@ -36,6 +50,10 @@ class ChatModel {
       unreadCount: unreadCount ?? this.unreadCount,
       isMuted: isMuted ?? this.isMuted,
       isArchived: isArchived ?? this.isArchived,
+      prescriptionId: prescriptionId ?? this.prescriptionId,
+      prescriptionImage: prescriptionImage ?? this.prescriptionImage,
+      prescriptionNotes: prescriptionNotes ?? this.prescriptionNotes,
+      prescriptionPrice: prescriptionPrice ?? this.prescriptionPrice,
     );
   }
 

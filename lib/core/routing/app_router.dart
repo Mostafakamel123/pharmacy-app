@@ -18,6 +18,7 @@ import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
 import 'package:pharmacy_app/features/chat/view/screens/chat_conversation_screen.dart';
 import 'package:pharmacy_app/features/prescription/view/screens/upload_prescription_screen.dart';
 import 'package:pharmacy_app/features/prescription/view/screens/searching_pharmacies_screen.dart';
+import 'package:pharmacy_app/features/prescription/view/screens/my_prescriptions_screen.dart';
 import 'app_routes.dart';
 
 // Simple 404 error page
@@ -207,6 +208,11 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((ref) {
       path: AppRoutes.searchingPharmacies,
       name: 'searchingPharmacies',
       builder: (context, state) => const SearchingPharmaciesScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.myPrescriptions,
+      name: 'myPrescriptions',
+      builder: (context, state) => const MyPrescriptionsScreen(),
     ),
   ],
 );

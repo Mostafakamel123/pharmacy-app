@@ -110,6 +110,57 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
       state = AsyncValue.data(updatedChats);
     });
   }
+
+  void createPrescriptionChat({
+    required String chatId,
+    required String pharmacyId,
+    required String pharmacyName,
+    required double price,
+    required String message,
+    String? prescriptionId,
+    String? prescriptionImage,
+    String? prescriptionNotes,
+  }) {
+    state.whenData((chats) {
+      final exists = chats.any((c) => c.id == chatId);
+      if (exists) return;
+
+      final newChat = ChatModel(
+        id: chatId,
+        otherUser: ChatUserModel(
+          id: pharmacyId,
+          name: pharmacyName,
+          avatar: '🏥',
+          type: 'pharmacy',
+          isOnline: true,
+        ),
+        lastMessage: 'تم قبول العرض: $price EGP - $message',
+        lastMessageTime: DateTime.now(),
+        unreadCount: 0,
+        prescriptionId: prescriptionId,
+        prescriptionImage: prescriptionImage,
+        prescriptionNotes: prescriptionNotes,
+        prescriptionPrice: price,
+      );
+
+      state = AsyncValue.data([newChat, ...chats]);
+    });
+  }
+
+  void updateLastMessage(String chatId, String message) {
+    state.whenData((chats) {
+      final updatedChats = chats.map((chat) {
+        if (chat.id == chatId) {
+          return chat.copyWith(
+            lastMessage: message,
+            lastMessageTime: DateTime.now(),
+          );
+        }
+        return chat;
+      }).toList();
+      state = AsyncValue.data(updatedChats);
+    });
+  }
 }
 
 final chatsProvider = StateNotifierProvider<ChatsNotifier, AsyncValue<List<ChatModel>>>((ref) {
@@ -142,8 +193,9 @@ final filteredChatsProvider = FutureProvider<List<ChatModel>>((ref) async {
 // Current chat messages
 class MessagesNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
   final String chatId;
+  final Ref ref;
 
-  MessagesNotifier(this.chatId) : super(const AsyncValue.loading()) {
+  MessagesNotifier(this.chatId, this.ref) : super(const AsyncValue.loading()) {
     _loadMessages();
   }
 
@@ -151,7 +203,35 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
     try {
       await Future.delayed(const Duration(milliseconds: 600));
 
-      final messages = _getMockMessages(chatId);
+      List<MessageModel> messages;
+      if (chatId.startsWith('chat_historical_') || chatId.startsWith('chat_pres_') || chatId.length > 10) {
+        final chatsState = ref.read(chatsProvider).value;
+        final currentChat = (chatsState != null && chatsState.any((c) => c.id == chatId))
+            ? chatsState.firstWhere((c) => c.id == chatId)
+            : null;
+        
+        if (currentChat != null && currentChat.prescriptionId != null) {
+          final price = currentChat.prescriptionPrice ?? 0.0;
+          final pharmName = currentChat.otherUser.name;
+          messages = [
+            MessageModel(
+              id: 'msg_welcome_${DateTime.now().millisecondsSinceEpoch}',
+              chatId: chatId,
+              senderId: currentChat.otherUser.id,
+              senderName: pharmName,
+              senderAvatar: '🏥',
+              content: 'مرحباً بك! شكراً لقبول عرض صيدليتنا بقيمة $price EGP. جاري الآن تجهيز طلبك، وسنتواصل معك هنا بخصوص الشحن والتوصيل.',
+              timestamp: DateTime.now().subtract(const Duration(minutes: 1)),
+              status: MessageStatus.read,
+              isSent: false,
+            )
+          ];
+        } else {
+          messages = _getMockMessages(chatId);
+        }
+      } else {
+        messages = _getMockMessages(chatId);
+      }
       state = AsyncValue.data(messages);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -234,6 +314,9 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
         state = AsyncValue.data([...messages, newMessage]);
       });
 
+      // Update last message in Chats list dynamically!
+      ref.read(chatsProvider.notifier).updateLastMessage(chatId, content);
+
       // Simulate sending
       await Future.delayed(const Duration(milliseconds: 500));
 
@@ -277,7 +360,7 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
 
 final chatMessagesProvider =
     StateNotifierProvider.family<MessagesNotifier, AsyncValue<List<MessageModel>>, String>(
-  (ref, chatId) => MessagesNotifier(chatId),
+  (ref, chatId) => MessagesNotifier(chatId, ref),
 );
 
 // Current chat user

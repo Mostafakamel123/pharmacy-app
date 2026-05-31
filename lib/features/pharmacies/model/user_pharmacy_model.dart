@@ -127,8 +127,9 @@ class UserPharmacyModel {
 
   /// Create from JSON (API response)
   factory UserPharmacyModel.fromJson(Map<String, dynamic> json) {
-    // Determine ownerUserId: check 'ownerId', 'owner_user_id', or if role is 'Owner'
+    // Determine ownerUserId: check 'ownerId', 'ownerUserId', 'owner_user_id', or if role is 'Owner'
     String ownerId = json['ownerId'] as String? ?? 
+                     json['ownerUserId'] as String? ?? 
                      json['owner_user_id'] as String? ?? 
                      '';
     

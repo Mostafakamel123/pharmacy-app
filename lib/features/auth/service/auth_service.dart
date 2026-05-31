@@ -29,6 +29,13 @@ abstract class AuthService {
   
   // Pharmacy Admin Management
   Future<Map<String, dynamic>> assignPharmacyAdmin({required String userId, required String pharmacyId});
+  
+  // User Search
+  Future<List<Map<String, dynamic>>> searchUsers({
+    required String query,
+    int pageNumber = 1,
+    int pageSize = 10,
+  });
 }
 
 /// Implementation of Auth Service using Dio - Elaaj API
@@ -459,6 +466,38 @@ class AuthServiceImpl implements AuthService {
       rethrow;
     } catch (e) {
       throw AppFailure(message: e.toString(), code: 'ASSIGN_PHARMACY_ADMIN_ERROR');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchUsers({
+    required String query,
+    int pageNumber = 1,
+    int pageSize = 10,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/api/Users/search',
+        queryParameters: {
+          'Search': query,
+          'PageNumber': pageNumber,
+          'PageSize': pageSize,
+        },
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data is Map<String, dynamic> && data.containsKey('items')) {
+          final items = data['items'] as List;
+          return items.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+      }
+      return [];
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'SEARCH_USERS_ERROR');
     }
   }
 }
