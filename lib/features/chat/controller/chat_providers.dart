@@ -18,7 +18,7 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
         ChatModel(
           id: 'chat_1',
           otherUser: ChatUserModel(
-            id: 'pharmacy_1',
+            id: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
             name: 'kamal Pharmacy',
             avatar: '🏥',
             type: 'pharmacy',
@@ -31,7 +31,7 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
         ChatModel(
           id: 'chat_2',
           otherUser: ChatUserModel(
-            id: 'pharmacy_2',
+            id: 'd0a4c281-a67b-4011-893c-a93108920199',
             name: 'الدولي ',
             avatar: '💊',
             type: 'pharmacy',
@@ -163,7 +163,7 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
       MessageModel(
         id: 'msg_1',
         chatId: chatId,
-        senderId: 'pharmacy_1',
+        senderId: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
         senderName: 'kamal Pharmacy',
         senderAvatar: '🏥',
         content: 'Hello! How can we assist you today?',
@@ -184,7 +184,7 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
       MessageModel(
         id: 'msg_3',
         chatId: chatId,
-        senderId: 'pharmacy_1',
+        senderId: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
         senderName: 'kamal Pharmacy',
         senderAvatar: '🏥',
         content: 'قول يصاحبي',
@@ -205,7 +205,7 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
       MessageModel(
         id: 'msg_5',
         chatId: chatId,
-        senderId: 'pharmacy_1',
+        senderId: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
         senderName: 'kamal Pharmacy',
         senderAvatar: '🏥',
         content: 'فاجرة',

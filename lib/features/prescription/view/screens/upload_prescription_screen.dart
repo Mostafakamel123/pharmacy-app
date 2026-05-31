@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/routing/app_routes.dart';
+import 'package:pharmacy_app/features/home/controller/home_providers.dart' show locationProvider;
 import 'package:pharmacy_app/features/prescription/model/prescription_model.dart';
 import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Upload Prescription Screen
 /// Allows patient to upload prescription image or enter text
@@ -23,8 +25,32 @@ class UploadPrescriptionScreen extends ConsumerStatefulWidget {
 class _UploadPrescriptionScreenState
     extends ConsumerState<UploadPrescriptionScreen> {
   late TextEditingController _descriptionController;
+  final ImagePicker _picker = ImagePicker();
   String? _selectedImagePath;
   bool _isImage = false;
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1080,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImagePath = pickedFile.path;
+          _isImage = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -39,13 +65,14 @@ class _UploadPrescriptionScreenState
   }
 
   void _handleSendRequest() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final isRequestPending =
         ref.read(routingStateNotifierProvider)?.isRequestPending ?? false;
     print(
       '🚀 DEBUG UploadScreen: Checking if pending... isRequestPending=$isRequestPending',
     );
     if (isRequestPending) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Text('There is already a pending request. Please wait.'),
         ),
@@ -54,7 +81,7 @@ class _UploadPrescriptionScreenState
     }
 
     if (_selectedImagePath == null && _descriptionController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('Please upload image or add description')),
       );
       return;
@@ -76,10 +103,15 @@ class _UploadPrescriptionScreenState
         isImage: _isImage && _selectedImagePath != null,
       );
 
+      // Fetch user's actual location (Egyptian location as default Cairo/Assiut)
+      final location = await ref.read(locationProvider.future);
+      final double lat = location?.latitude ?? 27.1874;
+      final double lon = location?.longitude ?? 31.1954;
+
       // Fetch nearby pharmacies using read() instead of watch()
       final List<PharmacyModel> pharmacies = await ref.read(
         nearbyPharmaciesProvider(
-          (latitude: 24.7136, longitude: 46.6753), // Mock location
+          (latitude: lat, longitude: lon),
         ).future,
       );
 
@@ -91,6 +123,8 @@ class _UploadPrescriptionScreenState
               patientId: 'patient_123',
               prescription: prescription,
               pharmacies: pharmacies,
+              latitude: lat,
+              longitude: lon,
             );
 
         // Defer navigation to next frame using post-frame callback
@@ -103,9 +137,7 @@ class _UploadPrescriptionScreenState
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
   }
 
@@ -165,7 +197,7 @@ class _UploadPrescriptionScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Upload Image (Optional)',
+          'Upload Image (Required)',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 16),
@@ -265,28 +297,14 @@ class _UploadPrescriptionScreenState
                   children: [
                     Expanded(
                       child: TextButton.icon(
-                        onPressed: () {
-                          // TODO: Implement camera
-                          setState(() {
-                            _selectedImagePath =
-                                'assets/prescription_sample.jpg';
-                            _isImage = true;
-                          });
-                        },
+                        onPressed: () => _pickImage(ImageSource.camera),
                         icon: const Icon(Icons.camera_alt),
                         label: const Text('Camera'),
                       ),
                     ),
                     Expanded(
                       child: TextButton.icon(
-                        onPressed: () {
-                          // TODO: Implement gallery
-                          setState(() {
-                            _selectedImagePath =
-                                'assets/prescription_sample.jpg';
-                            _isImage = true;
-                          });
-                        },
+                        onPressed: () => _pickImage(ImageSource.gallery),
                         icon: const Icon(Icons.photo_library),
                         label: const Text('Gallery'),
                       ),

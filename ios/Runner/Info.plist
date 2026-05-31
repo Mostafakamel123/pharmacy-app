@@ -49,5 +49,9 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>We need camera access to allow you to take a photo of your prescription.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>We need photo library access to allow you to upload your prescription image.</string>
 	</dict>
 </plist>

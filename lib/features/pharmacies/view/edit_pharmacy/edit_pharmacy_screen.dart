@@ -21,22 +21,25 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
-  late TextEditingController _addressController;
-  late TextEditingController _phoneController;
-  late TextEditingController _emailController;
-  late TextEditingController _websiteController;
-  late TextEditingController _licenseNumberController;
+  late TextEditingController _workingHoursController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _websiteController;
+  late final TextEditingController _licenseNumberController;
   
   late double _latitude;
   late double _longitude;
   bool _isLoading = false;
   bool _isActive = true;
+  bool _hasDelivery = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.pharmacy.name);
     _descriptionController = TextEditingController(text: widget.pharmacy.description ?? '');
+    _workingHoursController = TextEditingController(text: widget.pharmacy.workingHours ?? '');
     _addressController = TextEditingController(text: widget.pharmacy.address);
     _phoneController = TextEditingController(text: widget.pharmacy.phone ?? '');
     _emailController = TextEditingController(text: widget.pharmacy.email ?? '');
@@ -45,12 +48,14 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
     _latitude = widget.pharmacy.latitude;
     _longitude = widget.pharmacy.longitude;
     _isActive = widget.pharmacy.isActive;
+    _hasDelivery = widget.pharmacy.hasDelivery;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _workingHoursController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
@@ -195,6 +200,10 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
         phone: _phoneController.text.trim().isEmpty 
             ? null 
             : _phoneController.text.trim(),
+        workingHours: _workingHoursController.text.trim().isEmpty
+            ? null
+            : _workingHoursController.text.trim(),
+        hasDelivery: _hasDelivery,
         email: _emailController.text.trim().isEmpty 
             ? null 
             : _emailController.text.trim(),
@@ -345,6 +354,37 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
               maxLines: 3,
             ),
             
+            const SizedBox(height: 16),
+
+            TextFormField(
+              controller: _workingHoursController,
+              decoration: const InputDecoration(
+                labelText: 'Working Hours',
+                hintText: 'e.g. 24/7 or 08:00 AM - 12:00 AM',
+                prefixIcon: Icon(Icons.access_time),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Delivery Status Toggle
+            SwitchListTile(
+              title: const Text('Delivery Service'),
+              subtitle: Text(_hasDelivery ? 'Offers home delivery' : 'No home delivery'),
+              value: _hasDelivery,
+              onChanged: isOwner
+                  ? (value) {
+                      setState(() {
+                        _hasDelivery = value;
+                      });
+                    }
+                  : null,
+              secondary: Icon(
+                _hasDelivery ? Icons.local_shipping : Icons.shopping_bag_outlined,
+                color: _hasDelivery ? AppColors.primaryGreen : null,
+              ),
+            ),
+
             const SizedBox(height: 16),
             
             // Active Status Toggle

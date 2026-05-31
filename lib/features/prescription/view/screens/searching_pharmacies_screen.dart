@@ -8,6 +8,7 @@ import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';
 import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
+import 'package:pharmacy_app/features/prescription/controller/patient_prescription_providers.dart';
 
 /// Searching Pharmacies Screen
 /// Shows animated search with countdown timer and current pharmacy being contacted
@@ -25,6 +26,8 @@ class _SearchingPharmaciesScreenState
   late AnimationController _pulseController;
   late AnimationController _rotateController;
   Timer? _routingTimer;
+  Timer? _pollingTimer;
+  String? _acceptingReplyId;
 
   @override
   void initState() {
@@ -43,6 +46,17 @@ class _SearchingPharmaciesScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(countdownTimerNotifierProvider.notifier).start();
       _startRoutingLogic();
+    });
+
+    // Poll the patient history API and specific prescription details for incoming pharmacy replies/offers every 5 seconds
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted) {
+        final routingState = ref.read(routingStateNotifierProvider);
+        if (routingState != null) {
+          ref.refresh(singlePrescriptionProvider(routingState.id));
+        }
+        ref.refresh(patientPrescriptionsProvider);
+      }
     });
   }
 
@@ -64,7 +78,19 @@ class _SearchingPharmaciesScreenState
     _pulseController.dispose();
     _rotateController.dispose();
     _routingTimer?.cancel();
+    _pollingTimer?.cancel();
     super.dispose();
+  }
+
+  dynamic _getVal(dynamic map, String key) {
+    if (map is! Map) return null;
+    final target = key.toLowerCase();
+    for (final entry in map.entries) {
+      if (entry.key.toString().toLowerCase() == target) {
+        return entry.value;
+      }
+    }
+    return null;
   }
 
   @override
@@ -78,9 +104,81 @@ class _SearchingPharmaciesScreenState
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Check if all pharmacies failed
-    if (routingState.status == RoutingStatus.allPharmaciesFailed) {
-      return _buildAllPharmaciesFailedScreen(routingState, isDark);
+    // Fetch replies/offers nested in our current prescription from dedicated single endpoint provider
+    final singlePresAsync = ref.watch(singlePrescriptionProvider(routingState.id));
+    dynamic currentPres = singlePresAsync.value;
+    bool fetchedFromSingle = currentPres != null && currentPres is Map && currentPres.isNotEmpty;
+
+    // Fetch replies/offers nested in our current prescription from history provider as robust fallback
+    final prescriptionsAsync = ref.watch(patientPrescriptionsProvider);
+    final prescriptionsList = prescriptionsAsync.value ?? [];
+    
+    if (!fetchedFromSingle) {
+      // Completely case-insensitive matching from history
+      currentPres = prescriptionsList.firstWhere(
+        (p) {
+          if (p is! Map) return false;
+          final id = _getVal(p, 'id')?.toString().toLowerCase();
+          final pId = _getVal(p, 'prescriptionId')?.toString().toLowerCase();
+          final targetId = routingState.id.toLowerCase();
+          return id == targetId || pId == targetId;
+        },
+        orElse: () => null,
+      );
+    }
+
+    // Completely case-insensitive replies retrieval
+    final rawReplies = currentPres != null 
+        ? (_getVal(currentPres, 'replies') ?? _getVal(currentPres, 'offers') ?? _getVal(currentPres, 'prescriptionReplies') ?? _getVal(currentPres, 'Replies') ?? _getVal(currentPres, 'Offers'))
+        : null;
+    final List<dynamic> replies = rawReplies is List ? rawReplies : [];
+
+    // Completely case-insensitive status retrieval
+    final rawStatus = currentPres != null ? _getVal(currentPres, 'status') : null;
+    final int serverStatus = (rawStatus is num) ? rawStatus.toInt() : 0;
+    final bool isExplicitlyRejected = serverStatus == 4;
+
+    // ELAAJ REAL-TIME DEBUG LOGGING
+    print('------------------ ELAAJ PRESCRIPTION REAL-TIME DEBUG ------------------');
+    print('🎯 PATIENT TARGET PRESCRIPTION ID (routingState.id): "${routingState.id}"');
+    print('📦 TOTAL PRESCRIPTIONS RECEIVED FROM API: ${prescriptionsList.length}');
+    for (int i = 0; i < prescriptionsList.length; i++) {
+      final p = prescriptionsList[i];
+      if (p is Map) {
+        final id = _getVal(p, 'id')?.toString();
+        final pId = _getVal(p, 'prescriptionId')?.toString();
+        final status = _getVal(p, 'status');
+        print('   [$i] id: "$id" | prescriptionId: "$pId" | status: $status');
+      } else {
+        print('   [$i] NOT A MAP: $p');
+      }
+    }
+    
+    if (currentPres != null) {
+      print('✅ MATCH FOUND IN HISTORY!');
+      print('ℹ️ Data source resolved from: ${fetchedFromSingle ? "Single API endpoint (/api/Prescriptions/{id})" : "History API list (/api/Prescriptions/my-prescriptions)"}');
+      print('📝 Matched Prescription JSON: $currentPres');
+      print('❓ Raw replies from JSON: $rawReplies (Type: ${rawReplies?.runtimeType})');
+      print('⚡ Parsed replies list length: ${replies.length}');
+      print('🚨 Server status value: $serverStatus');
+    } else {
+      print('❌ NO MATCH FOUND FOR "${routingState.id}" IN BOTH CHANNELS!');
+    }
+    print('------------------------------------------------------------------------');
+
+    // Pause countdown timer and stop animations if there are replies, then show Offers Dashboard
+    if (replies.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(countdownTimerNotifierProvider.notifier).pause();
+        if (_pulseController.isAnimating) _pulseController.stop();
+        if (_rotateController.isAnimating) _rotateController.stop();
+      });
+      return _buildOffersDashboardScreen(replies, routingState, isDark);
+    }
+
+    // Check if all pharmacies failed or explicitly rejected
+    if (routingState.status == RoutingStatus.allPharmaciesFailed || isExplicitlyRejected) {
+      return _buildAllPharmaciesFailedScreen(routingState, isDark, isExplicitlyRejected: isExplicitlyRejected);
     }
 
     // Check if pharmacy responded
@@ -99,6 +197,10 @@ class _SearchingPharmaciesScreenState
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Column(
             children: [
+              if (replies.isNotEmpty) ...[
+                _buildOfferReceivedBanner(context, replies.length, isDark),
+                const SizedBox(height: 16),
+              ],
               const SizedBox(height: 20),
 
               // Animated Pulse Circle
@@ -141,7 +243,7 @@ class _SearchingPharmaciesScreenState
 
               // Remaining Pharmacies
               _buildRemainingPharmacies(routingState, context, isDark),
-              const SizedBox(height: 24),
+
 
               // Cancel Button
               SizedBox(
@@ -154,6 +256,326 @@ class _SearchingPharmaciesScreenState
                     context.pop();
                   },
                   child: const Text('Cancel Request'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOffersDashboardScreen(List<dynamic> replies, RoutingStateModel routingState, bool isDark) {
+    final surfaceColor = isDark ? DarkColors.surface : LightColors.surface;
+    final textSec = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
+    final bgColor = isDark ? DarkColors.background : LightColors.background;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        title: const Text('Offers Received / العروض المستلمة'),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. Success Hero Banner
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryGreen.withOpacity(0.15),
+                      AppColors.primaryBlue.withOpacity(0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primaryGreen.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Offer Received! / تم استلام عرض سعر!',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryGreen,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'We found ${replies.length} nearby pharmacy offer(s) for you. Please review details below.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13, color: textSec, height: 1.4),
+                    ),
+                    Text(
+                      'تم العثور على ${replies.length} عرض سعر من الصيدليات المجاورة. يرجى مراجعة التفاصيل أدناه.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13, color: textSec, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 2. Incoming Offers list title
+              Row(
+                children: [
+                  const Icon(Icons.local_offer_outlined, color: AppColors.primaryBlue),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Available Offers / العروض المتوفرة',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // 3. Offers List
+              ...replies.map((reply) {
+                final rawPrice = _getVal(reply, 'totalPrice');
+                final double price = (rawPrice is num) ? rawPrice.toDouble() : 0.0;
+                
+                final rawAvailable = _getVal(reply, 'isAvailable');
+                final bool available = (rawAvailable is bool) ? rawAvailable : true;
+                
+                final String msg = _getVal(reply, 'message')?.toString() ?? 'العلاج متوفر بالكامل وجاهز للشحن فوراً';
+                final String pharmId = _getVal(reply, 'pharmacyId')?.toString() ?? '';
+                final String replyId = _getVal(reply, 'id')?.toString() ?? '';
+                final bool isThisAccepting = _acceptingReplyId == replyId;
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  color: surfaceColor,
+                  elevation: 4,
+                  shadowColor: Colors.black.withOpacity(0.08),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: AppColors.primaryBlue.withOpacity(0.12),
+                      width: 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Pharmacy Header & Price
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryBlue.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.store_rounded,
+                                    color: AppColors.primaryBlue,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'صيدلية قريبة',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Nearby Pharmacy',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: textSec,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.primaryGreen.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                '$price EGP',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Chat bubble notes box
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                            ),
+                          ),
+                          child: Text(
+                            msg,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontStyle: FontStyle.italic,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Availability Badges
+                        Row(
+                          children: [
+                            Icon(
+                              available ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                              color: available ? AppColors.primaryGreen : AppColors.accentRed,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                available
+                                    ? 'All items are available / جميع الأصناف متوفرة'
+                                    : 'Some items missing / بعض الأصناف غير متوفرة',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: available ? AppColors.primaryGreen : AppColors.accentRed,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Accept CTA
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _acceptingReplyId != null
+                                ? null
+                                : () async {
+                                    setState(() {
+                                      _acceptingReplyId = replyId;
+                                    });
+
+                                    final success = await ref.read(patientActionsProvider).acceptOffer(
+                                          prescriptionId: routingState.id,
+                                          replyId: replyId,
+                                        );
+
+                                    if (mounted) {
+                                      setState(() {
+                                        _acceptingReplyId = null;
+                                      });
+                                    }
+
+                                    if (success && mounted) {
+                                      // Lock locally and transition to pharmacy responded chat screen
+                                      ref.read(routingStateNotifierProvider.notifier).handlePharmacyResponse(
+                                            pharmId,
+                                            'chat_${DateTime.now().millisecondsSinceEpoch}',
+                                          );
+                                    }
+                                  },
+                            icon: isThisAccepting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.chat_rounded, size: 18),
+                            label: Text(
+                              isThisAccepting
+                                  ? 'Connecting... / جاري الاتصال...'
+                                  : 'Accept Offer & Chat / قبول وبدء المحادثة',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 16),
+
+              // 4. Cancel Request Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    ref.read(routingStateNotifierProvider.notifier).resetRouting();
+                    context.pop();
+                  },
+                  icon: const Icon(Icons.cancel_outlined, size: 18),
+                  label: const Text('Cancel Request / إلغاء طلب البحث'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.accentRed,
+                    side: const BorderSide(color: AppColors.accentRed, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -195,7 +617,6 @@ class _SearchingPharmaciesScreenState
     BuildContext context,
     bool isDark,
   ) {
-    final bgColor = isDark ? DarkColors.surface : LightColors.surface;
     final textSecondary = isDark
         ? DarkColors.textSecondary
         : LightColors.textSecondary;
@@ -493,13 +914,62 @@ class _SearchingPharmaciesScreenState
     );
   }
 
-  Widget _buildAllPharmaciesFailedScreen(RoutingStateModel state, bool isDark) {
+  Widget _buildOfferReceivedBanner(BuildContext context, int count, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreen.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.primaryGreen.withOpacity(0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.celebration_rounded,
+            color: AppColors.primaryGreen,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Offer Received! / تم استلام عرض سعر!',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'We found $count pharmacy offer(s) for your prescription.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAllPharmaciesFailedScreen(RoutingStateModel state, bool isDark, {bool isExplicitlyRejected = false}) {
     final textSecondary = isDark
         ? DarkColors.textSecondary
         : LightColors.textSecondary;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Search Completed')),
+      appBar: AppBar(title: Text(isExplicitlyRejected ? 'Request Cancelled' : 'Search Completed')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -507,20 +977,22 @@ class _SearchingPharmaciesScreenState
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.sentiment_dissatisfied_rounded,
+                isExplicitlyRejected ? Icons.cancel_outlined : Icons.sentiment_dissatisfied_rounded,
                 size: 64,
                 color: AppColors.accentRed,
               ),
               const SizedBox(height: 24),
               Text(
-                'No Pharmacies Responded',
+                isExplicitlyRejected ? 'Request Declined / Cancelled' : 'No Pharmacies Responded',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                'We contacted ${state.failedPharmacyIds.length} pharmacies but none responded. Please try again later or contact manually.',
+                isExplicitlyRejected 
+                    ? 'The request was declined by nearby pharmacies or cancelled. You can try resubmitting or contacting directly.'
+                    : 'We contacted ${state.failedPharmacyIds.length} pharmacies but none responded. Please try again later or contact manually.',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,

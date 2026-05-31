@@ -28,6 +28,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
   // Controllers initialized once and disposed properly
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
+  late final TextEditingController _workingHoursController;
   late final TextEditingController _addressController;
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
@@ -37,12 +38,14 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
   double _latitude = 30.0444;
   double _longitude = 31.2357;
   bool _isSubmitting = false;
+  bool _hasDelivery = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
+    _workingHoursController = TextEditingController();
     _addressController = TextEditingController();
     _phoneController = TextEditingController();
     _emailController = TextEditingController();
@@ -54,6 +57,7 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _workingHoursController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
@@ -101,6 +105,10 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
         phone: _phoneController.text.trim().isEmpty 
             ? null 
             : _phoneController.text.trim(),
+        workingHours: _workingHoursController.text.trim().isEmpty
+            ? null
+            : _workingHoursController.text.trim(),
+        hasDelivery: _hasDelivery,
         email: _emailController.text.trim().isEmpty 
             ? null 
             : _emailController.text.trim(),
@@ -236,6 +244,23 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
             _NameField(controller: _nameController),
             const SizedBox(height: AppSpacing.lg),
             _DescriptionField(controller: _descriptionController),
+            const SizedBox(height: AppSpacing.lg),
+            _WorkingHoursField(controller: _workingHoursController),
+            const SizedBox(height: AppSpacing.lg),
+            SwitchListTile(
+              title: const Text('Delivery Service'),
+              subtitle: Text(_hasDelivery ? 'Offers home delivery' : 'No home delivery'),
+              value: _hasDelivery,
+              onChanged: (value) {
+                setState(() {
+                  _hasDelivery = value;
+                });
+              },
+              secondary: Icon(
+                _hasDelivery ? Icons.local_shipping : Icons.shopping_bag_outlined,
+                color: _hasDelivery ? AppColors.primaryGreen : null,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.xxl),
@@ -671,6 +696,25 @@ class _LicenseField extends StatelessWidget {
         prefixIcon: Icon(Icons.verified_user),
       ),
       textCapitalization: TextCapitalization.characters,
+    );
+  }
+}
+
+class _WorkingHoursField extends StatelessWidget {
+  final TextEditingController controller;
+
+  const _WorkingHoursField({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      decoration: const InputDecoration(
+        labelText: 'Working Hours',
+        hintText: 'e.g. 24/7 or 08:00 AM - 12:00 AM',
+        prefixIcon: Icon(Icons.access_time),
+      ),
+      textCapitalization: TextCapitalization.sentences,
     );
   }
 }

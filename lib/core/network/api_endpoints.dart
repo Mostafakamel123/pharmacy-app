@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:pharmacy_app/core/network/dio_client.dart';
 
@@ -9,6 +10,34 @@ import 'package:pharmacy_app/core/network/dio_client.dart';
 /// - Pharmacies endpoints
 class ApiEndpoints {
   final Dio _dio = DioClient.instance.dio;
+
+  Map<String, dynamic> _safeParseMap(dynamic data) {
+    if (data == null) return {};
+    if (data is Map) return Map<String, dynamic>.from(data);
+    if (data is String) {
+      try {
+        final parsed = jsonDecode(data);
+        if (parsed is Map) return Map<String, dynamic>.from(parsed);
+      } catch (e) {
+        print('DEBUG ApiEndpoints: Error parsing map response: $e');
+      }
+    }
+    return {};
+  }
+
+  List<dynamic> _safeParseList(dynamic data) {
+    if (data == null) return [];
+    if (data is List) return data;
+    if (data is String) {
+      try {
+        final parsed = jsonDecode(data);
+        if (parsed is List) return parsed;
+      } catch (e) {
+        print('DEBUG ApiEndpoints: Error parsing list response: $e');
+      }
+    }
+    return [];
+  }
 
   // ========================= Auth Endpoints =========================
 
@@ -25,7 +54,7 @@ class ApiEndpoints {
         'password': password,
       },
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// POST /api/Auth/register
@@ -45,7 +74,7 @@ class ApiEndpoints {
         'confirmPassword': confirmPassword,
       },
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   // ========================= Identity Endpoints =========================
@@ -63,7 +92,7 @@ class ApiEndpoints {
         'password': password,
       },
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// POST /api/identity/login
@@ -85,7 +114,7 @@ class ApiEndpoints {
       },
       options: Options(headers: {'Accept': 'application/json'}),
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// POST /api/identity/refresh
@@ -98,7 +127,7 @@ class ApiEndpoints {
       data: {'refreshToken': refreshToken},
       options: Options(headers: {'Accept': 'application/json'}),
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// GET /api/identity/confirmEmail
@@ -173,7 +202,7 @@ class ApiEndpoints {
       },
       options: Options(headers: {'Accept': 'application/json'}),
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// GET /api/identity/manage/info
@@ -183,7 +212,7 @@ class ApiEndpoints {
       '/api/identity/manage/info',
       options: Options(headers: {'Accept': 'application/json'}),
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// POST /api/identity/manage/info
@@ -202,14 +231,14 @@ class ApiEndpoints {
       },
       options: Options(headers: {'Accept': 'application/json'}),
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// GET /api/identity/profile
   /// Get user profile (requires auth token)
   Future<Map<String, dynamic>> getProfile() async {
     final response = await _dio.get('/api/identity/profile');
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// PATCH /api/identity/user
@@ -278,21 +307,21 @@ class ApiEndpoints {
         'pharmacyId': pharmacyId,
       },
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// GET /api/Pharmacies
   /// Get list of all pharmacies
   Future<List<dynamic>> getPharmacies() async {
     final response = await _dio.get('/api/Pharmacies');
-    return response.data as List;
+    return _safeParseList(response.data);
   }
 
   /// GET /api/Pharmacies/my-pharmacies
   /// Get current user's pharmacies (requires auth token)
   Future<List<dynamic>> getMyPharmacies() async {
     final response = await _dio.get('/api/Pharmacies/my-pharmacies');
-    return response.data as List;
+    return _safeParseList(response.data);
   }
 
   /// POST /api/Pharmacies
@@ -321,14 +350,14 @@ class ApiEndpoints {
         'longitude': longitude,
       },
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// GET /api/Pharmacies/{id}
   /// Get pharmacy by ID (ID must be a valid GUID)
   Future<Map<String, dynamic>> getPharmacyById({required String id}) async {
     final response = await _dio.get('/api/Pharmacies/$id');
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// PUT /api/Pharmacies/{id}
@@ -358,7 +387,7 @@ class ApiEndpoints {
         if (longitude != null) 'longitude': longitude,
       },
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   /// DELETE /api/Pharmacies/{id}
@@ -383,7 +412,7 @@ class ApiEndpoints {
         'radius': radius,
       },
     );
-    return response.data as List;
+    return _safeParseList(response.data);
   }
 
   /// POST /api/Pharmacies/toggle-favorite
@@ -398,7 +427,7 @@ class ApiEndpoints {
         'pharmacyId': pharmacyId,
       },
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   // ========================= Posts Endpoints =========================
@@ -419,11 +448,13 @@ class ApiEndpoints {
     );
     // The API might return a pagination wrapper or direct list
     // Handle both cases
-    final data = response.data;
-    if (data is Map && data.containsKey('items')) {
+    final data = _safeParseMap(response.data);
+    if (data.containsKey('items')) {
       return data['items'] as List;
-    } else if (data is List) {
-      return data;
+    }
+    final listData = _safeParseList(response.data);
+    if (listData.isNotEmpty) {
+      return listData;
     }
     return [];
   }
@@ -454,7 +485,7 @@ class ApiEndpoints {
       '/api/Posts',
       data: formData,
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
   }
 
   // ========================= Prescriptions Endpoints =========================
@@ -469,7 +500,10 @@ class ApiEndpoints {
     required double longitude,
   }) async {
     final formData = FormData.fromMap({
-      'File': await MultipartFile.fromFile(filePath),
+      'File': await MultipartFile.fromFile(
+        filePath,
+        filename: filePath.split('/').last,
+      ),
       if (notes != null && notes.isNotEmpty) 'Notes': notes,
       'Latitude': latitude,
       'Longitude': longitude,
@@ -479,7 +513,14 @@ class ApiEndpoints {
       '/api/Prescriptions',
       data: formData,
     );
-    return response.data as Map<String, dynamic>;
+    return _safeParseMap(response.data);
+  }
+
+  /// GET /api/Prescriptions/{id}
+  /// Get a specific prescription by ID (including replies)
+  Future<Map<String, dynamic>> getPrescriptionById({required String id}) async {
+    final response = await _dio.get('/api/Prescriptions/$id');
+    return _safeParseMap(response.data);
   }
 
   /// GET /api/Prescriptions/my-prescriptions
@@ -495,11 +536,13 @@ class ApiEndpoints {
         'pageSize': pageSize,
       },
     );
-    final data = response.data;
-    if (data is Map && data.containsKey('items')) {
+    final data = _safeParseMap(response.data);
+    if (data.containsKey('items')) {
       return data['items'] as List;
-    } else if (data is List) {
-      return data;
+    }
+    final listData = _safeParseList(response.data);
+    if (listData.isNotEmpty) {
+      return listData;
     }
     return [];
   }
@@ -511,9 +554,99 @@ class ApiEndpoints {
     required String id,
     required int status,
   }) async {
-    await _dio.patch(
+    final response = await _dio.patch(
       '/api/Prescriptions/$id/status',
       data: status,
+    );
+    if (response.statusCode != null && response.statusCode! >= 400) {
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        message: 'Failed to update status: ${response.data}',
+      );
+    }
+  }
+
+  /// PUT /api/Prescriptions/{prescriptionId}/replies/{replyId}/accept
+  /// Accept a specific pharmacy reply/offer for a prescription
+  Future<void> acceptPharmacyReply({
+    required String prescriptionId,
+    required String replyId,
+  }) async {
+    await _dio.put(
+      '/api/Prescriptions/$prescriptionId/replies/$replyId/accept',
+    );
+  }
+
+  /// GET /api/Prescriptions/nearby/{pharmacyId}
+  /// Get active prescriptions near a specific pharmacy
+  Future<List<dynamic>> getNearbyPrescriptions({
+    required String pharmacyId,
+    double radius = 5.0,
+  }) async {
+    final response = await _dio.get(
+      '/api/Prescriptions/nearby/$pharmacyId',
+      queryParameters: {
+        'radius': radius.toInt(),
+      },
+    );
+    return _safeParseList(response.data);
+  }
+
+  /// POST /api/Prescriptions/{id}/replies
+  /// Submit a pharmacy reply/offer to a prescription request
+  Future<Map<String, dynamic>> replyToPrescription({
+    required String prescriptionId,
+    required String pharmacyId,
+    required String message,
+    required double totalPrice,
+    required bool isAvailable,
+  }) async {
+    final response = await _dio.post(
+      '/api/Prescriptions/$prescriptionId/replies',
+      data: {
+        'prescriptionId': prescriptionId,
+        'pharmacyId': pharmacyId,
+        'message': message,
+        'totalPrice': totalPrice,
+        'isAvailable': isAvailable,
+      },
+    );
+    if (response.statusCode != null && response.statusCode! >= 400) {
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        message: 'Failed to submit offer: ${response.data}',
+      );
+    }
+    return _safeParseMap(response.data);
+  }
+
+  /// PUT /api/Prescriptions/{id}
+  /// Update prescription text/notes
+  Future<Map<String, dynamic>> updatePrescription({
+    required String id,
+    required String notes,
+  }) async {
+    final response = await _dio.put(
+      '/api/Prescriptions/$id',
+      data: '"$notes"',
+      options: Options(
+        contentType: 'application/json',
+      ),
+    );
+    return _safeParseMap(response.data);
+  }
+
+  /// DELETE /api/Prescriptions/{id}
+  /// Cancel or delete a prescription request
+  Future<void> deletePrescription({
+    required String id,
+  }) async {
+    await _dio.delete(
+      '/api/Prescriptions/$id',
     );
   }
 }

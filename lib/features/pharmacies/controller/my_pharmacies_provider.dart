@@ -66,8 +66,8 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
         latitude: pharmacy.latitude,
         longitude: pharmacy.longitude,
         contactNumber: pharmacy.phone,
-        workingHours: null, // Can be added if needed
-        hasDelivery: false, // Default value, can be updated later
+        workingHours: pharmacy.workingHours,
+        hasDelivery: pharmacy.hasDelivery,
       );
       
       // Parse the created pharmacy from response
@@ -101,6 +101,8 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
         latitude: updatedPharmacy.latitude,
         longitude: updatedPharmacy.longitude,
         contactNumber: updatedPharmacy.phone,
+        workingHours: updatedPharmacy.workingHours,
+        hasDelivery: updatedPharmacy.hasDelivery,
       );
       
       // Since the API returns success: true rather than the pharmacy model,

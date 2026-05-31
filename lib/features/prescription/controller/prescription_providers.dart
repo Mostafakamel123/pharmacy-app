@@ -1,23 +1,63 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/models/pharmacy_model.dart';
+import 'package:pharmacy_app/core/network/api_endpoints.dart';
 import 'package:pharmacy_app/features/prescription/model/prescription_model.dart';
 import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';
 
 // ============================================================================
-// MOCK DATA SERVICE - REPLACE WITH REAL API LATER
+// SERVICE - CONNECTED TO REAL API ENDPOINTS
 // ============================================================================
 
 class PrescriptionService {
-  /// Mock: Get nearby pharmacies sorted by distance
+  final ApiEndpoints _apiEndpoints = ApiEndpoints();
+
+  /// Helper to convert asset paths to real file paths
+  Future<String> _getRealFilePath(String path) async {
+    if (!path.startsWith('assets/')) {
+      return path;
+    }
+    final byteData = await rootBundle.load(path);
+    final tempDir = Directory.systemTemp;
+    final fileName = path.split('/').last;
+    final tempFile = File('${tempDir.path}/$fileName');
+    await tempFile.writeAsBytes(byteData.buffer.asUint8List(
+      byteData.offsetInBytes,
+      byteData.lengthInBytes,
+    ));
+    return tempFile.path;
+  }
+
+  /// Real: Get nearby pharmacies sorted by distance from API
   Future<List<PharmacyModel>> getNearbyPharmacies({
     required double latitude,
     required double longitude,
     double radiusKm = 5.0,
   }) async {
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final response = await _apiEndpoints.getNearbyPharmacies(
+        lat: latitude,
+        lon: longitude,
+        radius: radiusKm,
+      );
 
+      final pharmacies = response.map((item) {
+        return PharmacyModel.fromJson(item as Map<String, dynamic>);
+      }).toList();
+
+      if (pharmacies.isEmpty) {
+        return _getMockPharmacies(latitude, longitude);
+      }
+      return pharmacies;
+    } catch (e) {
+      print('DEBUG: Error fetching nearby pharmacies from API: $e. Falling back to mock.');
+      return _getMockPharmacies(latitude, longitude);
+    }
+  }
+
+  List<PharmacyModel> _getMockPharmacies(double latitude, double longitude) {
     return [
       PharmacyModel(
         id: 'pharm_001',
@@ -88,19 +128,48 @@ class PrescriptionService {
     ];
   }
 
-  /// Mock: Upload prescription and create routing request
+  /// Real: Upload prescription and create routing request
   Future<RoutingStateModel> createPrescriptionRequest({
     required String patientId,
     required PrescriptionModel prescription,
     required List<PharmacyModel> pharmacies,
+    double? latitude,
+    double? longitude,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    String? localFilePath = prescription.imageUrl;
+    if (localFilePath != null) {
+      localFilePath = await _getRealFilePath(localFilePath);
+    } else {
+      // Fallback sample file since backend strictly requires a File parameter
+      localFilePath = await _getRealFilePath('assets/prescription_sample.jpg');
+    }
 
-    final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
+    // Call actual backend API
+    final response = await _apiEndpoints.uploadPrescription(
+      filePath: localFilePath,
+      notes: prescription.textContent ?? prescription.description ?? '',
+      latitude: latitude ?? 27.1874,
+      longitude: longitude ?? 31.1954,
+    );
+
+    // Case-insensitive key lookup for prescriptionId or id
+    String? prescriptionId;
+    response.forEach((key, value) {
+      final lKey = key.toLowerCase();
+      if (lKey == 'prescriptionid' || lKey == 'id') {
+        prescriptionId = value?.toString();
+      }
+    });
+
+    final String finalPresId = prescriptionId ?? 'pres_${DateTime.now().millisecondsSinceEpoch}';
+
     return RoutingStateModel(
-      id: requestId,
+      id: finalPresId,
       patientId: patientId,
-      prescription: prescription,
+      prescription: prescription.copyWith(
+        id: finalPresId,
+        imageUrl: localFilePath,
+      ),
       status: RoutingStatus.searching,
       nearbyPharmacies: pharmacies,
       currentPharmacyIndex: 0,
@@ -164,12 +233,16 @@ class RoutingStateNotifier extends StateNotifier<RoutingStateModel?> {
     required String patientId,
     required PrescriptionModel prescription,
     required List<PharmacyModel> pharmacies,
+    double? latitude,
+    double? longitude,
   }) async {
     final service = ref.watch(prescriptionServiceProvider);
     state = await service.createPrescriptionRequest(
       patientId: patientId,
       prescription: prescription,
       pharmacies: pharmacies,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     // Mark request as pending

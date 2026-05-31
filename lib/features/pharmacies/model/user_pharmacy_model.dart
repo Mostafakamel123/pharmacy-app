@@ -14,6 +14,7 @@ class UserPharmacyModel {
   final double latitude;
   final double longitude;
   final String? phone;
+  final String? workingHours;
   final String? email;
   final String? website;
   final String? licenseNumber;
@@ -34,6 +35,7 @@ class UserPharmacyModel {
     required this.latitude,
     required this.longitude,
     this.phone,
+    this.workingHours,
     this.email,
     this.website,
     this.licenseNumber,
@@ -66,6 +68,7 @@ class UserPharmacyModel {
     double? latitude,
     double? longitude,
     String? phone,
+    String? workingHours,
     String? email,
     String? website,
     String? licenseNumber,
@@ -86,6 +89,7 @@ class UserPharmacyModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       phone: phone ?? this.phone,
+      workingHours: workingHours ?? this.workingHours,
       email: email ?? this.email,
       website: website ?? this.website,
       licenseNumber: licenseNumber ?? this.licenseNumber,
@@ -110,6 +114,7 @@ class UserPharmacyModel {
       'latitude': latitude,
       'longitude': longitude,
       'phone': phone,
+      'working_hours': workingHours,
       'email': email,
       'website': website,
       'license_number': licenseNumber,
@@ -160,6 +165,7 @@ class UserPharmacyModel {
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       phone: json['phone'] as String? ?? json['contactNumber'] as String?,
+      workingHours: json['workingHours'] as String? ?? json['working_hours'] as String?,
       email: json['email'] as String?,
       website: json['website'] as String?,
       licenseNumber: json['license_number'] as String? ?? json['licenseNumber'] as String?,
@@ -174,7 +180,7 @@ class UserPharmacyModel {
   static List<UserPharmacyModel> sampleData(String currentUserId) {
     return [
       UserPharmacyModel(
-        id: 'pharmacy_1',
+        id: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
         name: 'Al-Shifa Pharmacy',
         description: 'Your trusted neighborhood pharmacy',
         logoUrl: null,
@@ -188,7 +194,7 @@ class UserPharmacyModel {
         createdAt: DateTime.now().subtract(const Duration(days: 90)),
       ),
       UserPharmacyModel(
-        id: 'pharmacy_2',
+        id: 'd0a4c281-a67b-4011-893c-a93108920199',
         name: 'Sehat Pharmacy',
         description: '24/7 Pharmacy services',
         ownerUserId: 'user_2',

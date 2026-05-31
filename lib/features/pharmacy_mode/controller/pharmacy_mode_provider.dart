@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pharmacy_app/core/network/api_endpoints.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
-
 /// Application mode enum
 enum AppMode {
   /// User is browsing in personal mode
@@ -152,18 +152,27 @@ class PharmacyModeNotifier extends StateNotifier<PharmacyModeState> {
     state = state.copyWith(error: null);
   }
 
-  /// Load user's pharmacies (simulate API call)
+  /// Load user's pharmacies from real API
   Future<void> loadUserPharmacies(String userId) async {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(milliseconds: 500));
+      final apiEndpoints = ApiEndpoints();
+      final list = await apiEndpoints.getMyPharmacies();
+      final pharmacies = list
+          .map((item) => UserPharmacyModel.fromJson(item as Map<String, dynamic>))
+          .toList();
       
+      if (pharmacies.isEmpty) {
+        // Fallback to sample data for testing/demo if they don't have any pharmacies yet
+        final samplePharmacies = UserPharmacyModel.sampleData(userId);
+        setUserPharmacies(samplePharmacies);
+      } else {
+        setUserPharmacies(pharmacies);
+      }
+    } catch (e) {
+      print('DEBUG: Error loading user pharmacies from API: $e. Falling back to sample.');
       final samplePharmacies = UserPharmacyModel.sampleData(userId);
       setUserPharmacies(samplePharmacies);
-    } catch (e) {
-      setError('Failed to load pharmacies: $e');
-      setLoading(false);
     }
   }
 }

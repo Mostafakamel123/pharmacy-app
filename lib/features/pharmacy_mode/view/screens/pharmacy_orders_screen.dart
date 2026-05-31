@@ -1,9 +1,11 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_request_providers.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_prescription_detail_screen.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
 
 /// Pharmacy Orders Screen
@@ -134,7 +136,7 @@ class _PharmacyOrdersScreenState extends ConsumerState<PharmacyOrdersScreen>
 
 enum OrderStatus { pending, accepted, completed }
 
-class _OrdersList extends StatelessWidget {
+class _OrdersList extends ConsumerWidget {
   final OrderStatus status;
   final dynamic pharmacy;
 
@@ -143,30 +145,89 @@ class _OrdersList extends StatelessWidget {
     required this.pharmacy,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    // Sample data - replace with actual data from provider
-    final orders = _getSampleOrders();
+  void _showOfferDialog(BuildContext context, WidgetRef ref, String prescriptionId, String pharmacyId) {
+    final priceController = TextEditingController();
+    final msgController = TextEditingController();
+    bool available = true;
 
-    if (orders.isEmpty) {
-      return _buildEmptyList(context);
-    }
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Submit Price Offer'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: priceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Total Price (EGP)',
+                        hintText: 'e.g. 150',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: msgController,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes / Message',
+                        hintText: 'e.g. Fully available, fast delivery',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: available,
+                          onChanged: (val) {
+                            setState(() {
+                              available = val ?? true;
+                            });
+                          },
+                        ),
+                        const Text('All items are available'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final double price = double.tryParse(priceController.text) ?? 0.0;
+                    final String message = msgController.text;
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        return _OrderCard(
-          order: order,
-          onAccept: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Order #${order['id']} accepted')),
-            );
-          },
-          onReject: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Order #${order['id']} rejected')),
+                    final success = await ref.read(pharmacyActionsProvider).submitReply(
+                      prescriptionId: prescriptionId,
+                      pharmacyId: pharmacyId,
+                      message: message,
+                      totalPrice: price,
+                      isAvailable: available,
+                    );
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(success ? 'Offer submitted successfully!' : 'Error submitting offer.'),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Submit Offer'),
+                ),
+              ],
             );
           },
         );
@@ -174,61 +235,125 @@ class _OrdersList extends StatelessWidget {
     );
   }
 
-  List<Map<String, dynamic>> _getSampleOrders() {
-    switch (status) {
-      case OrderStatus.pending:
-        return [
-          {
-            'id': '1234',
-            'customer': 'Ahmed Mohamed',
-            'items': 'Paracetamol 500mg x2, Ibuprofen x1',
-            'time': '10 min ago',
-            'price': '45 EGP',
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prescriptionsAsync = ref.watch(
+      nearbyPrescriptionsProvider((pharmacyId: pharmacy.id, radius: 5.0)),
+    );
+    final localState = ref.watch(pharmacyPrescriptionsLocalProvider(pharmacy.id));
+    final rejectedIds = localState.rejectedIds;
+    final offeredDetails = localState.offeredDetails;
+    final offeredIds = offeredDetails.keys.toSet();
+
+    return prescriptionsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err')),
+      data: (presList) {
+        final List<dynamic> filteredList;
+        if (status == OrderStatus.pending) {
+          filteredList = presList.where((p) {
+            final id = p['id'] as String? ?? '';
+            final isRejected = rejectedIds.contains(id);
+            final isOffered = offeredIds.contains(id);
+            final isPendingStatus = p['status'] == null || p['status'] == 0 || p['status'] == 1;
+            return !isRejected && !isOffered && isPendingStatus;
+          }).toList();
+        } else if (status == OrderStatus.accepted) {
+          filteredList = presList.where((p) {
+            final id = p['id'] as String? ?? '';
+            final isRejected = rejectedIds.contains(id);
+            final isOffered = offeredIds.contains(id);
+            final isAcceptedStatus = p['status'] == 2 || p['status'] == 3;
+            return !isRejected && (isAcceptedStatus || isOffered);
+          }).toList();
+        } else {
+          filteredList = presList.where((p) {
+            final id = p['id'] as String? ?? '';
+            final isRejected = rejectedIds.contains(id);
+            final isCancelledStatus = p['status'] == 5 || p['status'] == 4;
+            return isRejected || isCancelledStatus;
+          }).toList();
+        }
+
+        if (filteredList.isEmpty) {
+          return _buildEmptyList(context);
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          itemCount: filteredList.length,
+          itemBuilder: (context, index) {
+            final item = filteredList[index];
+            final String id = item['id'] as String? ?? '';
+            final String notes = item['notes'] as String? ?? 'Prescription Request';
+            final String displayId = id.length >= 4 ? id.substring(0, 4).toUpperCase() : id.toUpperCase();
+            final String customer = 'Patient #$displayId';
+            final int pStatus = item['status'] as int? ?? 0;
+            
+            final offerDetail = offeredDetails[id];
+            final String priceText;
+            if (offerDetail != null) {
+              priceText = '${offerDetail['price']} EGP';
+            } else {
+              priceText = 'No price offered yet';
+            }
+
+            final isRejectedItem = rejectedIds.contains(id);
+
+            final orderItem = {
+              'id': displayId,
+              'fullId': id,
+              'customer': customer,
+              'items': notes,
+              'time': 'Nearby Request',
+              'price': priceText,
+              'status': pStatus == 2 
+                  ? 'Preparing' 
+                  : (pStatus == 3 
+                      ? 'Ready' 
+                      : (isRejectedItem
+                          ? 'Rejected'
+                          : (offerDetail != null ? 'Offered' : null))),
+            };
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PharmacyPrescriptionDetailScreen(
+                      prescription: item,
+                      pharmacy: pharmacy,
+                    ),
+                  ),
+                );
+              },
+              child: _OrderCard(
+                order: orderItem,
+                onAccept: () {
+                  _showOfferDialog(context, ref, id, pharmacy.id);
+                },
+                onReject: () async {
+                  // Call backend API to change status to 4 (Rejected/Declined)
+                  await ref.read(pharmacyActionsProvider).changeStatus(
+                    prescriptionId: id,
+                    status: 4,
+                  );
+                  
+                  await ref.read(pharmacyPrescriptionsLocalProvider(pharmacy.id).notifier)
+                      .rejectPrescription(id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Request Rejected / تم رفض الطلب')),
+                    );
+                  }
+                },
+              ),
+            );
           },
-          {
-            'id': '1235',
-            'customer': 'Fatima Ali',
-            'items': 'Vitamin C 1000mg x3',
-            'time': '25 min ago',
-            'price': '90 EGP',
-          },
-          {
-            'id': '1236',
-            'customer': 'Mohamed Hassan',
-            'items': 'Amoxicillin 500mg x1, Panadol Extra x2',
-            'time': '1 hour ago',
-            'price': '75 EGP',
-          },
-        ];
-      case OrderStatus.accepted:
-        return [
-          {
-            'id': '1230',
-            'customer': 'Sara Ibrahim',
-            'items': 'Aspirin 100mg x2',
-            'time': '2 hours ago',
-            'price': '30 EGP',
-            'status': 'Preparing',
-          },
-        ];
-      case OrderStatus.completed:
-        return [
-          {
-            'id': '1225',
-            'customer': 'Omar Khalid',
-            'items': 'Nurofen 400mg x1',
-            'time': 'Yesterday',
-            'price': '35 EGP',
-          },
-          {
-            'id': '1220',
-            'customer': 'Layla Mahmoud',
-            'items': 'Multivitamin x2, Zinc x1',
-            'time': '2 days ago',
-            'price': '120 EGP',
-          },
-        ];
-    }
+        );
+      },
+    );
   }
 
   Widget _buildEmptyList(BuildContext context) {
@@ -316,14 +441,19 @@ class _OrderCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Order #${order['id']}',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+              Expanded(
+                child: Text(
+                  'Order #${order['id']}',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: AppSpacing.md),
               Text(
                 order['price'] as String,
                 style: const TextStyle(
@@ -361,60 +491,73 @@ class _OrderCard extends StatelessWidget {
                   color: isDark ? DarkColors.textHint : LightColors.textHint,
                 ),
               ),
-              if (order['status'] != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    order['status'] as String,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryBlue,
+              if (order['status'] != null) ...[
+                (() {
+                  Color badgeColor = AppColors.primaryBlue;
+                  final String s = order['status'] as String;
+                  if (s == 'Rejected') {
+                    badgeColor = AppColors.accentRed;
+                  } else if (s == 'Ready' || s == 'Offered') {
+                    badgeColor = AppColors.primaryGreen;
+                  }
+                  
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: badgeColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
-                  ),
-                ),
+                    child: Text(
+                      s,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: badgeColor,
+                      ),
+                    ),
+                  );
+                })(),
+              ],
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onReject,
-                  icon: const Icon(Icons.close, size: 18),
-                  label: const Text('Reject'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.accentRed,
-                    side: const BorderSide(color: AppColors.accentRed),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+          if (order['status'] == null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onReject,
+                    icon: const Icon(Icons.close, size: 18),
+                    label: const Text('Reject'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.accentRed,
+                      side: const BorderSide(color: AppColors.accentRed),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: onAccept,
-                  icon: const Icon(Icons.check, size: 18),
-                  label: const Text('Accept'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onAccept,
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text('Accept'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );

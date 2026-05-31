@@ -47,6 +47,9 @@ dependencies:
   # Location services
   geolocator: ^14.0.2
 
+  # Image Picker
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

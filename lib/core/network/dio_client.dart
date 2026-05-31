@@ -78,66 +78,133 @@ class _AuthInterceptor extends Interceptor {
     return handler.next(options);
   }
 
+  /// Helper to perform token refresh using a clean Dio instance to avoid recursion
+  Future<String?> _performTokenRefresh(String baseUrl) async {
+    try {
+      final refreshToken =
+          await LocalStorageHelper.getString(AppConstants.refreshTokenKey);
+
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        // Create a dedicated Dio instance without interceptors to avoid loops
+        final dio = Dio(BaseOptions(
+          baseUrl: baseUrl.isNotEmpty ? baseUrl : EnvConfig.apiBaseUrl,
+          contentType: 'application/json',
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ));
+
+        final response = await dio.post(
+          '/api/identity/refresh',
+          data: {'refreshToken': refreshToken},
+          options: Options(headers: {'Accept': 'application/json'}),
+        );
+
+        if (response.statusCode == 200) {
+          final newToken = response.data['accessToken'] as String?;
+          final newRefreshToken = response.data['refreshToken'] as String?;
+
+          if (newToken != null && newToken.isNotEmpty) {
+            // Save new tokens
+            await LocalStorageHelper.setString(
+              AppConstants.authTokenKey,
+              newToken,
+            );
+            if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+              await LocalStorageHelper.setString(
+                AppConstants.refreshTokenKey,
+                newRefreshToken,
+              );
+            }
+            return newToken;
+          }
+        }
+      }
+    } catch (e) {
+      print('DEBUG: Error in _AuthInterceptor refreshing token: $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<void> onResponse(
+    Response response,
+    ResponseInterceptorHandler handler,
+  ) async {
+    // Handle 401 Unauthorized - refresh token
+    // (since validateStatus: status < 500 allows 401 to be processed as successful)
+    if (response.statusCode == 401 &&
+        !response.requestOptions.path.contains('/api/identity/refresh')) {
+      final newToken = await _performTokenRefresh(response.requestOptions.baseUrl);
+
+      if (newToken != null) {
+        // Retry original request with new token
+        response.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+        try {
+          final retryResponse = await DioClient.instance.dio.request(
+            response.requestOptions.path,
+            options: Options(
+              method: response.requestOptions.method,
+              headers: response.requestOptions.headers,
+            ),
+            data: response.requestOptions.data,
+          );
+          return handler.resolve(retryResponse);
+        } catch (e) {
+          print('DEBUG: Retry request in onResponse failed: $e');
+        }
+      }
+
+      // Token refresh failed or no refresh token - clear auth
+      await LocalStorageHelper.remove(AppConstants.authTokenKey);
+      await LocalStorageHelper.remove(AppConstants.refreshTokenKey);
+      await LocalStorageHelper.remove(AppConstants.userDataKey);
+
+      // Convert 401 response to a rejected DioException to prevent type casting crashes in the caller
+      return handler.reject(
+        DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          message: 'Session expired. Please login again.',
+        ),
+      );
+    }
+
+    return handler.next(response);
+  }
+
   @override
   Future<void> onError(
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
     // Handle 401 Unauthorized - refresh token
-    if (err.response?.statusCode == 401) {
-      try {
-        final refreshToken =
-            await LocalStorageHelper.getString(AppConstants.refreshTokenKey);
+    if (err.response?.statusCode == 401 &&
+        !err.requestOptions.path.contains('/api/identity/refresh')) {
+      final newToken = await _performTokenRefresh(err.requestOptions.baseUrl);
 
-        if (refreshToken != null && refreshToken.isNotEmpty) {
-          // Make refresh token request to Elaaj API
-          final dio = DioClient.instance.dio;
-          final response = await dio.post(
-            '/api/identity/refresh',
-            data: {'refreshToken': refreshToken},
-            options: Options(headers: {'Accept': 'application/json'}),
+      if (newToken != null) {
+        // Retry original request with new token
+        err.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+        try {
+          final retryResponse = await DioClient.instance.dio.request(
+            err.requestOptions.path,
+            options: Options(
+              method: err.requestOptions.method,
+              headers: err.requestOptions.headers,
+            ),
+            data: err.requestOptions.data,
           );
-
-          if (response.statusCode == 200) {
-            final newToken = response.data['accessToken'];
-            final newRefreshToken = response.data['refreshToken'];
-
-            // Save new tokens
-            await LocalStorageHelper.setString(
-              AppConstants.authTokenKey,
-              newToken,
-            );
-            await LocalStorageHelper.setString(
-              AppConstants.refreshTokenKey,
-              newRefreshToken,
-            );
-
-            // Retry original request with new token
-            err.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-            return handler.resolve(
-              await DioClient.instance.dio.request(
-                err.requestOptions.path,
-                options: Options(
-                  method: err.requestOptions.method,
-                  headers: err.requestOptions.headers,
-                ),
-                data: err.requestOptions.data,
-              ),
-            );
-          }
+          return handler.resolve(retryResponse);
+        } catch (e) {
+          print('DEBUG: Retry request in onError failed: $e');
         }
-
-        // Token refresh failed or no refresh token - clear auth and redirect to login
-        await LocalStorageHelper.remove(AppConstants.authTokenKey);
-        await LocalStorageHelper.remove(AppConstants.refreshTokenKey);
-        await LocalStorageHelper.remove(AppConstants.userDataKey);
-
-        // TODO: Implement app-wide logout/redirect to login
-        // You can emit a Riverpod event here to notify the app
-      } catch (e) {
-        // Token refresh failed
-        return handler.next(err);
       }
+
+      // Token refresh failed or no refresh token - clear auth
+      await LocalStorageHelper.remove(AppConstants.authTokenKey);
+      await LocalStorageHelper.remove(AppConstants.refreshTokenKey);
+      await LocalStorageHelper.remove(AppConstants.userDataKey);
     }
 
     return handler.next(err);

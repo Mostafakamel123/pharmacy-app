@@ -33,6 +33,11 @@ class LocalStorageHelper {
     return _prefs.getBool(key) ?? defaultValue;
   }
 
+  /// Retrieve a list of strings synchronously
+  static List<String>? getStringListSync(String key) {
+    return _prefs.getStringList(key);
+  }
+
   /// Retrieve an object synchronously from JSON string
   static T? getObjectSync<T>(
     String key, {

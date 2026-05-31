@@ -142,10 +142,11 @@ class PharmacyDashboardNotifier extends StateNotifier<PharmacyDashboardState> {
         if (statusInt == 3) statusStr = 'completed';
         if (statusInt == 4) statusStr = 'failed';
 
+        final String displayId = id.length >= 4 ? id.substring(0, 4).toUpperCase() : id.toUpperCase();
         loadedActivities.add(
           DashboardActivity(
             id: id,
-            title: 'Order #${id.substring(0, 4).toUpperCase()}',
+            title: 'Order #$displayId',
             subtitle: notes,
             time: 'Just now',
             type: DashboardActivityType.order,
