@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/failure.dart';
 import 'package:pharmacy_app/features/auth/model/auth_user.dart';
 import 'package:pharmacy_app/features/auth/service/auth_service.dart';
+import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
+import 'package:pharmacy_app/core/constants/app_constants.dart';
 
 /// Authentication state
 class AuthState {
@@ -46,15 +48,49 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
 
-  AuthNotifier(this._authService) : super(AuthState.initial) {
+  AuthNotifier(this._authService) : super(_getInitialState()) {
     // Check if user is already logged in on initialization
     _checkAuthStatus();
+  }
+
+  /// Get initial state synchronously from local storage
+  static AuthState _getInitialState() {
+    try {
+      final token = LocalStorageHelper.getStringSync(AppConstants.authTokenKey);
+      if (token != null && token.isNotEmpty) {
+        final userData = LocalStorageHelper.getObjectSync<AuthUser>(
+          AppConstants.userDataKey,
+          fromJson: (json) => AuthUser.fromJson(json as Map<String, dynamic>),
+        );
+        if (userData != null) {
+          return AuthState(
+            user: userData,
+            isAuthenticated: true,
+            isEmailVerified: userData.emailVerified,
+            isLoading: false,
+          );
+        }
+      }
+    } catch (e) {
+      // Ignore reading errors at startup
+    }
+    return AuthState.initial;
   }
 
   /// Check authentication status from local storage
   Future<void> _checkAuthStatus() async {
     try {
-      state = state.copyWith(isLoading: true);
+      final token = LocalStorageHelper.getStringSync(AppConstants.authTokenKey);
+      if (token == null || token.isEmpty) {
+        state = AuthState.initial;
+        return;
+      }
+
+      // If we are not authenticated yet, show loading.
+      // If we loaded cached credentials, keep them and fetch profile in the background.
+      if (!state.isAuthenticated) {
+        state = state.copyWith(isLoading: true);
+      }
       
       // Get profile info from API
       final profileData = await _authService.getProfileInfo();
@@ -67,13 +103,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isEmailVerified: user.emailVerified,
           isLoading: false,
         );
+        // Cache the fresh profile info
+        await LocalStorageHelper.setObject(AppConstants.userDataKey, profileData);
       } else {
-        // No user from API, check local storage
-        state = AuthState.initial;
+        // No user from API or API failed.
+        // If we are already authenticated from local storage, keep it (offline scenario).
+        if (state.user == null) {
+          state = AuthState.initial;
+        } else {
+          state = state.copyWith(isLoading: false);
+        }
       }
     } catch (e) {
-      // On error, assume not authenticated
-      state = AuthState.initial;
+      // On error (e.g. no internet), if we are already authenticated, keep it.
+      if (state.user == null) {
+        state = AuthState.initial;
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
     }
   }
 

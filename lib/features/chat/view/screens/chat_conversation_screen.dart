@@ -23,6 +23,7 @@ class ChatConversationScreen extends ConsumerStatefulWidget {
 
 class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen> {
   late ScrollController _scrollController;
+  int _lastMessageCount = 0;
 
   @override
   void initState() {
@@ -161,9 +162,15 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             Expanded(
               child: messagesAsync.when(
                 data: (messages) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _scrollToBottom();
-                  });
+                  if (messages.length != _lastMessageCount) {
+                    final isNewMessage = messages.length > _lastMessageCount;
+                    _lastMessageCount = messages.length;
+                    if (isNewMessage) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _scrollToBottom();
+                      });
+                    }
+                  }
 
                   if (messages.isEmpty) {
                     return Center(

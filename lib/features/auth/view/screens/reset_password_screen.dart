@@ -121,17 +121,19 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               const SizedBox(height: 20),
 
               if (!_isSuccess) ...[
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.security_rounded,
-                    size: 40,
-                    color: AppColors.primaryBlue,
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.security_rounded,
+                      size: 40,
+                      color: AppColors.primaryBlue,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -241,17 +243,19 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 _ResetPasswordButton(onPressed: _handleSubmit),
               ] else ...[
                 const SizedBox(height: 40),
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 40,
-                    color: AppColors.primaryGreen,
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 40,
+                      color: AppColors.primaryGreen,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 import 'package:pharmacy_app/features/home/view/widgets/home_header.dart';
+import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
 import 'package:pharmacy_app/features/home/view/widgets/nearby_pharmacies_section.dart';
 import 'package:pharmacy_app/features/home/view/widgets/quick_actions_section.dart';
 import 'package:pharmacy_app/features/home/view/widgets/recent_posts_section.dart';
@@ -44,9 +45,12 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
             // Header
             const SliverToBoxAdapter(child: HomeHeader()),
             // Search bar
-            const SliverToBoxAdapter(child: SmartSearchBar()),
-            // Removed SliverToBoxAdapter(child: SizedBox(height: 0))
-            // — zero-height box is a no-op layout and wastes a sliver slot.
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: StickySearchBarDelegate(
+                child: const SmartSearchBar(),
+              ),
+            ),
             // Nearby pharmacies
             const SliverToBoxAdapter(
                 child: NearbyPharmaciesSection()),
@@ -61,10 +65,11 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
       ),
       floatingActionButton: Consumer(
         builder: (context, ref, child) {
-          final routingState =
-              ref.watch(routingStateNotifierProvider);
-          final isRequestPending =
-              routingState?.isRequestPending ?? false;
+          final isRequestPending = ref.watch(
+            routingStateNotifierProvider.select(
+              (state) => state?.isRequestPending ?? false,
+            ),
+          );
           if (!isRequestPending) return const SizedBox.shrink();
 
           return FloatingActionButton(
@@ -84,6 +89,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     await Future.delayed(const Duration(milliseconds: 100));
     if (mounted) {
       await Future.wait<void>([
+        ref.read(profileProvider.notifier).refresh(),
         ref.read(nearbyPharmaciesProvider.notifier).refresh(),
         ref.read(recentPostsProvider.notifier).refresh(),
       ]);

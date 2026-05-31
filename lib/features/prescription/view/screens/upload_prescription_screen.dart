@@ -1,12 +1,13 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/routing/app_routes.dart';
 import 'package:pharmacy_app/features/prescription/model/prescription_model.dart';
-import 'package:pharmacy_app/features/prescription/model/pharmacy_model.dart';
+import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
 
 /// Upload Prescription Screen
@@ -205,17 +206,29 @@ class _UploadPrescriptionScreenState
                   padding: const EdgeInsets.all(12),
                   child: Container(
                     height: 150,
+                    width: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(AppRadius.md),
                       color: LightColors.surfaceVariant,
                     ),
                     child: Stack(
                       children: [
-                        Center(
-                          child: Icon(
-                            Icons.image,
-                            size: 48,
-                            color: LightColors.textHint,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          child: Center(
+                            child: _selectedImagePath!.startsWith('assets/')
+                                ? Image.asset(
+                                    _selectedImagePath!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 150,
+                                  )
+                                : Image.file(
+                                    File(_selectedImagePath!),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 150,
+                                  ),
                           ),
                         ),
                         Positioned(

@@ -135,20 +135,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
+                // Logo/Title
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 Text(
                   'Create Account',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   'Sign up to get started',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                   ),
                 ),

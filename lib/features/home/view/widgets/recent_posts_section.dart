@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 import 'package:pharmacy_app/features/home/model/home_post_model.dart';
+import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
+import 'package:pharmacy_app/features/posts/view/post_details_screen.dart';
+import 'package:pharmacy_app/features/posts/model/post_model.dart';
 
 class RecentPostsSection extends ConsumerWidget {
   const RecentPostsSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final postsAsync = ref.watch(recentPostsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return RepaintBoundary(
@@ -32,8 +34,8 @@ class RecentPostsSection extends ConsumerWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    // Navigate to posts feed screen
-                    Navigator.of(context).pushNamed('/posts');
+                    // Navigate to posts feed screen by switching bottom tab
+                    ref.read(navigationIndexProvider.notifier).state = 1;
                   },
                   child: Text(
                     'View All',
@@ -49,15 +51,26 @@ class RecentPostsSection extends ConsumerWidget {
               ],
             ),
           ),
-          postsAsync.when(
-            data: (posts) => _PostList(posts: posts),
-            loading: () => const _PostShimmerLoading(),
-            error: (_, __) => _ErrorState(
-              onRetry: () =>
-                  ref.read(recentPostsProvider.notifier).refresh(),
-            ),
-          ),
+          const _RecentPostsBody(),
         ],
+      ),
+    );
+  }
+}
+
+class _RecentPostsBody extends ConsumerWidget {
+  const _RecentPostsBody();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final postsAsync = ref.watch(recentPostsProvider);
+
+    return postsAsync.when(
+      data: (posts) => _PostList(posts: posts),
+      loading: () => const _PostShimmerLoading(),
+      error: (_, __) => _ErrorState(
+        onRetry: () =>
+            ref.read(recentPostsProvider.notifier).refresh(),
       ),
     );
   }
@@ -99,8 +112,25 @@ class _PostCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // Navigate to post details screen
-        Navigator.of(context).pushNamed('/post/${post.id}');
+        // Navigate to post details screen directly
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PostDetailsScreen(
+              post: PostModel(
+                id: post.id,
+                userId: 'unknown',
+                userName: 'User',
+                content: post.question,
+                category: PostCategory.advice,
+                imageUrl: post.attachmentUrl,
+                replyCount: post.replyCount,
+                status: post.hasResponse ? PostStatus.replied : PostStatus.open,
+                createdAt: post.createdAt,
+              ),
+            ),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -265,8 +295,25 @@ class _PostCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  // Navigate to post details screen
-                  Navigator.of(context).pushNamed('/post/${post.id}');
+                  // Navigate to post details screen directly
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PostDetailsScreen(
+                        post: PostModel(
+                          id: post.id,
+                          userId: 'unknown',
+                          userName: 'User',
+                          content: post.question,
+                          category: PostCategory.advice,
+                          imageUrl: post.attachmentUrl,
+                          replyCount: post.replyCount,
+                          status: post.hasResponse ? PostStatus.replied : PostStatus.open,
+                          createdAt: post.createdAt,
+                        ),
+                      ),
+                    ),
+                  );
                 },
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(

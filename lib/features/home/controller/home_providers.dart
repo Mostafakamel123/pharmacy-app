@@ -3,7 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/api_endpoints.dart';
 import 'package:pharmacy_app/features/home/model/home_post_model.dart';
-import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
+import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:geolocator/geolocator.dart';
 
 // ============================================================================
@@ -138,6 +138,26 @@ class RecentPostsNotifier extends StateNotifier<AsyncValue<List<HomePostModel>>>
     await _loadPosts();
   }
 }
+
+// ============================================================================
+// FILTERED NEARBY PHARMACIES PROVIDER - Combines nearbyPharmaciesProvider & searchQueryProvider
+// ============================================================================
+
+final filteredNearbyPharmaciesProvider = Provider<AsyncValue<List<PharmacyModel>>>((ref) {
+  final pharmaciesAsync = ref.watch(nearbyPharmaciesProvider);
+  final searchQuery = ref.watch(searchQueryProvider).toLowerCase();
+
+  if (searchQuery.isEmpty) {
+    return pharmaciesAsync;
+  }
+
+  return pharmaciesAsync.whenData((list) {
+    return list.where((pharmacy) {
+      return pharmacy.name.toLowerCase().contains(searchQuery) ||
+             pharmacy.address.toLowerCase().contains(searchQuery);
+    }).toList();
+  });
+});
 
 // ============================================================================
 // SEARCH QUERY PROVIDER

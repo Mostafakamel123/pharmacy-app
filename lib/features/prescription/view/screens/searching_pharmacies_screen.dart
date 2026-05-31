@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';
-import 'package:pharmacy_app/features/prescription/model/pharmacy_model.dart';
+import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
 
 /// Searching Pharmacies Screen
@@ -442,14 +442,14 @@ class _SearchingPharmaciesScreenState
           ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: remaining.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            final pharmacy = remaining[index];
-            return Container(
+        ...remaining.asMap().entries.map((entry) {
+          final index = entry.key;
+          final pharmacy = entry.value;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: index == remaining.length - 1 ? 0 : 8.0,
+            ),
+            child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: surfaceVariant,
@@ -486,9 +486,9 @@ class _SearchingPharmaciesScreenState
                   Icon(Icons.chevron_right, color: textHint),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }).toList(),
       ],
     );
   }

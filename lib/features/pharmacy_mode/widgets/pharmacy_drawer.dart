@@ -572,7 +572,6 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
               ] else ...[
                 Flexible(
                   child: ListView.builder(
-                    shrinkWrap: true,
                     physics: const ClampingScrollPhysics(),
                     itemCount: state.userPharmacies.length,
                     itemBuilder: (context, index) {
@@ -775,8 +774,8 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
     // Switch pharmacy mode immediately
     pharmacyModeNotifier.switchToPharmacyMode(pharmacy);
     
-    // Wait for 3 seconds to simulate loading and show "Switching..." message
-    await Future.delayed(const Duration(seconds: 3));
+    // Wait for 150 milliseconds to allow for a smooth premium fade transition
+    await Future.delayed(const Duration(milliseconds: 150));
 
     // Close loading dialog safely using dialogContext with fade out animation
     if (!dialogClosed && dialogContext != null && dialogContext!.mounted) {

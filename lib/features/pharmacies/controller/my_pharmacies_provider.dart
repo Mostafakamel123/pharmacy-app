@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/api_endpoints.dart';
+import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 import 'package:pharmacy_app/features/auth/service/auth_service.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
@@ -22,24 +23,31 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
     state = const AsyncValue.loading();
     
     try {
-      // Get all pharmacies from API
-      final response = await _apiEndpoints.getPharmacies();
+      // Get current user's pharmacies list
+      final response = await _apiEndpoints.getMyPharmacies();
       
-      // Convert to UserPharmacyModel list
-      final pharmacies = response
-          .map((json) => UserPharmacyModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-      
-      // Get current user ID (replace with actual auth provider)
-      final currentUserId = ref.read(currentUserIdProvider);
-      
-      // Filter pharmacies owned or managed by current user
-      final userPharmacies = pharmacies.where((p) => p.ownerUserId == currentUserId || p.adminUserIds.contains(currentUserId)).toList();
+      // Fetch full detailed pharmacy information for each in parallel
+      final detailedPharmacies = await Future.wait(
+        response.map((item) async {
+          final id = item['id'] as String;
+          try {
+            final fullDetails = await _apiEndpoints.getPharmacyById(id: id);
+            return UserPharmacyModel.fromJson(fullDetails);
+          } catch (e) {
+            // Fallback to basic info if full details fetch fails
+            final mapItem = item as Map<String, dynamic>;
+            return UserPharmacyModel.fromJson({
+              ...mapItem,
+              'ownerId': mapItem['role'] == 'Owner' ? ref.read(currentUserIdProvider) : '',
+            });
+          }
+        }),
+      );
       
       // Update pharmacy mode state with loaded pharmacies
-      ref.read(pharmacyModeProvider.notifier).setUserPharmacies(userPharmacies);
+      ref.read(pharmacyModeProvider.notifier).setUserPharmacies(detailedPharmacies);
       
-      state = AsyncValue.data(userPharmacies);
+      state = AsyncValue.data(detailedPharmacies);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -85,7 +93,7 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
   Future<bool> updatePharmacy(UserPharmacyModel updatedPharmacy) async {
     try {
       // Call API to update pharmacy
-      final response = await _apiEndpoints.updatePharmacy(
+      await _apiEndpoints.updatePharmacy(
         id: updatedPharmacy.id,
         name: updatedPharmacy.name,
         imageUrl: updatedPharmacy.logoUrl,
@@ -95,8 +103,9 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
         contactNumber: updatedPharmacy.phone,
       );
       
-      // Parse the updated pharmacy from response
-      final pharmacy = UserPharmacyModel.fromJson(response);
+      // Since the API returns success: true rather than the pharmacy model,
+      // we use updatedPharmacy directly as the parsed pharmacy.
+      final pharmacy = updatedPharmacy;
       
       // Update in local list
       final currentState = state.value ?? [];
@@ -209,8 +218,8 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
   }
 }
 
-/// Temporary provider for current user ID
-/// TODO: Replace with actual auth provider
+/// Real provider for current user ID linked to auth state
 final currentUserIdProvider = Provider<String>((ref) {
-  return 'current_user_id';
+  final authState = ref.watch(authProvider);
+  return authState.user?.id ?? '';
 });

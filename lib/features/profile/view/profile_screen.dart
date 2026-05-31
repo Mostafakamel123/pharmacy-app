@@ -8,6 +8,7 @@ import 'package:pharmacy_app/features/profile/view/saved_posts_screen.dart';
 import 'package:pharmacy_app/features/profile/view/widgets/profile_actions.dart';
 import 'package:pharmacy_app/features/profile/view/widgets/profile_header.dart';
 import 'package:pharmacy_app/features/profile/view/widgets/quick_stats.dart';
+import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -222,9 +223,9 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _LogoutDialog extends StatelessWidget {
+class _LogoutDialog extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
@@ -257,9 +258,9 @@ class _LogoutDialog extends StatelessWidget {
           ),
         ),
         ElevatedButton(
-          onPressed: () {
-            // Handle logout logic
+          onPressed: () async {
             Navigator.pop(context);
+            await ref.read(authProvider.notifier).logout();
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.accentRed,

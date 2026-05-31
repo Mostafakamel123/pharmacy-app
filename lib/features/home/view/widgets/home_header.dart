@@ -3,12 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
+import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
 
-class HomeHeader extends ConsumerWidget {
+class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Compute hour once instead of calling DateTime.now() in two separate methods
@@ -111,24 +112,81 @@ class HomeHeader extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             // Row 2: Name & Location (Compact)
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Mostafa Kamel',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    letterSpacing: -0.5,
-                  ),
+                Expanded(
+                  child: _ProfileNameWidget(),
                 ),
-                const _LocationPill(),
+                SizedBox(width: 12),
+                _ProfileLocationWidget(),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProfileNameWidget extends ConsumerWidget {
+  const _ProfileNameWidget();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profileAsync = ref.watch(profileProvider);
+
+    return profileAsync.when(
+      data: (profile) {
+        final displayName = profile.name.trim().isNotEmpty ? profile.name : 'User';
+        return Text(
+          displayName,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+            letterSpacing: -0.5,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      },
+      loading: () => _HeaderShimmer(
+        width: 140,
+        height: 22,
+        isDark: isDark,
+      ),
+      error: (_, __) => Text(
+        'User',
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          letterSpacing: -0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileLocationWidget extends ConsumerWidget {
+  const _ProfileLocationWidget();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profileAsync = ref.watch(profileProvider);
+
+    return profileAsync.when(
+      data: (profile) => _LocationPill(location: profile.location),
+      loading: () => _HeaderShimmer(
+        width: 80,
+        height: 28,
+        borderRadius: 20,
+        isDark: isDark,
+      ),
+      error: (_, __) => const _LocationPill(location: 'Assiut'),
     );
   }
 }
@@ -182,11 +240,12 @@ class _HeaderIconButton extends StatelessWidget {
 }
 
 class _LocationPill extends StatelessWidget {
-  const _LocationPill();
-
+  final String? location;
+  const _LocationPill({this.location});
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayLocation = (location == null || location!.trim().isEmpty) ? 'Assiut' : location!;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
@@ -219,13 +278,15 @@ class _LocationPill extends StatelessWidget {
           ),
           const SizedBox(width: 5),
           Text(
-            'Assiut',
+            displayLocation,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
               color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A),
               letterSpacing: -0.1,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(width: 4),
           Icon(
@@ -316,6 +377,66 @@ class _NotificationBadge extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _HeaderShimmer extends StatefulWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+  final bool isDark;
+
+  const _HeaderShimmer({
+    required this.width,
+    required this.height,
+    this.borderRadius = 8,
+    required this.isDark,
+  });
+
+  @override
+  State<_HeaderShimmer> createState() => _HeaderShimmerState();
+}
+
+class _HeaderShimmerState extends State<_HeaderShimmer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.35, end: 0.75).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shimmerColor = widget.isDark
+        ? const Color(0x2BFFFFFF) // white @ 0.17
+        : const Color(0x14000000); // black @ 0.08
+
+    return FadeTransition(
+      opacity: _animation,
+      child: Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: shimmerColor,
+          borderRadius: BorderRadius.all(Radius.circular(widget.borderRadius)),
+        ),
+      ),
     );
   }
 }

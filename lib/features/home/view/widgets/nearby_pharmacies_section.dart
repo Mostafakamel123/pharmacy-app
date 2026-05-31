@@ -3,16 +3,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/features/home/controller/home_providers.dart';
-import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
+import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:pharmacy_app/features/pharmacies/view/nearby_pharmacies_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/pharmacy_details_screen.dart';
 
-class NearbyPharmaciesSection extends ConsumerWidget {
+class NearbyPharmaciesSection extends StatelessWidget {
   const NearbyPharmaciesSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final pharmaciesAsync = ref.watch(nearbyPharmaciesProvider);
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return RepaintBoundary(
@@ -67,16 +66,27 @@ class NearbyPharmaciesSection extends ConsumerWidget {
               ],
             ),
           ),
-          pharmaciesAsync.when(
-            data: (pharmacies) => _PharmacyList(pharmacies: pharmacies),
-            loading: () => const _ShimmerLoading(),
-            error: (error, stack) => _ErrorState(
-              onRetry: () => ref
-                  .read(nearbyPharmaciesProvider.notifier)
-                  .refresh(),
-            ),
-          ),
+          const _NearbyPharmaciesBody(),
         ],
+      ),
+    );
+  }
+}
+
+class _NearbyPharmaciesBody extends ConsumerWidget {
+  const _NearbyPharmaciesBody();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pharmaciesAsync = ref.watch(filteredNearbyPharmaciesProvider);
+
+    return pharmaciesAsync.when(
+      data: (pharmacies) => _PharmacyList(pharmacies: pharmacies),
+      loading: () => const _ShimmerLoading(),
+      error: (error, stack) => _ErrorState(
+        onRetry: () => ref
+            .read(nearbyPharmaciesProvider.notifier)
+            .refresh(),
       ),
     );
   }

@@ -288,6 +288,13 @@ class ApiEndpoints {
     return response.data as List;
   }
 
+  /// GET /api/Pharmacies/my-pharmacies
+  /// Get current user's pharmacies (requires auth token)
+  Future<List<dynamic>> getMyPharmacies() async {
+    final response = await _dio.get('/api/Pharmacies/my-pharmacies');
+    return response.data as List;
+  }
+
   /// POST /api/Pharmacies
   /// Create a new pharmacy (requires auth token)
   /// Body: CreatePharmacyCommand

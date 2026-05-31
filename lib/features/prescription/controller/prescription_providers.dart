@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/features/prescription/model/pharmacy_model.dart';
+import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:pharmacy_app/features/prescription/model/prescription_model.dart';
 import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';
 

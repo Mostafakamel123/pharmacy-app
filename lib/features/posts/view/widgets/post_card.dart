@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
 
-class PostCard extends StatefulWidget {
+class PostCard extends StatelessWidget {
   final PostModel post;
   final VoidCallback onTap;
   final VoidCallback? onBookmark;
@@ -17,238 +17,210 @@ class PostCard extends StatefulWidget {
   });
 
   @override
-  State<PostCard> createState() => _PostCardState();
-}
-
-class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onTapDown(TapDownDetails _) => _controller.forward();
-  void _onTapUp(TapUpDetails _) {
-    _controller.reverse().then((_) => widget.onTap());
-  }
-  void _onTapCancel() => _controller.reverse();
-
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: GestureDetector(
-        onTapDown: _onTapDown,
-        onTapUp: _onTapUp,
-        onTapCancel: _onTapCancel,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: isDark ? DarkColors.card : LightColors.card,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            border: Border.all(
-              color: isDark ? DarkColors.divider : LightColors.divider,
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: (isDark ? Colors.black : AppColors.primaryBlue)
-                    .withOpacity(isDark ? 0.15 : 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? DarkColors.card : LightColors.card,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: isDark ? DarkColors.divider : LightColors.divider,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isDark ? Colors.black : AppColors.primaryBlue)
+                .withOpacity(isDark ? 0.15 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row
-              Row(
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // User avatar
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      gradient: _getCategoryGradient(widget.post.category),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Icon(
-                      _getCategoryIcon(widget.post.category),
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.post.userName,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? DarkColors.textPrimary
-                                : LightColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Text(
-                              widget.post.timeAgo,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark
-                                    ? DarkColors.textHint
-                                    : LightColors.textHint,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            _CategoryChip(category: widget.post.category),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Bookmark + Status
+                  // Header row
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (widget.post.replyCount > 0)
-                        _ReplyBadge(count: widget.post.replyCount),
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: widget.onBookmark,
-                        child: Icon(
-                          widget.post.isBookmarked
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_border_rounded,
-                          size: 20,
-                          color: widget.post.isBookmarked
-                              ? AppColors.primaryBlue
-                              : isDark
-                                  ? DarkColors.textHint
-                                  : LightColors.textHint,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              // Content
-              Text(
-                widget.post.content,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark
-                      ? DarkColors.textSecondary
-                      : LightColors.textSecondary,
-                  height: 1.5,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              // Image placeholder
-              if (widget.post.imageUrl != null) ...[
-                const SizedBox(height: 10),
-                Container(
-                  height: 120,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [const Color(0xFF1E3A4A), const Color(0xFF2C5364)]
-                          : [const Color(0xFFE0F7FA), const Color(0xFFE8F5E9)],
-                    ),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Icon(
-                        Icons.image_rounded,
-                        size: 32,
-                        color: isDark
-                            ? const Color(0xFF90CAF9)
-                            : AppColors.primaryBlue,
-                      ),
-                      Positioned(
-                        bottom: 6,
-                        right: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Prescription',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 10),
-              // Action row
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: widget.onTap,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        backgroundColor: isDark
-                            ? AppColors.primaryBlue.withOpacity(0.1)
-                            : AppColors.primaryBlue.withOpacity(0.08),
-                        shape: RoundedRectangleBorder(
+                      // User avatar
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          gradient: _getCategoryGradient(post.category),
                           borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
-                      ),
-                      child: Text(
-                        'View Details',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? const Color(0xFF90CAF9)
-                              : AppColors.primaryBlue,
+                        child: Icon(
+                          _getCategoryIcon(post.category),
+                          color: Colors.white,
+                          size: 20,
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              post.userName,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? DarkColors.textPrimary
+                                    : LightColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Text(
+                                  post.timeAgo,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? DarkColors.textHint
+                                        : LightColors.textHint,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                _CategoryChip(category: post.category),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Bookmark + Status
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (post.replyCount > 0)
+                            _ReplyBadge(count: post.replyCount),
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: onBookmark,
+                            child: Icon(
+                              post.isBookmarked
+                                  ? Icons.bookmark_rounded
+                                  : Icons.bookmark_border_rounded,
+                              size: 20,
+                              color: post.isBookmarked
+                                  ? AppColors.primaryBlue
+                                  : isDark
+                                      ? DarkColors.textHint
+                                      : LightColors.textHint,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Content
+                  Text(
+                    post.content,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark
+                          ? DarkColors.textSecondary
+                          : LightColors.textSecondary,
+                      height: 1.5,
                     ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // Image placeholder
+                  if (post.imageUrl != null) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      height: 120,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDark
+                              ? [const Color(0xFF1E3A4A), const Color(0xFF2C5364)]
+                              : [const Color(0xFFE0F7FA), const Color(0xFFE8F5E9)],
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_rounded,
+                            size: 32,
+                            color: isDark
+                                ? const Color(0xFF90CAF9)
+                                : AppColors.primaryBlue,
+                          ),
+                          Positioned(
+                            bottom: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'Prescription',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  // Action row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: onTap,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            backgroundColor: isDark
+                                ? AppColors.primaryBlue.withOpacity(0.1)
+                                : AppColors.primaryBlue.withOpacity(0.08),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                          ),
+                          child: Text(
+                            'View Details',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? const Color(0xFF90CAF9)
+                                  : AppColors.primaryBlue,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

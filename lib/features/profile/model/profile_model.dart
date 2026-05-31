@@ -49,7 +49,7 @@ class UserProfileModel {
             '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim() ?? 'User',
       email: json['email'] as String? ?? '',
       phone: json['phoneNumber'] as String? ?? json['phone'] as String? ?? '',
-      location: null, // Location not in basic profile, can be extended
+      location: json['address'] as String?,
       avatarUrl: json['avatarUrl'] as String? ?? json['imageUrl'] as String?,
       postsCount: 0, // Can be extended with actual data
       repliesCount: 0,

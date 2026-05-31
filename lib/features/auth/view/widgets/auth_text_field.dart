@@ -68,7 +68,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             color: _isDark ? DarkColors.textPrimary : LightColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
             color: _isDark ? DarkColors.card : LightColors.card,

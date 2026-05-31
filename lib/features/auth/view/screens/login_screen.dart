@@ -81,8 +81,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Select only needed properties to minimize rebuilds
-    final authState = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -113,27 +111,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
                 // Logo/Title
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 Text(
                   'Welcome Back',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: isDark
                         ? DarkColors.textPrimary
                         : LightColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   'Sign in to continue',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: isDark
                         ? DarkColors.textSecondary
                         : LightColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
                 // Email field - use onChanged with showError: false to avoid rebuilds while typing
                 AuthTextField(
@@ -177,45 +193,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Error message
-                if (authState.error != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(
-                        color: AppColors.accentRed.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: AppColors.accentRed,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            authState.error!,
-                            style: const TextStyle(
-                              color: AppColors.accentRed,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (authState.error != null) const SizedBox(height: 16),
+                // Extracted Error Banner
+                const _LoginErrorBanner(),
 
-                // Login button
-                AuthButton(
-                  text: 'Sign In',
-                  isLoading: authState.isLoading,
-                  onPressed: _handleLogin,
-                ),
+                // Extracted Login button
+                _LoginSubmitButton(onPressed: _handleLogin),
                 const SizedBox(height: 24),
 
                 // Divider
@@ -330,6 +312,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// --- Extracted Widgets for Performance ---
+
+class _LoginSubmitButton extends ConsumerWidget {
+  final VoidCallback onPressed;
+  const _LoginSubmitButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    return AuthButton(
+      text: 'Sign In',
+      isLoading: isLoading,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _LoginErrorBanner extends ConsumerWidget {
+  const _LoginErrorBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final error = ref.watch(authProvider.select((s) => s.error));
+    if (error == null) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.accentRed.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(
+              color: AppColors.accentRed.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: AppColors.accentRed,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  error,
+                  style: const TextStyle(
+                    color: AppColors.accentRed,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

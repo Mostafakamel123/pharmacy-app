@@ -82,7 +82,7 @@ class PostsFeedScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Consumer(
               builder: (context, ref, _) {
-                final sort = ref.watch(postsSortProvider);
+                final selectedCategory = ref.watch(selectedCategoryProvider);
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: SizedBox(
@@ -93,28 +93,32 @@ class PostsFeedScreen extends ConsumerWidget {
                         _FilterChip(
                           label: 'All',
                           icon: Icons.all_inclusive_rounded,
-                          isSelected: sort == PostsSort.latest,
-                          onTap: () => ref.read(postsSortProvider.notifier).state = PostsSort.latest,
+                          isSelected: selectedCategory == null,
+                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = null,
                         ),
                         _FilterChip(
                           label: 'General',
                           icon: Icons.help_outline_rounded,
-                          onTap: () => ref.read(postsFeedProvider.notifier).filterByCategory(PostCategory.general),
+                          isSelected: selectedCategory == PostCategory.general,
+                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = PostCategory.general,
                         ),
                         _FilterChip(
                           label: 'Prescription',
                           icon: Icons.description_rounded,
-                          onTap: () => ref.read(postsFeedProvider.notifier).filterByCategory(PostCategory.prescription),
+                          isSelected: selectedCategory == PostCategory.prescription,
+                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = PostCategory.prescription,
                         ),
                         _FilterChip(
                           label: 'Emergency',
                           icon: Icons.local_hospital_rounded,
-                          onTap: () => ref.read(postsFeedProvider.notifier).filterByCategory(PostCategory.emergency),
+                          isSelected: selectedCategory == PostCategory.emergency,
+                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = PostCategory.emergency,
                         ),
                         _FilterChip(
                           label: 'Advice',
                           icon: Icons.lightbulb_outline_rounded,
-                          onTap: () => ref.read(postsFeedProvider.notifier).filterByCategory(PostCategory.advice),
+                          isSelected: selectedCategory == PostCategory.advice,
+                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = PostCategory.advice,
                         ),
                       ],
                     ),

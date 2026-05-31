@@ -96,7 +96,6 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final email = widget.email ?? 'your email';
 
@@ -124,17 +123,19 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               const SizedBox(height: 20),
 
               if (!_isVerified) ...[
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.mark_email_unread_outlined,
-                    size: 40,
-                    color: AppColors.primaryBlue,
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.mark_email_unread_outlined,
+                      size: 40,
+                      color: AppColors.primaryBlue,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -197,45 +198,14 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                 const SizedBox(height: 24),
 
                 // Error Banner
-                if (authState.error != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(color: AppColors.accentRed.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: AppColors.accentRed, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            authState.error!,
-                            style: const TextStyle(color: AppColors.accentRed, fontSize: 13),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                const _VerificationErrorBanner(),
 
                 // Verify Button
-                AuthButton(
-                  text: 'Verify Email',
-                  isLoading: authState.isLoading,
-                  onPressed: _handleVerifyNow,
-                ),
+                _VerifyEmailButton(onPressed: _handleVerifyNow),
                 const SizedBox(height: 16),
 
                 // Resend Button
-                AuthButton(
-                  text: 'Resend Code',
-                  isLoading: authState.isLoading,
-                  isOutlined: true,
-                  onPressed: _handleResendEmail,
-                ),
+                _ResendCodeButton(onPressed: _handleResendEmail),
                 const SizedBox(height: 16),
 
                 TextButton(
@@ -250,17 +220,19 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                 ),
               ] else ...[
                 const SizedBox(height: 40),
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 40,
-                    color: AppColors.primaryGreen,
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 40,
+                      color: AppColors.primaryGreen,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -295,6 +267,75 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
           ),
         ),
       ),
+    );
+  }
+}
+
+// --- Extracted Widgets for Performance ---
+
+class _VerifyEmailButton extends ConsumerWidget {
+  final VoidCallback onPressed;
+  const _VerifyEmailButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    return AuthButton(
+      text: 'Verify Email',
+      isLoading: isLoading,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _ResendCodeButton extends ConsumerWidget {
+  final VoidCallback onPressed;
+  const _ResendCodeButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    return AuthButton(
+      text: 'Resend Code',
+      isLoading: isLoading,
+      isOutlined: true,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _VerificationErrorBanner extends ConsumerWidget {
+  const _VerificationErrorBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final error = ref.watch(authProvider.select((s) => s.error));
+    if (error == null) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.accentRed.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(color: AppColors.accentRed.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.accentRed, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  error,
+                  style: const TextStyle(color: AppColors.accentRed, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

@@ -21,6 +21,34 @@ class LocalStorageHelper {
     return _instance!;
   }
 
+  // ========================= Synchronous Operations =========================
+
+  /// Retrieve a string value synchronously
+  static String? getStringSync(String key) {
+    return _prefs.getString(key);
+  }
+
+  /// Retrieve a boolean value synchronously with default
+  static bool getBoolSync(String key, {bool defaultValue = false}) {
+    return _prefs.getBool(key) ?? defaultValue;
+  }
+
+  /// Retrieve an object synchronously from JSON string
+  static T? getObjectSync<T>(
+    String key, {
+    required T Function(dynamic json) fromJson,
+  }) {
+    try {
+      final jsonString = _prefs.getString(key);
+      if (jsonString == null) return null;
+      
+      final json = jsonDecode(jsonString);
+      return fromJson(json);
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ========================= String Operations =========================
 
   /// Store a string value

@@ -1,7 +1,12 @@
 // ignore_for_file: use_super_parameters
 
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
+import 'package:pharmacy_app/core/constants/app_constants.dart';
+import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
 import 'package:pharmacy_app/features/onboarding/view/onboarding_screen.dart';
 import 'package:pharmacy_app/features/auth/view/screens/login_screen.dart';
@@ -44,11 +49,73 @@ class NotFoundScreen extends StatelessWidget {
   }
 }
 
-// App Router Configuration
-final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.onboarding,
-  errorBuilder: (context, state) => const NotFoundScreen(),
-  routes: [
+/// A Listenable that notifies GoRouter when a Stream emits a new value.
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+          (dynamic_) => notifyListeners(),
+        );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
+
+// App Router Configuration Provider
+final Provider<GoRouter> routerProvider = Provider<GoRouter>((ref) {
+  final authNotifier = ref.watch(authProvider.notifier);
+
+  return GoRouter(
+    initialLocation: AppRoutes.onboarding,
+    refreshListenable: GoRouterRefreshStream(authNotifier.stream),
+    errorBuilder: (context, state) => const NotFoundScreen(),
+    redirect: (context, state) {
+      final authState = ref.read(authProvider);
+      final isAuthenticated = authState.isAuthenticated;
+      
+      // Check onboarding completion synchronously
+      final isOnboardingComplete = LocalStorageHelper.getBoolSync(
+        AppConstants.onboardingCompleteKey,
+      );
+
+      final location = state.uri.path;
+
+      // 1. If onboarding is not complete, force them to onboarding page
+      if (!isOnboardingComplete) {
+        if (location == AppRoutes.onboarding) {
+          return null; // Stay on onboarding
+        }
+        return AppRoutes.onboarding;
+      }
+
+      // 2. Onboarding is complete. Evaluate authentication
+      final isAuthRoute = location.startsWith('/auth');
+
+      if (!isAuthenticated) {
+        // Unauthenticated users can only visit auth pages
+        if (isAuthRoute) {
+          return null; // Allow viewing login/register etc.
+        }
+        // Redirect any other route to login
+        return AppRoutes.login;
+      }
+
+      // 3. User is authenticated.
+      // If they are on an auth route or onboarding, redirect to home
+      if (isAuthRoute || location == AppRoutes.onboarding) {
+        return AppRoutes.home;
+      }
+
+      // Allow all other routes
+      return null;
+    },
+    routes: [
     // Onboarding Screen
     GoRoute(
       path: AppRoutes.onboarding,
@@ -143,3 +210,4 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
 );
+});

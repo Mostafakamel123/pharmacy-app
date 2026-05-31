@@ -94,10 +94,12 @@ class _PremiumNavItemState extends State<PremiumNavItem>
       behavior: HitTestBehavior.translucent,
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
             AnimatedSwitcher(
               duration: NavTheme.animationDuration,
               transitionBuilder: (child, animation) {
@@ -148,7 +150,8 @@ class _PremiumNavItemState extends State<PremiumNavItem>
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildIcon(Color? iconColor) {

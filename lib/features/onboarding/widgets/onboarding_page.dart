@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/routing/app_routes.dart';
+import 'package:pharmacy_app/core/constants/app_constants.dart';
+import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
 
 // Pharmacy-inspired color palette
 class _OnboardingColors {
@@ -126,8 +128,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       data: _screens[index],
                       isLastPage: index == _screens.length - 1,
                       onNext: _nextPage,
-                      onGetStarted: () {
-                        context.go(AppRoutes.login);
+                      onGetStarted: () async {
+                        await LocalStorageHelper.setBool(AppConstants.onboardingCompleteKey, true);
+                        if (context.mounted) {
+                          context.go(AppRoutes.login);
+                        }
                       },
                     );
                   },
@@ -296,77 +301,90 @@ class OnboardingScreenContent extends StatelessWidget {
     final textColor = isDark ? _OnboardingColors.textColorDark : _OnboardingColors.textColorLight;
     final descColor = isDark ? _OnboardingColors.descColorDark : _OnboardingColors.descColorLight;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Spacer(flex: 1),
-
-          // Animated illustration container
-          RepaintBoundary(
-            child: TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 600),
-              tween: Tween(begin: 0.0, end: 1.0),
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: 0.85 + (0.15 * value),
-                  child: Opacity(
-                    opacity: value,
-                    child: child,
-                  ),
-                );
-              },
-              // Moving static widget sub-tree to the 'child' parameter avoids 
-              // rebuilding it every animation frame
-              child: _OnboardingIllustration(data: data),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: IntrinsicHeight(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 20),
+                    
+                    // Animated illustration container
+                    RepaintBoundary(
+                      child: TweenAnimationBuilder<double>(
+                        duration: const Duration(milliseconds: 600),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: 0.85 + (0.15 * value),
+                            child: Opacity(
+                              opacity: value,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: _OnboardingIllustration(data: data),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Headline
+                    Text(
+                      data.headline,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        height: 1.25,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Description
+                    Text(
+                      data.description,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: descColor,
+                        height: 1.5,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    
+                    const Spacer(flex: 1),
+                    const SizedBox(height: 24),
+                    
+                    // Button
+                    RepaintBoundary(
+                      child: _OnboardingButton(
+                        isLastPage: isLastPage,
+                        gradientColors: data.gradientColors,
+                        onNext: onNext,
+                        onGetStarted: onGetStarted,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
             ),
           ),
-
-          const SizedBox(height: 44),
-
-          // Headline
-          Text(
-            data.headline,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-              height: 1.25,
-              letterSpacing: -0.3,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Description
-          Text(
-            data.description,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: descColor,
-              height: 1.6,
-              letterSpacing: 0.1,
-            ),
-          ),
-
-          const Spacer(flex: 2),
-
-          // Button
-          RepaintBoundary(
-            child: _OnboardingButton(
-              isLastPage: isLastPage,
-              gradientColors: data.gradientColors,
-              onNext: onNext,
-              onGetStarted: onGetStarted,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-        ],
-      ),
+        );
+      },
     );
   }
 }

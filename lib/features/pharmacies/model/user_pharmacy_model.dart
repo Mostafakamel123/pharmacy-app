@@ -18,6 +18,7 @@ class UserPharmacyModel {
   final String? website;
   final String? licenseNumber;
   final bool isActive;
+  final bool hasDelivery;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -37,6 +38,7 @@ class UserPharmacyModel {
     this.website,
     this.licenseNumber,
     this.isActive = true,
+    this.hasDelivery = false,
     required this.createdAt,
     this.updatedAt,
   });
@@ -68,6 +70,7 @@ class UserPharmacyModel {
     String? website,
     String? licenseNumber,
     bool? isActive,
+    bool? hasDelivery,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -87,6 +90,7 @@ class UserPharmacyModel {
       website: website ?? this.website,
       licenseNumber: licenseNumber ?? this.licenseNumber,
       isActive: isActive ?? this.isActive,
+      hasDelivery: hasDelivery ?? this.hasDelivery,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -110,6 +114,7 @@ class UserPharmacyModel {
       'website': website,
       'license_number': licenseNumber,
       'is_active': isActive,
+      'has_delivery': hasDelivery,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -117,26 +122,51 @@ class UserPharmacyModel {
 
   /// Create from JSON (API response)
   factory UserPharmacyModel.fromJson(Map<String, dynamic> json) {
+    // Determine ownerUserId: check 'ownerId', 'owner_user_id', or if role is 'Owner'
+    String ownerId = json['ownerId'] as String? ?? 
+                     json['owner_user_id'] as String? ?? 
+                     '';
+    
+    // Parse adminUserIds
+    var adminIds = json['admin_user_ids'] ?? json['adminUserIds'];
+    List<String> adminList = [];
+    if (adminIds is List) {
+      adminList = List<String>.from(adminIds);
+    }
+
+    // Handle createdAt (can be null or String)
+    DateTime createdTime = DateTime.now();
+    final rawCreated = json['createdAt'] ?? json['created_at'];
+    if (rawCreated != null && rawCreated is String && rawCreated.isNotEmpty) {
+      createdTime = DateTime.tryParse(rawCreated) ?? DateTime.now();
+    }
+    
+    // Handle updatedAt
+    DateTime? updatedTime;
+    final rawUpdated = json['updatedAt'] ?? json['updated_at'];
+    if (rawUpdated != null && rawUpdated is String && rawUpdated.isNotEmpty) {
+      updatedTime = DateTime.tryParse(rawUpdated);
+    }
+
     return UserPharmacyModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Unknown',
       description: json['description'] as String?,
-      logoUrl: json['logo_url'] as String?,
-      coverImageUrl: json['cover_image_url'] as String? ?? '',
-      ownerUserId: json['owner_user_id'] as String,
-      adminUserIds: List<String>.from(json['admin_user_ids'] ?? []),
-      address: json['address'] as String,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      phone: json['phone'] as String?,
+      logoUrl: json['logoUrl'] as String? ?? json['imageUrl'] as String? ?? json['logo_url'] as String?,
+      coverImageUrl: json['coverImageUrl'] as String? ?? json['cover_image_url'] as String? ?? '',
+      ownerUserId: ownerId,
+      adminUserIds: adminList,
+      address: json['address'] as String? ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      phone: json['phone'] as String? ?? json['contactNumber'] as String?,
       email: json['email'] as String?,
       website: json['website'] as String?,
-      licenseNumber: json['license_number'] as String?,
-      isActive: json['is_active'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      licenseNumber: json['license_number'] as String? ?? json['licenseNumber'] as String?,
+      isActive: json['isActive'] as bool? ?? json['is_active'] as bool? ?? json['isOpen'] as bool? ?? true,
+      hasDelivery: json['hasDelivery'] as bool? ?? json['has_delivery'] as bool? ?? false,
+      createdAt: createdTime,
+      updatedAt: updatedTime,
     );
   }
 

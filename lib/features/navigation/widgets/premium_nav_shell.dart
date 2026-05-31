@@ -13,6 +13,10 @@ import 'package:pharmacy_app/features/navigation/widgets/premium_nav_item.dart';
 import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/core/theme/nav_theme.dart';
 import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+
+/// Global provider for unified bottom navigation active index
+final navigationIndexProvider = StateProvider<int>((ref) => 0);
 
 /// Premium Navigation Shell
 /// 
@@ -33,9 +37,8 @@ class PremiumNavShell extends ConsumerStatefulWidget {
 
 class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
     with TickerProviderStateMixin {
-  int _currentIndex = 0;
+  int get _currentIndex => ref.watch(navigationIndexProvider);
   bool _isNavBarVisible = true;
-  final ScrollController _scrollController = ScrollController();
 
   // Get navigation items from provider (reactive to mode changes)
   List<NavItem> get _navItems => UserNavItems.items(ref);
@@ -43,31 +46,9 @@ class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
   // Always show FAB for all users
   bool get _showFab => true;
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.userScrollDirection ==
-        ScrollDirection.reverse) {
-      if (_isNavBarVisible) setState(() => _isNavBarVisible = false);
-    } else if (_scrollController.position.userScrollDirection ==
-        ScrollDirection.forward) {
-      if (!_isNavBarVisible) setState(() => _isNavBarVisible = true);
-    }
-  }
 
   void _onTabChanged(int index) {
-    setState(() => _currentIndex = index);
+    ref.read(navigationIndexProvider.notifier).state = index;
   }
 
   void _onFabPressed() async {
@@ -97,26 +78,45 @@ class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: Stack(
-        children: [
-          if (widget.child != null) widget.child! else _buildCurrentScreen(),
-          // Floating nav bar
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildFloatingNavigationBar(),
-          ),
-        ],
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (notification) {
+          if (notification.direction == ScrollDirection.reverse) {
+            if (_isNavBarVisible) {
+              setState(() => _isNavBarVisible = false);
+            }
+          } else if (notification.direction == ScrollDirection.forward) {
+            if (!_isNavBarVisible) {
+              setState(() => _isNavBarVisible = true);
+            }
+          }
+          return false; // let the notification bubble further up
+        },
+        child: Stack(
+          children: [
+            if (widget.child != null) widget.child! else _buildCurrentScreen(),
+            // Floating nav bar
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildFloatingNavigationBar(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCurrentScreen() {
-    if (_currentIndex < _navItems.length) {
-      return _navItems[_currentIndex].builder(ref);
-    }
-    return const SizedBox.shrink();
+    final isPharmacyMode = ref.watch(pharmacyModeProvider.select((s) => s.isPharmacyMode));
+    return IndexedStack(
+      index: _currentIndex,
+      key: ValueKey(isPharmacyMode),
+      children: [
+        for (int i = 0; i < _navItems.length; i++)
+          _navItems[i].builder(ref),
+      ],
+    );
   }
 
   Widget _buildFloatingNavigationBar() {

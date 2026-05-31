@@ -206,6 +206,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                         pharmacy.coverImageUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
+                        cacheHeight: 240,
                         errorBuilder: (context, error, stack) {
                           return _buildPlaceholder(pharmacy.name);
                         },
@@ -439,8 +440,3 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
   }
 }
 
-/// Provider for current user ID (temporary - replace with auth provider)
-final currentUserIdProvider = Provider<String>((ref) {
-  // TODO: Replace with actual current user ID from auth
-  return 'current_user_id';
-});

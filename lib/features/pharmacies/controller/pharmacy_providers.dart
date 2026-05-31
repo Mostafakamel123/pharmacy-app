@@ -1,6 +1,7 @@
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/api_endpoints.dart';
-import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
+import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 
 // Nearby pharmacies provider
 final nearbyPharmaciesProvider = StateNotifierProvider<NearbyPharmaciesNotifier, AsyncValue<List<PharmacyModel>>>((ref) {
@@ -65,8 +66,8 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
 
   /// Parse pharmacy from JSON response
   PharmacyModel _parsePharmacyFromJson(Map<String, dynamic> json) {
-    // Calculate distance from current location (in km)
-    final distance = _calculateDistance(
+    // Check if distance is already returned by API, otherwise calculate it manually from coordinates (in km)
+    final distance = (json['distance'] as num?)?.toDouble() ?? _calculateDistance(
       _latitude,
       _longitude,
       (json['latitude'] as num).toDouble(),
@@ -99,36 +100,13 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
     final dLat = _toRadians(lat2 - lat1);
     final dLon = _toRadians(lon2 - lon1);
     final a = 
-        _sin2(dLat / 2) +
-        _cos(lat1) * _cos(lat2) * _sin2(dLon / 2);
-    final c = 2 * _atan2(_sqrt(a), _sqrt(1 - a));
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_toRadians(lat1)) * math.cos(_toRadians(lat2)) * math.sin(dLon / 2) * math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return earthRadius * c;
   }
 
-  double _toRadians(double degrees) => degrees * 3.141592653589793 / 180;
-  double _sin2(double x) {
-    final sin = _sin(x);
-    return sin * sin;
-  }
-  double _sin(double x) => x - (x * x * x) / 6 + (x * x * x * x * x) / 120;
-  double _cos(double x) => 1 - (x * x) / 2 + (x * x * x * x) / 24;
-  double _sqrt(double x) {
-    if (x == 0) return 0;
-    double result = x;
-    for (int i = 0; i < 10; i++) {
-      result = (result + x / result) / 2;
-    }
-    return result;
-  }
-  double _atan2(double y, double x) {
-    if (x > 0) return _atan(y / x);
-    if (x < 0 && y >= 0) return _atan(y / x) + 3.141592653589793;
-    if (x < 0 && y < 0) return _atan(y / x) - 3.141592653589793;
-    if (x == 0 && y > 0) return 3.141592653589793 / 2;
-    if (x == 0 && y < 0) return -3.141592653589793 / 2;
-    return 0;
-  }
-  double _atan(double x) => x - (x * x * x) / 3 + (x * x * x * x * x) / 5;
+  double _toRadians(double degrees) => degrees * math.pi / 180;
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();

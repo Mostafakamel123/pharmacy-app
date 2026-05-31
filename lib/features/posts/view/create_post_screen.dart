@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
+import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
 
 class CreatePostScreen extends ConsumerStatefulWidget {
   const CreatePostScreen({super.key});
@@ -27,6 +28,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   Widget build(BuildContext context) {
     final formState = ref.watch(createPostFormProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profileAsync = ref.watch(profileProvider);
     final charCount = formState.content.length;
     final hasContent = formState.content.trim().isNotEmpty;
 
@@ -171,27 +173,54 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                       // Author row
                       Row(
                         children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDark
-                                    ? DarkColors.divider
-                                    : LightColors.divider,
-                                width: 2,
+                          profileAsync.maybeWhen(
+                            data: (profile) => Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark
+                                      ? DarkColors.divider
+                                      : LightColors.divider,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  profile.initials,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                               ),
                             ),
-                            child: const Center(
-                              child: Text(
-                                'MK',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
+                            orElse: () => Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark
+                                      ? DarkColors.divider
+                                      : LightColors.divider,
+                                  width: 2,
+                                ),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'MK',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
                             ),
@@ -200,14 +229,26 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Mostafa Kamel',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark
-                                      ? DarkColors.textPrimary
-                                      : LightColors.textPrimary,
+                              profileAsync.maybeWhen(
+                                data: (profile) => Text(
+                                  profile.name.trim().isNotEmpty ? profile.name : 'User',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark
+                                        ? DarkColors.textPrimary
+                                        : LightColors.textPrimary,
+                                  ),
+                                ),
+                                orElse: () => Text(
+                                  'Mostafa Kamel',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark
+                                        ? DarkColors.textPrimary
+                                        : LightColors.textPrimary,
+                                  ),
                                 ),
                               ),
                               Text(

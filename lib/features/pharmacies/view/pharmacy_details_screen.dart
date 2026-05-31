@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/home/model/pharmacy_model.dart';
+import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 
 class PharmacyDetailsScreen extends StatelessWidget {
   final PharmacyModel pharmacy;

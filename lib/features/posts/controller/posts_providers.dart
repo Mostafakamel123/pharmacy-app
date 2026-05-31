@@ -1,18 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
 
+// Selected category filter provider
+final selectedCategoryProvider = StateProvider<PostCategory?>((ref) => null);
+
 // Posts feed provider
 final postsFeedProvider =
     StateNotifierProvider<PostsFeedNotifier, AsyncValue<List<PostModel>>>((ref) {
-  return PostsFeedNotifier();
+  final category = ref.watch(selectedCategoryProvider);
+  return PostsFeedNotifier(category);
 });
 
 class PostsFeedNotifier extends StateNotifier<AsyncValue<List<PostModel>>> {
-  PostsFeedNotifier() : super(const AsyncValue.loading()) {
+  final PostCategory? _filterCategory;
+
+  PostsFeedNotifier(this._filterCategory) : super(const AsyncValue.loading()) {
     _loadPosts();
   }
-
-  PostCategory? _filterCategory;
 
   Future<void> _loadPosts() async {
     try {
@@ -30,11 +34,6 @@ class PostsFeedNotifier extends StateNotifier<AsyncValue<List<PostModel>>> {
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     await _loadPosts();
-  }
-
-  void filterByCategory(PostCategory? category) {
-    _filterCategory = category;
-    _loadPosts();
   }
 }
 

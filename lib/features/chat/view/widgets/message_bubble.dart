@@ -21,13 +21,17 @@ class MessageBubble extends StatelessWidget {
     return Align(
       alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Padding(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 4,
         ),
-        child: Container(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-          child: _buildMessageContent(context, isDark),
+        child: FractionallySizedBox(
+          widthFactor: 0.75,
+          alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: Align(
+            alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+            child: _buildMessageContent(context, isDark),
+          ),
         ),
       ),
     );
@@ -187,6 +191,8 @@ class _ImageMessageBubble extends StatelessWidget {
               message.imageUrl ?? '',
               width: 200,
               height: 200,
+              cacheWidth: 400,
+              cacheHeight: 400,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(

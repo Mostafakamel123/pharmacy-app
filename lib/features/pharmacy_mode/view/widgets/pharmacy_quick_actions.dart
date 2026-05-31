@@ -39,42 +39,64 @@ class PharmacyQuickActions extends StatelessWidget {
             builder: (context, constraints) {
               final availableWidth = constraints.maxWidth;
               final isSmallScreen = availableWidth < 380;
-              
-              // Adjust grid columns and aspect ratio for small screens
-              final crossAxisCount = isSmallScreen ? 2 : 2;
               final childAspectRatio = isSmallScreen ? 1.6 : 1.8;
-
-              return GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: crossAxisCount,
-                mainAxisSpacing: AppSpacing.md,
-                crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: childAspectRatio,
-                children: const [
-                  _QuickActionItem(
-                    icon: Icons.add_circle_outline,
-                    label: 'Add Post',
-                    color: AppColors.primaryBlue,
-                    actionName: 'Create Post',
+              
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AspectRatio(
+                          aspectRatio: childAspectRatio,
+                          child: const _QuickActionItem(
+                            icon: Icons.add_circle_outline,
+                            label: 'Add Post',
+                            color: AppColors.primaryBlue,
+                            actionName: 'Create Post',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: AspectRatio(
+                          aspectRatio: childAspectRatio,
+                          child: const _QuickActionItem(
+                            icon: Icons.inventory_2_outlined,
+                            label: 'Manage Orders',
+                            color: AppColors.primaryGreen,
+                            actionName: 'Orders',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  _QuickActionItem(
-                    icon: Icons.inventory_2_outlined,
-                    label: 'Manage Orders',
-                    color: AppColors.primaryGreen,
-                    actionName: 'Orders',
-                  ),
-                  _QuickActionItem(
-                    icon: Icons.people_outline,
-                    label: 'Admins',
-                    color: AppColors.accentPurple,
-                    actionName: 'Admins',
-                  ),
-                  _QuickActionItem(
-                    icon: Icons.analytics_outlined,
-                    label: 'Analytics',
-                    color: AppColors.accentYellow,
-                    actionName: 'Analytics',
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AspectRatio(
+                          aspectRatio: childAspectRatio,
+                          child: const _QuickActionItem(
+                            icon: Icons.people_outline,
+                            label: 'Admins',
+                            color: AppColors.accentPurple,
+                            actionName: 'Admins',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: AspectRatio(
+                          aspectRatio: childAspectRatio,
+                          child: const _QuickActionItem(
+                            icon: Icons.analytics_outlined,
+                            label: 'Analytics',
+                            color: AppColors.accentYellow,
+                            actionName: 'Analytics',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               );

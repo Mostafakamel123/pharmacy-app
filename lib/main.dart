@@ -24,17 +24,19 @@ void main() async {
   });
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
     return MaterialApp.router(
       title: 'Elaaj',
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
-      routerConfig: appRouter,
+      routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
   }

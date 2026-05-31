@@ -79,17 +79,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               const SizedBox(height: 20),
 
               if (!_isSubmitted) ...[
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.lock_reset_rounded,
-                    size: 40,
-                    color: AppColors.primaryBlue,
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.lock_reset_rounded,
+                      size: 40,
+                      color: AppColors.primaryBlue,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -132,17 +134,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 _ForgotSubmitButton(onPressed: _handleSubmit),
               ] else ...[
                 const SizedBox(height: 40),
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 40,
-                    color: AppColors.primaryGreen,
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 40,
+                      color: AppColors.primaryGreen,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
