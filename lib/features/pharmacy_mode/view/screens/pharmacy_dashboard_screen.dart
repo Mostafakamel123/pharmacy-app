@@ -21,7 +21,7 @@ class PharmacyDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _PharmacyDashboardScreenState extends ConsumerState<PharmacyDashboardScreen> {
-  bool _isOpened = false;
+  final bool _isOpened = false;
 
   @override
   Widget build(BuildContext context) {
@@ -398,7 +398,7 @@ class _StatsSection extends StatelessWidget {
                       subtitle: 'تحتاج استجابة',
                       color: AppColors.accentYellow,
                       icon: Icons.pending_actions_rounded,
-                      trend: '${state.pendingOrders > 0 ? "تنبيه" : "مستقر"}',
+                      trend: state.pendingOrders > 0 ? "تنبيه" : "مستقر",
                       width: cardWidth,
                     ),
                   ],

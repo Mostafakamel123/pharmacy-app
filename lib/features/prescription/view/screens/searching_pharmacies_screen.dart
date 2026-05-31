@@ -488,7 +488,7 @@ class _SearchingPharmaciesScreenState
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

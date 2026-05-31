@@ -6,7 +6,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/features/home/view/home_screen.dart';
 import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 import 'package:pharmacy_app/features/posts/view/posts_feed_screen.dart';

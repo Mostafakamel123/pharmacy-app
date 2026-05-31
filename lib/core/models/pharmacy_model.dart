@@ -151,7 +151,7 @@ class PharmacyModel {
       isVerified: isVerified ?? this.isVerified,
       estimatedDeliveryMinutes: estimatedDeliveryMinutes ?? this.estimatedDeliveryMinutes,
       isFavorite: isFavorite ?? this.isFavorite,
-      location: location ?? this._location,
+      location: location ?? _location,
     );
   }
 
