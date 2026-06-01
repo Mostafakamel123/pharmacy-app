@@ -14,7 +14,7 @@ import 'package:pharmacy_app/features/posts/view/posts_feed_screen.dart';
 import 'package:pharmacy_app/features/profile/view/profile_screen.dart';
 import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_dashboard_screen.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_profile_screen.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_orders_screen.dart';
 
 /// Navigation item configuration
@@ -45,11 +45,11 @@ class UserNavItems {
     if (isPharmacyMode) {
       return [
         NavItem(
-          label: 'Dashboard',
-          icon: Icons.dashboard_outlined,
-          activeIcon: Icons.dashboard,
-          builder: (ref) => const PharmacyDashboardScreen(),
-          route: '/pharmacy/dashboard',
+          label: 'Pharmacy Profile',
+          icon: Icons.storefront_outlined,
+          activeIcon: Icons.storefront,
+          builder: (ref) => const PharmacyProfileScreen(),
+          route: '/pharmacy/profile',
         ),
         NavItem(
           label: 'Chats',

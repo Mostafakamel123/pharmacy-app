@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/api_endpoints.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
 
 // Selected category filter provider (kept for legacy references, default to null)
@@ -99,15 +102,19 @@ class MyPostsNotifier extends StateNotifier<AsyncValue<List<PostModel>>> {
     await _loadPosts();
   }
 
-  Future<bool> deletePost(String postId) async {
+  Future<(bool, String?)> deletePost(String postId) async {
     try {
       await _api.deletePost(postId: postId);
+      // Remove from my posts immediately
       refresh();
       // Synchronize deletion with the main feed
       ref.read(postsFeedProvider.notifier).refresh();
-      return true;
+      return (true, null);
     } catch (e) {
-      return false;
+      // Log the error for debugging
+      print('DEBUG: Error deleting post $postId: $e');
+      final errorMsg = e.toString();
+      return (false, errorMsg);
     }
   }
 }
@@ -320,35 +327,52 @@ class CreatePostNotifier extends StateNotifier<CreatePostState> {
 
 // Post details replies state notifier provider
 class PostRepliesNotifier extends StateNotifier<AsyncValue<List<ReplyModel>>> {
-  final String postId;
+  final PostModel post;
   final ApiEndpoints _api = ApiEndpoints();
   final Ref ref;
 
-  PostRepliesNotifier(this.ref, this.postId, List<ReplyModel> initialReplies)
-      : super(AsyncValue.data(initialReplies));
+  PostRepliesNotifier(this.ref, this.post)
+      : super(AsyncValue.data(post.replies));
 
-  Future<bool> addReply(String message) async {
+  Future<bool> addReply(String replyContent) async {
     try {
-      state = const AsyncValue.loading();
-      await _api.replyToPost(postId: postId, message: message);
+      // Get pharmacy ID from current pharmacy mode
+      final currentPharmacy = ref.read(currentPharmacyProvider);
+      if (currentPharmacy == null) {
+        state = AsyncValue.error('Not in pharmacy mode', StackTrace.current);
+        return false;
+      }
 
-      // Refresh post lists on success to synchronize nested replies
+      final response = await _api.replyToPost(
+        postId: int.parse(post.id),
+        replyContent: replyContent,
+        receiverId: post.userId,
+        pharmacyId: currentPharmacy.id,
+      );
+
+      // API returns a numeric ID, create a minimal reply model with essential data
+      // The reply will be properly loaded when feed refreshes
+      final replyId = response is int ? response : (response['id'] ?? 0);
+      final newReply = ReplyModel(
+        id: replyId.toString(),
+        postId: post.id,
+        pharmacyId: currentPharmacy.id,
+        pharmacyName: currentPharmacy.name,
+        content: replyContent,
+        createdAt: DateTime.now(),
+      );
+      
+      // Add the new reply to the current list (optimistic update)
+      final currentReplies = state.value ?? [];
+      final updatedReplies = [...currentReplies, newReply];
+      state = AsyncValue.data(updatedReplies);
+
+      // Refresh post feeds in background to sync with server data
+      // This ensures we get the complete reply data (verified status, etc.)
+      await Future.delayed(const Duration(milliseconds: 800));
       await ref.read(postsFeedProvider.notifier).refresh();
       await ref.read(myPostsProvider.notifier).refresh();
 
-      // Find this updated post and get its new list of replies
-      final posts = ref.read(postsFeedProvider).value ?? [];
-      final updatedPost = posts.firstWhere(
-        (p) => p.id == postId,
-        orElse: () => PostModel(
-          id: postId,
-          userId: '',
-          userName: '',
-          content: '',
-          createdAt: DateTime.now(),
-        ),
-      );
-      state = AsyncValue.data(updatedPost.replies);
       return true;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
@@ -359,7 +383,7 @@ class PostRepliesNotifier extends StateNotifier<AsyncValue<List<ReplyModel>>> {
 
 final postRepliesNotifierProvider = StateNotifierProvider.family<
     PostRepliesNotifier, AsyncValue<List<ReplyModel>>, PostModel>((ref, post) {
-  return PostRepliesNotifier(ref, post.id, post.replies);
+  return PostRepliesNotifier(ref, post);
 });
 
 // Legacy family provider for backward compatibility

@@ -182,16 +182,32 @@ class PostCard extends ConsumerWidget {
                                   );
 
                                   if (confirm == true) {
-                                    final success = await ref
+                                    final (success, error) = await ref
                                         .read(myPostsProvider.notifier)
                                         .deletePost(post.id);
-                                    if (success && context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Post deleted successfully'),
-                                          backgroundColor: AppColors.accentRed,
-                                        ),
-                                      );
+                                    if (context.mounted) {
+                                      if (success) {
+                                        // Show success and pop immediately
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Post deleted successfully'),
+                                            backgroundColor: AppColors.primaryGreen,
+                                            duration: Duration(milliseconds: 800),
+                                          ),
+                                        );
+                                        // Pop after brief delay to show snackbar
+                                        await Future.delayed(const Duration(milliseconds: 1000));
+                                        Navigator.of(context).pop();
+                                      } else {
+                                        // Show error message
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Failed to delete post: ${error ?? "Unknown error"}'),
+                                            backgroundColor: AppColors.accentRed,
+                                            duration: const Duration(seconds: 3),
+                                          ),
+                                        );
+                                      }
                                     }
                                   }
                                 }

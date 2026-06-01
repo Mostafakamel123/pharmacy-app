@@ -14,6 +14,7 @@ import 'package:pharmacy_app/features/home/view/widgets/smart_search_bar.dart';
 import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart'
     hide nearbyPharmaciesProvider;
 import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
+import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
 
 class PatientHomeScreen extends ConsumerStatefulWidget {
   const PatientHomeScreen({super.key});
@@ -32,37 +33,42 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: const PharmacyDrawer(null),
-      body: RefreshIndicator(
-        // Extracted to a named method to avoid creating a new closure
-        // on every build invocation.
-        onRefresh: _handleRefresh,
-        color: const Color(0xFF0EA5E9),
-        child: CustomScrollView(
-          cacheExtent: 250,
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          slivers: [
-            // Header
-            const SliverToBoxAdapter(child: HomeHeader()),
-            // Search bar
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: StickySearchBarDelegate(
-                child: const SmartSearchBar(),
+      body: Column(
+        children: [
+          const HomeHeader(),
+          Expanded(
+            child: RefreshIndicator(
+              // Extracted to a named method to avoid creating a new closure
+              // on every build invocation.
+              onRefresh: _handleRefresh,
+              color: const Color(0xFF0EA5E9),
+              child: CustomScrollView(
+                cacheExtent: 250,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  // Search bar
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: StickySearchBarDelegate(
+                      child: const SmartSearchBar(),
+                    ),
+                  ),
+                  // Nearby pharmacies
+                  const SliverToBoxAdapter(
+                      child: NearbyPharmaciesSection()),
+                  // Quick actions
+                  const SliverToBoxAdapter(child: QuickActionsSection()),
+                  // Recent posts
+                  const SliverToBoxAdapter(child: RecentPostsSection()),
+                  // Bottom padding for nav bar
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                ],
               ),
             ),
-            // Nearby pharmacies
-            const SliverToBoxAdapter(
-                child: NearbyPharmaciesSection()),
-            // Quick actions
-            const SliverToBoxAdapter(child: QuickActionsSection()),
-            // Recent posts
-            const SliverToBoxAdapter(child: RecentPostsSection()),
-            // Bottom padding for nav bar
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButton: Consumer(
         builder: (context, ref, child) {
@@ -92,7 +98,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
       await Future.wait<void>([
         ref.read(profileProvider.notifier).refresh(),
         ref.read(nearbyPharmaciesProvider.notifier).refresh(),
-        ref.read(recentPostsProvider.notifier).refresh(),
+        ref.read(postsFeedProvider.notifier).refresh(),
       ]);
     }
   }

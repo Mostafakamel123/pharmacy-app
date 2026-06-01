@@ -576,25 +576,63 @@ class ApiEndpoints {
 
   /// DELETE /api/Posts/{postId}
   /// Delete an existing post (requires auth token)
+  /// Only the post owner can delete their own post
+  /// Returns empty response on success (204 No Content or 200 OK with empty body)
   Future<Map<String, dynamic>> deletePost({
     required String postId,
   }) async {
-    final response = await _dio.delete(
-      '/api/Posts/$postId',
-    );
-    return _safeParseMap(response.data);
+    try {
+      final response = await _dio.delete(
+        '/api/Posts/$postId',
+      );
+      // Handle both empty responses and JSON responses
+      return _safeParseMap(response.data) ?? {'message': 'Post deleted successfully'};
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode ?? 0;
+      final responseBody = e.response?.data;
+      
+      print('DEBUG ApiEndpoints: Error deleting post $postId');
+      print('  Status Code: $statusCode');
+      print('  Response Body: $responseBody');
+      print('  Error Message: ${e.message}');
+      
+      // Create a descriptive error message
+      String errorMsg = 'Failed to delete post';
+      if (statusCode == 500) {
+        errorMsg = 'Server error (500) - Backend failed to delete post. Please check if post exists and you are the owner.';
+      } else if (statusCode == 403) {
+        errorMsg = 'Permission denied - You can only delete your own posts';
+      } else if (statusCode == 404) {
+        errorMsg = 'Post not found - It may have already been deleted';
+      } else if (statusCode == 401) {
+        errorMsg = 'Unauthorized - Please log in again';
+      } else {
+        errorMsg = 'Error: ${e.message}';
+      }
+      
+      throw Exception(errorMsg);
+    } catch (e) {
+      print('DEBUG ApiEndpoints: Unexpected error deleting post $postId: $e');
+      rethrow;
+    }
   }
 
-  /// POST /api/Posts/{postId}/replies
+  /// POST /api/PostReplies
   /// Submit a pharmacy reply to a community post (requires auth token)
+  /// Only users with Pharmacy role can call this endpoint
   Future<Map<String, dynamic>> replyToPost({
-    required String postId,
-    required String message,
+    required int postId,
+    required String replyContent,
+    required String receiverId,
+    required String pharmacyId,
   }) async {
     final response = await _dio.post(
-      '/api/Posts/$postId/replies',
+      '/api/PostReplies',
       data: {
-        'message': message,
+        'postId': postId,
+        'replyContent': replyContent,
+        'receiverId': receiverId,
+        'pharmacyId': pharmacyId,
       },
     );
     return _safeParseMap(response.data);

@@ -169,6 +169,56 @@ DELETE /Posts/{postId}
 
 ---
 
+## Add Reply to Post (Pharmacy Only)
+
+### Endpoint
+
+```http
+POST /PostReplies
+```
+
+### Content-Type
+
+```text
+application/json
+```
+
+### Fields
+
+```text
+postId (integer, required) - The ID of the post to reply to
+replyContent (string, required) - The pharmacy's reply message
+receiverId (string, required) - The user ID who created the post
+pharmacyId (string, required) - The pharmacy ID sending the reply
+```
+
+### Example Request
+
+```json
+{
+  "postId": 6,
+  "replyContent": "We have this medicine in stock. You can visit our pharmacy or order online.",
+  "receiverId": "f4a1649e-7ed0-4058-b39a-67f9298e1ae4",
+  "pharmacyId": "203b5b7f-13e5-492a-0be3-08debf4eceec"
+}
+```
+
+### Example Success Response
+
+```
+7
+```
+
+Returns the reply ID as a number.
+
+### Authorization Requirement
+
+- **MUST** be authenticated (Bearer token required)
+- **ONLY** users with **Pharmacy** role can call this endpoint
+- Non-pharmacy users will receive 403 Forbidden error
+
+---
+
 ## Authentication
 
 All requests require:

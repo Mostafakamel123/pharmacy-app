@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dart *)"
+      "Bash(dart *)",
+      "Bash(flutter *)",
+      "Bash(dir *)",
+      "Bash(rmdir *)",
+      "Bash(del *)"
     ]
-  }
+  },
+  "$version": 3
 }

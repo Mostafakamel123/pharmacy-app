@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
-import 'package:pharmacy_app/features/posts/model/post_model.dart';
 import 'package:pharmacy_app/features/posts/view/post_details_screen.dart';
 import 'package:pharmacy_app/features/posts/view/widgets/post_card.dart';
 
@@ -144,13 +143,20 @@ class MyPostsScreen extends ConsumerWidget {
                       );
                     },
                     onDismissed: (direction) async {
-                      final success = await ref
+                      final (success, error) = await ref
                           .read(myPostsProvider.notifier)
                           .deletePost(post.id);
                       if (success && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Post deleted successfully'),
+                            backgroundColor: AppColors.primaryGreen,
+                          ),
+                        );
+                      } else if (!success && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to delete post: ${error ?? "Unknown error"}'),
                             backgroundColor: AppColors.accentRed,
                           ),
                         );

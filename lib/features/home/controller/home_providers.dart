@@ -2,7 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/api_endpoints.dart';
-import 'package:pharmacy_app/features/home/model/home_post_model.dart';
+import 'package:pharmacy_app/features/posts/model/post_model.dart';
 import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -101,35 +101,44 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
 // RECENT POSTS PROVIDER - Connected to /api/Posts
 // ============================================================================
 
-final recentPostsProvider = StateNotifierProvider<RecentPostsNotifier, AsyncValue<List<HomePostModel>>>((ref) {
-  return RecentPostsNotifier(ref);
+final recentPostsProvider = StateNotifierProvider<RecentPostsNotifier, AsyncValue<List<PostModel>>>((ref) {
+  return RecentPostsNotifier();
 });
 
-class RecentPostsNotifier extends StateNotifier<AsyncValue<List<HomePostModel>>> {
-  final Ref ref;
+class RecentPostsNotifier extends StateNotifier<AsyncValue<List<PostModel>>> {
   final ApiEndpoints _api = ApiEndpoints();
 
-  RecentPostsNotifier(this.ref) : super(const AsyncValue.loading()) {
+  RecentPostsNotifier() : super(const AsyncValue.loading()) {
     _loadPosts();
   }
 
   Future<void> _loadPosts() async {
     try {
       state = const AsyncValue.loading();
+      print('🟡 RecentPostsNotifier: Starting to load posts...');
 
       // Call API: GET /api/Posts?pageNumber=1&pageSize=5
       final response = await _api.getPosts(pageNumber: 1, pageSize: 5);
+      print('🟡 RecentPostsNotifier: API response received: ${response.length} items');
 
-      // Map API response to HomePostModel
+      // Map API response to PostModel
       final posts = (response).map((item) {
-        return HomePostModel.fromJson(item as Map<String, dynamic>);
+        return PostModel.fromJson(item as Map<String, dynamic>);
       }).toList();
 
-      state = AsyncValue.data(posts);
+      // If API returns data, use it
+      if (posts.isNotEmpty) {
+        print('🟢 RecentPostsNotifier: API returned ${posts.length} posts');
+        state = AsyncValue.data(posts);
+      } else {
+        print('⚠️  RecentPostsNotifier: API returned empty list');
+        state = AsyncValue.data([]);
+      }
     } catch (e, stack) {
-      // On error, return empty list
-      state = AsyncValue.data([]);
-      print('Error loading recent posts: $e');
+      // On error, show error state
+      print('🔴 RecentPostsNotifier: Error loading posts: $e');
+      print('🔴 Stack trace: $stack');
+      state = AsyncValue.error(e, stack);
     }
   }
 
