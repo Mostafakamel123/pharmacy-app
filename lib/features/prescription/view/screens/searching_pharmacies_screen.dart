@@ -1,4 +1,4 @@
-// ignore_for_file: use_super_parameters, deprecated_member_use
+// ignore_for_file: use_super_parameters, deprecated_member_use, avoid_print
 
 import 'dart:async';
 import 'package:flutter/material.dart';

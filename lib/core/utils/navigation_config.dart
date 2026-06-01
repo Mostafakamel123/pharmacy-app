@@ -2,6 +2,8 @@
 /// 
 /// The app now has a single navigation flow regardless of user type.
 /// Pharmacy management is handled through pharmacy mode toggle.
+// ignore_for_file: unused_element
+
 library;
 
 import 'package:flutter/material.dart';
@@ -51,11 +53,13 @@ class UserNavItems {
         route: isPharmacyMode ? '/pharmacy/dashboard' : '/home',
       ),
       NavItem(
-        label: 'Posts',
-        icon: Icons.article_outlined,
-        activeIcon: Icons.article,
-        builder: (ref) => const PostsFeedScreen(),
-        route: '/posts',
+        label: isPharmacyMode ? 'Chats' : 'Posts',
+        icon: isPharmacyMode ? Icons.chat_bubble_outline : Icons.article_outlined,
+        activeIcon: isPharmacyMode ? Icons.chat_bubble : Icons.article,
+        builder: (ref) => isPharmacyMode 
+            ? const ChatsListScreen() 
+            : const PostsFeedScreen(),
+        route: isPharmacyMode ? '/chats' : '/posts',
       ),
       // Center FAB - no regular nav item (index 2 is skipped for FAB)
       NavItem(

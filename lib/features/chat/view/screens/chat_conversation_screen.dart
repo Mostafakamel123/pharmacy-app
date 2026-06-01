@@ -1,4 +1,4 @@
-// ignore_for_file: use_super_parameters, unused_result
+// ignore_for_file: use_super_parameters, unused_result, deprecated_member_use
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -442,13 +442,15 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 6),
-                        const Row(
-                          children: [
+                        Row(
+                          children: const [
                             Icon(Icons.verified_user_rounded, size: 12, color: Color(0xFF10B981)),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Offer Accepted & Preparing / تم قبول العرض وجاري التجهيز',
-                              style: TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Offer Accepted & Preparing / تم قبول العرض وجاري التجهيز',
+                                style: TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ],
                         ),

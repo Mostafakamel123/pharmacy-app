@@ -2,62 +2,105 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../model/chat_model.dart';
 import '../model/chat_user_model.dart';
 import '../model/message_model.dart';
+import 'package:pharmacy_app/core/network/api_endpoints.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:pharmacy_app/features/prescription/controller/patient_prescription_providers.dart';
 
 // Mock data - Replace with real API calls
 class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
-  ChatsNotifier() : super(const AsyncValue.loading()) {
+  final Ref ref;
+
+  ChatsNotifier(this.ref) : super(const AsyncValue.loading()) {
     _initializeChats();
   }
 
   Future<void> _initializeChats() async {
     try {
       // Simulate API delay
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 200));
 
-      final chats = [
-        ChatModel(
-          id: 'chat_1',
-          otherUser: ChatUserModel(
-            id: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
-            name: 'kamal Pharmacy',
-            avatar: '🏥',
-            type: 'pharmacy',
-            isOnline: true,
-          ),
-          lastMessage: 'ايه الاخبار دلوقتي',
-          lastMessageTime: DateTime.now().subtract(const Duration(minutes: 5)),
-          unreadCount: 2,
-        ),
-        ChatModel(
-          id: 'chat_2',
-          otherUser: ChatUserModel(
-            id: 'd0a4c281-a67b-4011-893c-a93108920199',
-            name: 'الدولي ',
-            avatar: '💊',
-            type: 'pharmacy',
-            isOnline: false,
-            lastSeen: DateTime.now().subtract(const Duration(hours: 2)),
-          ),
-          lastMessage: 'هيتوفر الاسبوع الجاي ',
-          lastMessageTime: DateTime.now().subtract(const Duration(hours: 3)),
-          unreadCount: 0,
-        ),
-        ChatModel(
-          id: 'chat_3',
-          otherUser: ChatUserModel(
-            id: 'pharmacy_3',
-            name: 'صيدلية محمد عمر العلء',
-            avatar: '⚕️',
-            type: 'pharmacy',
-            isOnline: true,
-          ),
-          lastMessage: 'مفيش حاجة تطول العلاقة شوية ',
-          lastMessageTime: DateTime.now().subtract(const Duration(days: 1)),
-          unreadCount: 0,
-        ),
-      ];
+      final isPharmacy = ref.read(isPharmacyModeProvider);
+      final List<ChatModel> activePrescriptionChats = [];
 
-      state = AsyncValue.data(chats);
+      // 1. Scan and dynamically load accepted/completed chats from real backend API!
+      try {
+        final api = ApiEndpoints();
+        final List<dynamic> allPrescriptions = await api.getMyPrescriptions(pageSize: 100);
+        
+        for (var p in allPrescriptions) {
+          if (p is! Map) continue;
+
+          final id = p['id']?.toString() ?? '';
+          final statusVal = (p['status'] as num?)?.toInt() ?? 0;
+          final repliesRaw = p['replies'] ?? p['offers'] ?? p['prescriptionReplies'] ?? [];
+          final List<dynamic> replies = repliesRaw is List ? repliesRaw : [];
+
+          // Chats are for status 2 (Accepted/Preparing) or 3 (Completed/Ready)
+          if (statusVal == 2 || statusVal == 3) {
+            // Find the accepted reply/offer
+            final acceptedReply = replies.firstWhere((r) => r is Map, orElse: () => null);
+            if (acceptedReply != null) {
+              final rPharmacyId = acceptedReply['pharmacyId']?.toString() ?? 'pharm_001';
+              final rPharmacyName = acceptedReply['pharmacyName']?.toString() ?? 'Pharmacy';
+              final double rPrice = (acceptedReply['totalPrice'] as num?)?.toDouble() ?? 0.0;
+              final rMsg = acceptedReply['message']?.toString() ?? '';
+
+              // Find the last reply to show as the lastMessage in chats list
+              var lastMsgText = 'تم قبول العرض: $rPrice EGP - $rMsg';
+              var lastMsgTime = DateTime.tryParse(p['createdAt']?.toString() ?? '') ?? DateTime.now();
+
+              if (replies.isNotEmpty) {
+                final lastReply = replies.lastWhere((r) => r is Map, orElse: () => null);
+                if (lastReply != null) {
+                  var rawText = lastReply['message']?.toString() ?? '';
+                  // strip prefix
+                  if (rawText.startsWith('[PATIENT] ')) {
+                    rawText = rawText.substring('[PATIENT] '.length);
+                  } else if (rawText.startsWith('[PHARMACY] ')) {
+                    rawText = rawText.substring('[PHARMACY] '.length);
+                  }
+                  lastMsgText = rawText;
+                  lastMsgTime = DateTime.tryParse(lastReply['createdAt']?.toString() ?? '') ?? lastMsgTime;
+                }
+              }
+
+              activePrescriptionChats.add(
+                ChatModel(
+                  id: 'chat_historical_$id',
+                  otherUser: ChatUserModel(
+                    id: isPharmacy ? 'patient' : rPharmacyId,
+                    name: isPharmacy ? 'Customer / زبون' : rPharmacyName,
+                    avatar: isPharmacy ? '👤' : '🏥',
+                    type: isPharmacy ? 'patient' : 'pharmacy',
+                    isOnline: true,
+                  ),
+                  lastMessage: lastMsgText,
+                  lastMessageTime: lastMsgTime,
+                  unreadCount: 0,
+                  prescriptionId: id,
+                  prescriptionImage: p['imageUrl']?.toString(),
+                  prescriptionNotes: p['notes']?.toString(),
+                  prescriptionPrice: rPrice,
+                ),
+              );
+            }
+          }
+        }
+      } catch (e) {
+        print('DEBUG: Error scanning prescriptions for chats: $e');
+      }
+
+      // De-duplicate chats by ID
+      final seenIds = <String>{};
+      final uniqueChats = <ChatModel>[];
+      for (var chat in activePrescriptionChats) {
+        if (!seenIds.contains(chat.id)) {
+          seenIds.add(chat.id);
+          uniqueChats.add(chat);
+        }
+      }
+
+      state = AsyncValue.data(uniqueChats);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -164,7 +207,7 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
 }
 
 final chatsProvider = StateNotifierProvider<ChatsNotifier, AsyncValue<List<ChatModel>>>((ref) {
-  return ChatsNotifier();
+  return ChatsNotifier(ref);
 });
 
 // Search functionality
@@ -199,159 +242,264 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
     _loadMessages();
   }
 
+  String? _getPrescriptionId() {
+    if (chatId.startsWith('chat_historical_')) {
+      return chatId.substring('chat_historical_'.length);
+    }
+    if (chatId.startsWith('chat_pres_')) {
+      return chatId.substring('chat_pres_'.length);
+    }
+    if (chatId.startsWith('chat_')) {
+      final suffix = chatId.substring(5);
+      if (RegExp(r'^\d+$').hasMatch(suffix)) {
+        return null;
+      }
+      return suffix;
+    }
+    return null;
+  }
+
   Future<void> _loadMessages() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 600));
-
-      List<MessageModel> messages;
-      if (chatId.startsWith('chat_historical_') || chatId.startsWith('chat_pres_') || chatId.length > 10) {
-        final chatsState = ref.read(chatsProvider).value;
-        final currentChat = (chatsState != null && chatsState.any((c) => c.id == chatId))
-            ? chatsState.firstWhere((c) => c.id == chatId)
-            : null;
+      final presId = _getPrescriptionId();
+      if (presId != null) {
+        print('⚡ ELAAJ CHAT: Resolving prescription chat for prescriptionId: "$presId"');
+        final api = ApiEndpoints();
+        final isPharmacy = ref.read(isPharmacyModeProvider);
         
-        if (currentChat != null && currentChat.prescriptionId != null) {
-          final price = currentChat.prescriptionPrice ?? 0.0;
-          final pharmName = currentChat.otherUser.name;
-          messages = [
-            MessageModel(
-              id: 'msg_welcome_${DateTime.now().millisecondsSinceEpoch}',
-              chatId: chatId,
-              senderId: currentChat.otherUser.id,
-              senderName: pharmName,
-              senderAvatar: '🏥',
-              content: 'مرحباً بك! شكراً لقبول عرض صيدليتنا بقيمة $price EGP. جاري الآن تجهيز طلبك، وسنتواصل معك هنا بخصوص الشحن والتوصيل.',
-              timestamp: DateTime.now().subtract(const Duration(minutes: 1)),
-              status: MessageStatus.read,
-              isSent: false,
-            )
-          ];
-        } else {
-          messages = _getMockMessages(chatId);
+        Map<String, dynamic>? presData;
+        try {
+          presData = await api.getPrescriptionById(id: presId);
+        } catch (e) {
+          print('DEBUG: Error calling getPrescriptionById from chat: $e. Falling back to history list.');
+          final historyList = ref.read(patientPrescriptionsProvider).value ?? [];
+          final matched = historyList.firstWhere(
+            (p) {
+              if (p is! Map) return false;
+              final idStr = (p['id'] ?? p['prescriptionId'])?.toString().toLowerCase();
+              return idStr == presId.toLowerCase();
+            },
+            orElse: () => null,
+          );
+          if (matched is Map) {
+            presData = Map<String, dynamic>.from(matched);
+          }
         }
-      } else {
-        messages = _getMockMessages(chatId);
+
+        if (presData != null && presData.isNotEmpty) {
+          final repliesRaw = presData['replies'] ?? presData['offers'] ?? presData['prescriptionReplies'] ?? [];
+          final List<dynamic> replies = repliesRaw is List ? repliesRaw : [];
+          
+          print('⚡ ELAAJ CHAT: Parsed replies list length: ${replies.length}');
+
+          final acceptedReply = replies.firstWhere((r) => r is Map, orElse: () => null);
+          if (acceptedReply != null) {
+            final pId = acceptedReply['pharmacyId']?.toString() ?? 'pharm_001';
+            final pName = acceptedReply['pharmacyName']?.toString() ?? 'Pharmacy';
+            final price = (acceptedReply['totalPrice'] as num?)?.toDouble() ?? 0.0;
+            final msg = acceptedReply['message']?.toString() ?? '';
+
+            Future.microtask(() {
+              ref.read(chatsProvider.notifier).createPrescriptionChat(
+                chatId: chatId,
+                pharmacyId: pId,
+                pharmacyName: pName,
+                price: price,
+                message: msg,
+                prescriptionId: presId,
+                prescriptionImage: presData?['imageUrl']?.toString(),
+                prescriptionNotes: presData?['notes']?.toString(),
+              );
+            });
+          }
+
+          final List<MessageModel> parsedMessages = [];
+          for (int i = 0; i < replies.length; i++) {
+            final r = replies[i];
+            if (r is! Map) continue;
+
+            final rId = r['id']?.toString() ?? 'reply_msg_$i';
+            final rMsg = r['message']?.toString() ?? '';
+            final rPharmacyId = r['pharmacyId']?.toString() ?? 'pharm_001';
+            final rPharmacyName = r['pharmacyName']?.toString() ?? 'Pharmacy';
+            final rCreatedAt = DateTime.tryParse(r['createdAt']?.toString() ?? '') ?? DateTime.now();
+
+            bool isFromPatient = false;
+            bool isFromPharmacy = false;
+
+            if (rMsg.startsWith('[PATIENT] ')) {
+              isFromPatient = true;
+            } else if (rMsg.startsWith('[PHARMACY] ')) {
+              isFromPharmacy = true;
+            } else {
+              isFromPharmacy = true;
+            }
+
+            String content = rMsg;
+            if (content.startsWith('[PATIENT] ')) {
+              content = content.substring('[PATIENT] '.length);
+            } else if (content.startsWith('[PHARMACY] ')) {
+              content = content.substring('[PHARMACY] '.length);
+            }
+
+            bool isSentByMe = false;
+            if (isPharmacy) {
+              isSentByMe = isFromPharmacy && !rMsg.startsWith('[PATIENT] ');
+            } else {
+              isSentByMe = isFromPatient;
+            }
+
+            parsedMessages.add(
+              MessageModel(
+                id: rId,
+                chatId: chatId,
+                senderId: isFromPatient ? 'patient' : rPharmacyId,
+                senderName: isFromPatient ? (isPharmacy ? 'Patient' : 'You') : (isPharmacy ? 'You' : rPharmacyName),
+                senderAvatar: isFromPatient ? '👤' : '🏥',
+                content: content,
+                timestamp: rCreatedAt,
+                status: MessageStatus.read,
+                isSent: isSentByMe,
+              ),
+            );
+          }
+
+          parsedMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+          state = AsyncValue.data(parsedMessages);
+          return;
+        }
       }
-      state = AsyncValue.data(messages);
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      state = const AsyncValue.data([]);
     } catch (e, st) {
+      print('DEBUG: Error in _loadMessages: $e');
       state = AsyncValue.error(e, st);
     }
   }
 
   List<MessageModel> _getMockMessages(String chatId) {
-    return [
-      MessageModel(
-        id: 'msg_1',
-        chatId: chatId,
-        senderId: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
-        senderName: 'kamal Pharmacy',
-        senderAvatar: '🏥',
-        content: 'Hello! How can we assist you today?',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        status: MessageStatus.read,
-        isSent: false,
-      ),
-      MessageModel(
-        id: 'msg_2',
-        chatId: chatId,
-        senderId: 'user_1',
-        senderName: 'You',
-        content: 'عاوز استفسر عن دوا معين',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 50)),
-        status: MessageStatus.read,
-        isSent: true,
-      ),
-      MessageModel(
-        id: 'msg_3',
-        chatId: chatId,
-        senderId: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
-        senderName: 'kamal Pharmacy',
-        senderAvatar: '🏥',
-        content: 'قول يصاحبي',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 40)),
-        status: MessageStatus.read,
-        isSent: false,
-      ),
-      MessageModel(
-        id: 'msg_4',
-        chatId: chatId,
-        senderId: 'user_1',
-        senderName: 'You',
-        content: 'فياجرا',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
-        status: MessageStatus.read,
-        isSent: true,
-      ),
-      MessageModel(
-        id: 'msg_5',
-        chatId: chatId,
-        senderId: 'cc29f0a9-9676-4949-5e44-08debf09c68b',
-        senderName: 'kamal Pharmacy',
-        senderAvatar: '🏥',
-        content: 'فاجرة',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-        status: MessageStatus.read,
-        isSent: false,
-      ),
-    ];
+    return [];
   }
 
   Future<void> sendMessage(String content, {MessageType type = MessageType.text}) async {
     try {
-      final newMessage = MessageModel(
-        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-        chatId: chatId,
-        senderId: 'user_1',
-        senderName: 'You',
-        content: content,
-        timestamp: DateTime.now(),
-        status: MessageStatus.sending,
-        isSent: true,
-        type: type,
-      );
+      final presId = _getPrescriptionId();
+      final isPharmacy = ref.read(isPharmacyModeProvider);
 
-      state.whenData((messages) {
-        state = AsyncValue.data([...messages, newMessage]);
-      });
+      if (presId != null) {
+        final tempMessage = MessageModel(
+          id: 'temp_msg_${DateTime.now().millisecondsSinceEpoch}',
+          chatId: chatId,
+          senderId: isPharmacy ? 'pharmacy' : 'patient',
+          senderName: 'You',
+          content: content,
+          timestamp: DateTime.now(),
+          status: MessageStatus.sending,
+          isSent: true,
+          type: type,
+        );
 
-      // Update last message in Chats list dynamically!
-      ref.read(chatsProvider.notifier).updateLastMessage(chatId, content);
+        state.whenData((messages) {
+          state = AsyncValue.data([...messages, tempMessage]);
+        });
 
-      // Simulate sending
-      await Future.delayed(const Duration(milliseconds: 500));
+        ref.read(chatsProvider.notifier).updateLastMessage(chatId, content);
 
-      state.whenData((messages) {
-        final updatedMessages = messages.map((msg) {
-          if (msg.id == newMessage.id) {
-            return msg.copyWith(status: MessageStatus.sent);
+        String? pharmacyId;
+        final chatsState = ref.read(chatsProvider).value;
+        final currentChat = (chatsState != null && chatsState.any((c) => c.id == chatId))
+            ? chatsState.firstWhere((c) => c.id == chatId)
+            : null;
+
+        if (isPharmacy) {
+          pharmacyId = ref.read(pharmacyModeProvider).currentPharmacy?.id ?? currentChat?.otherUser.id;
+        } else {
+          pharmacyId = currentChat?.otherUser.id;
+        }
+
+        if (pharmacyId == null) {
+          try {
+            final api = ApiEndpoints();
+            final presData = await api.getPrescriptionById(id: presId);
+            final rawReplies = presData['replies'] ?? presData['offers'] ?? [];
+            if (rawReplies is List && rawReplies.isNotEmpty) {
+              final firstReply = rawReplies.firstWhere((r) => r is Map && r['pharmacyId'] != null, orElse: () => null);
+              if (firstReply != null) {
+                pharmacyId = firstReply['pharmacyId']?.toString();
+              }
+            }
+          } catch (e) {
+            print('DEBUG: Error resolving pharmacyId in sendMessage: $e');
           }
-          return msg;
-        }).toList();
-        state = AsyncValue.data(updatedMessages);
-      });
+        }
 
-      // Simulate delivery after 1 second
-      await Future.delayed(const Duration(milliseconds: 500));
+        final String finalPharmId = pharmacyId ?? 'pharm_001';
+        final String prefixedMsg = isPharmacy ? '[PHARMACY] $content' : '[PATIENT] $content';
 
-      state.whenData((messages) {
-        final updatedMessages = messages.map((msg) {
-          if (msg.id == newMessage.id) {
-            return msg.copyWith(status: MessageStatus.delivered);
-          }
-          return msg;
-        }).toList();
-        state = AsyncValue.data(updatedMessages);
-      });
+        final api = ApiEndpoints();
+        await api.replyToPrescription(
+          prescriptionId: presId,
+          pharmacyId: finalPharmId,
+          message: prefixedMsg,
+          totalPrice: 0.0,
+          isAvailable: true,
+        );
+
+        await _loadMessages();
+      } else {
+        final newMessage = MessageModel(
+          id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+          chatId: chatId,
+          senderId: 'user_1',
+          senderName: 'You',
+          content: content,
+          timestamp: DateTime.now(),
+          status: MessageStatus.sending,
+          isSent: true,
+          type: type,
+        );
+
+        state.whenData((messages) {
+          state = AsyncValue.data([...messages, newMessage]);
+        });
+
+        ref.read(chatsProvider.notifier).updateLastMessage(chatId, content);
+
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        state.whenData((messages) {
+          final updatedMessages = messages.map((msg) {
+            if (msg.id == newMessage.id) {
+              return msg.copyWith(status: MessageStatus.sent);
+            }
+            return msg;
+          }).toList();
+          state = AsyncValue.data(updatedMessages);
+        });
+
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        state.whenData((messages) {
+          final updatedMessages = messages.map((msg) {
+            if (msg.id == newMessage.id) {
+              return msg.copyWith(status: MessageStatus.delivered);
+            }
+            return msg;
+          }).toList();
+          state = AsyncValue.data(updatedMessages);
+        });
+      }
     } catch (e, st) {
+      print('DEBUG: Error sending chat message: $e');
       state = AsyncValue.error(e, st);
     }
   }
 
   Future<void> loadOlderMessages() async {
     try {
-      // Implement pagination
       await Future.delayed(const Duration(milliseconds: 800));
-      // Add older messages
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

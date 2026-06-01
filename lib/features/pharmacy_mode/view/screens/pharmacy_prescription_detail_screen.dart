@@ -1,5 +1,8 @@
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/config/env_config.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_request_providers.dart';
@@ -846,6 +849,26 @@ class _PharmacyPrescriptionDetailScreenState
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  final String chatId = 'chat_historical_$prescriptionId';
+                  context.push('/chat/$chatId', extra: 'Customer / زبون');
+                },
+                icon: const Icon(Icons.chat_rounded, size: 20),
+                label: const Text('Chat with Patient / المحادثة مع المريض', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
