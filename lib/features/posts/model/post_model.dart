@@ -10,6 +10,14 @@ enum PostCategory {
 
 enum PostStatus { open, replied, closed }
 
+/// Helper to build full image URL from relative path
+String? buildImageUrl(String? path) {
+  if (path == null || path.isEmpty) return null;
+  if (path.startsWith('http')) return path;
+  final cleanPath = path.startsWith('/') ? path : '/$path';
+  return "http://elaaj.runasp.net$cleanPath";
+}
+
 class PostModel {
   final String id;
   final String userId;
@@ -21,18 +29,20 @@ class PostModel {
   final bool isBookmarked;
   final PostStatus status;
   final DateTime createdAt;
+  final List<ReplyModel> replies;
 
   const PostModel({
     required this.id,
     required this.userId,
     required this.userName,
     required this.content,
-    required this.category,
+    this.category = PostCategory.general,
     this.imageUrl,
     this.replyCount = 0,
     this.isBookmarked = false,
     this.status = PostStatus.open,
     required this.createdAt,
+    this.replies = const [],
   });
 
   String get timeAgo {
@@ -42,6 +52,50 @@ class PostModel {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     return '${(diff.inDays / 7).floor()}w ago';
+  }
+
+  factory PostModel.fromJson(Map<String, dynamic> json) {
+    final repliesJson = json['replies'] as List? ?? [];
+    final repliesList = repliesJson
+        .map((r) => ReplyModel.fromJson(r as Map<String, dynamic>))
+        .toList();
+
+    final createdAtRaw = json['createdAt'] ?? json['created_at'];
+    DateTime createdAt;
+    if (createdAtRaw is String) {
+      createdAt = DateTime.tryParse(createdAtRaw) ?? DateTime.now();
+    } else if (createdAtRaw is int) {
+      createdAt = DateTime.fromMillisecondsSinceEpoch(createdAtRaw);
+    } else {
+      createdAt = DateTime.now();
+    }
+
+    // Map Category (if present in API, map it, else default to general)
+    PostCategory cat = PostCategory.general;
+    final catRaw = json['category'] ?? json['post_category'];
+    if (catRaw is String) {
+      for (var value in PostCategory.values) {
+        if (value.name.toLowerCase() == catRaw.toLowerCase() ||
+            value.label.toLowerCase() == catRaw.toLowerCase()) {
+          cat = value;
+          break;
+        }
+      }
+    }
+
+    return PostModel(
+      id: (json['id'] ?? json['postId'] ?? '').toString(),
+      userId: json['userId'] as String? ?? '',
+      userName: json['userName'] as String? ?? json['userFullName'] as String? ?? 'Patient',
+      content: json['content'] as String? ?? '',
+      category: cat,
+      imageUrl: buildImageUrl(json['imageUrl'] as String? ?? json['imagePath'] as String?),
+      replyCount: repliesList.length,
+      isBookmarked: false, // will be handled by Riverpod provider
+      status: repliesList.isNotEmpty ? PostStatus.replied : PostStatus.open,
+      createdAt: createdAt,
+      replies: repliesList,
+    );
   }
 
   static List<PostModel> sample() {
@@ -68,39 +122,6 @@ class PostModel {
         replyCount: 5,
         status: PostStatus.replied,
         createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-      PostModel(
-        id: '3',
-        userId: 'u3',
-        userName: 'Ahmed K.',
-        content:
-            'What is the best vitamin D supplement available in Egyptian pharmacies? My doctor recommended 5000 IU daily.',
-        category: PostCategory.general,
-        replyCount: 1,
-        status: PostStatus.open,
-        createdAt: DateTime.now().subtract(const Duration(hours: 8)),
-      ),
-      PostModel(
-        id: '4',
-        userId: 'u4',
-        userName: 'Nour H.',
-        content:
-            'Emergency: Need insulin injection (NovoRapid) right now. Anyone knows which nearby pharmacy is open and has it?',
-        category: PostCategory.emergency,
-        replyCount: 7,
-        status: PostStatus.replied,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      PostModel(
-        id: '5',
-        userId: 'u5',
-        userName: 'Youssef T.',
-        content:
-            'Can someone recommend a good baby skincare routine? Looking for gentle products available at local pharmacies.',
-        category: PostCategory.advice,
-        replyCount: 0,
-        status: PostStatus.open,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
       ),
     ];
   }
@@ -141,6 +162,32 @@ class ReplyModel {
     return '${diff.inDays}d ago';
   }
 
+  factory ReplyModel.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = json['createdAt'] ?? json['created_at'];
+    DateTime createdAt;
+    if (createdAtRaw is String) {
+      createdAt = DateTime.tryParse(createdAtRaw) ?? DateTime.now();
+    } else if (createdAtRaw is int) {
+      createdAt = DateTime.fromMillisecondsSinceEpoch(createdAtRaw);
+    } else {
+      createdAt = DateTime.now();
+    }
+
+    return ReplyModel(
+      id: (json['id'] ?? json['replyId'] ?? '').toString(),
+      postId: (json['postId'] ?? '').toString(),
+      pharmacyId: json['pharmacyId'] as String? ?? '',
+      pharmacyName: json['pharmacyName'] as String? ?? 'Pharmacy',
+      isVerified: json['isVerified'] as bool? ?? true,
+      content: json['message'] as String? ?? json['content'] as String? ?? '',
+      price: (json['price'] ?? json['totalPrice'] ?? 0.0) as double?,
+      medicineName: json['medicineName'] as String?,
+      isAvailable: json['isAvailable'] as bool? ?? true,
+      isBestReply: json['isBestReply'] as bool? ?? false,
+      createdAt: createdAt,
+    );
+  }
+
   static List<ReplyModel> sampleForPost(String postId) {
     return [
       ReplyModel(
@@ -155,30 +202,6 @@ class ReplyModel {
         isAvailable: true,
         isBestReply: true,
         createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
-      ),
-      ReplyModel(
-        id: 'r2',
-        postId: postId,
-        pharmacyId: 'p2',
-        pharmacyName: 'Seif Pharmacy',
-        content:
-            'We have Brufen 400mg available. It is also effective for pain relief. Price is affordable.',
-        price: 22.0,
-        medicineName: 'Brufen 400mg',
-        isAvailable: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-      ),
-      ReplyModel(
-        id: 'r3',
-        postId: postId,
-        pharmacyId: 'p3',
-        pharmacyName: 'Dr. Ragab Pharmacy',
-        content:
-            'Available: Cataflam 50mg - good for pain and anti-inflammatory. We also have stomach protection tablets if needed.',
-        price: 45.0,
-        medicineName: 'Cataflam 50mg',
-        isAvailable: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       ),
     ];
   }

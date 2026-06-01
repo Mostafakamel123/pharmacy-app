@@ -1,26 +1,53 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
 import 'package:pharmacy_app/features/posts/view/widgets/post_card.dart';
 import 'package:pharmacy_app/features/posts/view/widgets/reply_card.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 
-class PostDetailsScreen extends ConsumerWidget {
+class PostDetailsScreen extends ConsumerStatefulWidget {
   final PostModel post;
 
   const PostDetailsScreen({super.key, required this.post});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PostDetailsScreen> createState() => _PostDetailsScreenState();
+}
+
+class _PostDetailsScreenState extends ConsumerState<PostDetailsScreen> {
+  late TextEditingController _replyController;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _replyController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _replyController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final repliesAsync = ref.watch(postRepliesProvider(post.id));
+    final isPharmacyMode = ref.watch(isPharmacyModeProvider);
+    
+    // Watch reactive replies from our new family provider
+    final repliesAsync = ref.watch(postRepliesNotifierProvider(widget.post));
 
     return Scaffold(
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
       body: CustomScrollView(
+        controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
           // App bar
@@ -38,15 +65,15 @@ class PostDetailsScreen extends ConsumerWidget {
               ),
               onPressed: () => Navigator.pop(context),
             ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  Icons.bookmark_border_rounded,
-                  color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
-                ),
-                onPressed: () {},
+            title: const Text(
+              'Discussion',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
               ),
-            ],
+            ),
+            centerTitle: false,
           ),
 
           // Post content
@@ -54,7 +81,7 @@ class PostDetailsScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: PostCard(
-                post: post,
+                post: widget.post,
                 onTap: () {},
               ),
             ),
@@ -77,18 +104,35 @@ class PostDetailsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                  repliesAsync.maybeWhen(
+                    data: (replies) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        '${replies.length}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      '${post.replyCount}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryGreen,
+                    orElse: () => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        '${widget.post.replyCount}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryGreen,
+                        ),
                       ),
                     ),
                   ),
@@ -110,13 +154,42 @@ class PostDetailsScreen extends ConsumerWidget {
           // Replies list
           repliesAsync.when(
             data: (replies) {
-              // Best replies first
-              replies.sort((a, b) => b.isBestReply ? 1 : -1);
+              if (replies.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 32),
+                        Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 48,
+                          color: isDark ? DarkColors.textHint : LightColors.textHint,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No replies yet',
+                          style: TextStyle(
+                            color: isDark ? DarkColors.textHint : LightColors.textHint,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              // Create copy to sort replies (verified/best first, then chronological)
+              final sortedReplies = List<ReplyModel>.from(replies);
+              sortedReplies.sort((a, b) => b.isBestReply ? 1 : -1);
 
               return SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    final reply = replies[index];
+                    final reply = sortedReplies[index];
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: ReplyCard(
@@ -125,7 +198,7 @@ class PostDetailsScreen extends ConsumerWidget {
                       ),
                     );
                   },
-                  childCount: replies.length,
+                  childCount: sortedReplies.length,
                 ),
               );
             },
@@ -165,8 +238,137 @@ class PostDetailsScreen extends ConsumerWidget {
 
           // Bottom padding
           const SliverToBoxAdapter(
-            child: SizedBox(height: 100),
+            child: SizedBox(height: 120),
           ),
+        ],
+      ),
+      bottomNavigationBar: isPharmacyMode ? _buildReplyInput(context) : null,
+    );
+  }
+
+  Widget _buildReplyInput(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final repliesState = ref.watch(postRepliesNotifierProvider(widget.post));
+    final isSubmitting = repliesState.maybeWhen(
+      loading: () => true,
+      orElse: () => false,
+    );
+
+    return Container(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        top: 12,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? DarkColors.card : LightColors.card,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? DarkColors.divider : LightColors.divider,
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark ? DarkColors.divider : LightColors.divider,
+                  width: 1,
+                ),
+              ),
+              child: TextField(
+                controller: _replyController,
+                maxLines: null,
+                textCapitalization: TextCapitalization.sentences,
+                style: const TextStyle(fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Type your official pharmacy reply...',
+                  hintStyle: TextStyle(
+                    color: isDark
+                        ? DarkColors.textHint.withOpacity(0.6)
+                        : LightColors.textHint.withOpacity(0.6),
+                    fontSize: 14,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          isSubmitting
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.primaryBlue,
+                  ),
+                )
+              : Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryBlue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                    onPressed: () async {
+                      final text = _replyController.text.trim();
+                      if (text.isEmpty) return;
+
+                      HapticFeedback.lightImpact();
+                      FocusScope.of(context).unfocus();
+                      
+                      final success = await ref
+                          .read(postRepliesNotifierProvider(widget.post).notifier)
+                          .addReply(text);
+
+                      if (success) {
+                        _replyController.clear();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Your reply has been posted successfully!'),
+                              backgroundColor: AppColors.primaryGreen,
+                            ),
+                          );
+                        }
+                        // Smoothly scroll down to see the new reply
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_scrollController.hasClients) {
+                            _scrollController.animateTo(
+                              _scrollController.position.maxScrollExtent,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          }
+                        });
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to submit reply. Please try again.'),
+                              backgroundColor: AppColors.accentRed,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
         ],
       ),
     );

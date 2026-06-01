@@ -78,55 +78,7 @@ class PostsFeedScreen extends ConsumerWidget {
               ),
             ],
           ),
-          // Category filter chips
-          SliverToBoxAdapter(
-            child: Consumer(
-              builder: (context, ref, _) {
-                final selectedCategory = ref.watch(selectedCategoryProvider);
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: SizedBox(
-                    height: 36,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _FilterChip(
-                          label: 'All',
-                          icon: Icons.all_inclusive_rounded,
-                          isSelected: selectedCategory == null,
-                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = null,
-                        ),
-                        _FilterChip(
-                          label: 'General',
-                          icon: Icons.help_outline_rounded,
-                          isSelected: selectedCategory == PostCategory.general,
-                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = PostCategory.general,
-                        ),
-                        _FilterChip(
-                          label: 'Prescription',
-                          icon: Icons.description_rounded,
-                          isSelected: selectedCategory == PostCategory.prescription,
-                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = PostCategory.prescription,
-                        ),
-                        _FilterChip(
-                          label: 'Emergency',
-                          icon: Icons.local_hospital_rounded,
-                          isSelected: selectedCategory == PostCategory.emergency,
-                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = PostCategory.emergency,
-                        ),
-                        _FilterChip(
-                          label: 'Advice',
-                          icon: Icons.lightbulb_outline_rounded,
-                          isSelected: selectedCategory == PostCategory.advice,
-                          onTap: () => ref.read(selectedCategoryProvider.notifier).state = PostCategory.advice,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
           // Posts list
           postsAsync.when(
             data: (posts) {
@@ -206,78 +158,7 @@ class PostsFeedScreen extends ConsumerWidget {
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
 
-  const _FilterChip({
-    required this.label,
-    required this.icon,
-    this.isSelected = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primaryBlue
-                : isDark
-                    ? DarkColors.surface
-                    : LightColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primaryBlue
-                  : isDark
-                      ? DarkColors.divider
-                      : LightColors.divider,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected
-                    ? Colors.white
-                    : isDark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : isDark
-                          ? DarkColors.textSecondary
-                          : LightColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _EmptyState extends StatelessWidget {
   @override

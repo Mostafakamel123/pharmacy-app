@@ -1,10 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 
-class ReplyCard extends StatelessWidget {
+class ReplyCard extends ConsumerWidget {
   final ReplyModel reply;
   final bool isBestReply;
 
@@ -15,14 +17,19 @@ class ReplyCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isPharmacyMode = ref.watch(isPharmacyModeProvider);
+
+    // Only show "Best Reply" visual highlight and bottom action buttons in Pharmacy Mode
+    final showBestReplyHighlight = isBestReply && isPharmacyMode;
+    final showActions = isPharmacyMode;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isBestReply
+        color: showBestReplyHighlight
             ? isDark
                 ? AppColors.primaryGreen.withOpacity(0.08)
                 : AppColors.primaryGreen.withOpacity(0.05)
@@ -31,12 +38,12 @@ class ReplyCard extends StatelessWidget {
                 : LightColors.card,
         borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(
-          color: isBestReply
+          color: showBestReplyHighlight
               ? AppColors.primaryGreen.withOpacity(0.3)
               : isDark
                   ? DarkColors.divider
                   : LightColors.divider,
-          width: isBestReply ? 2 : 1,
+          width: showBestReplyHighlight ? 2 : 1,
         ),
       ),
       child: Column(
@@ -50,7 +57,7 @@ class ReplyCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  gradient: isBestReply
+                  gradient: showBestReplyHighlight
                       ? const LinearGradient(
                           colors: [AppColors.primaryGreen, Color(0xFF34D399)])
                       : AppColors.primaryGradient,
@@ -75,7 +82,7 @@ class ReplyCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: isBestReply
+                              color: showBestReplyHighlight
                                   ? AppColors.primaryGreen
                                   : isDark
                                       ? DarkColors.textPrimary
@@ -209,61 +216,64 @@ class ReplyCard extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 10),
-          // Actions
-          Row(
-            children: [
-              TextButton.icon(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
+          
+          // Action Buttons (Only shown for pharmacy mode, hidden for normal user)
+          if (showActions) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    backgroundColor: showBestReplyHighlight
+                        ? AppColors.primaryGreen.withOpacity(0.1)
+                        : isDark
+                            ? AppColors.primaryGreen.withOpacity(0.08)
+                            : AppColors.primaryGreen.withOpacity(0.06),
                   ),
-                  backgroundColor: isBestReply
-                      ? AppColors.primaryGreen.withOpacity(0.1)
-                      : isDark
-                          ? AppColors.primaryGreen.withOpacity(0.08)
-                          : AppColors.primaryGreen.withOpacity(0.06),
-                ),
-                icon: Icon(
-                  Icons.check_circle_rounded,
-                  size: 18,
-                  color: AppColors.primaryGreen,
-                ),
-                label: Text(
-                  'Best Reply',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                  icon: const Icon(
+                    Icons.check_circle_rounded,
+                    size: 18,
                     color: AppColors.primaryGreen,
                   ),
-                ),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                ),
-                icon: Icon(
-                  Icons.chat_rounded,
-                  size: 16,
-                  color: isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue,
-                ),
-                label: Text(
-                  'Contact',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue,
+                  label: const Text(
+                    'Best Reply',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryGreen,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  ),
+                  icon: Icon(
+                    Icons.chat_rounded,
+                    size: 16,
+                    color: isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue,
+                  ),
+                  label: Text(
+                    'Contact',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

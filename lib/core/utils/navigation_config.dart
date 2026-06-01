@@ -42,34 +42,67 @@ class UserNavItems {
     final pharmacyModeState = ref.watch(pharmacyModeProvider);
     final isPharmacyMode = pharmacyModeState.isPharmacyMode;
 
+    if (isPharmacyMode) {
+      return [
+        NavItem(
+          label: 'Dashboard',
+          icon: Icons.dashboard_outlined,
+          activeIcon: Icons.dashboard,
+          builder: (ref) => const PharmacyDashboardScreen(),
+          route: '/pharmacy/dashboard',
+        ),
+        NavItem(
+          label: 'Chats',
+          icon: Icons.chat_bubble_outline,
+          activeIcon: Icons.chat_bubble,
+          builder: (ref) => const ChatsListScreen(),
+          route: '/chats',
+        ),
+        NavItem(
+          label: 'Posts',
+          icon: Icons.article_outlined,
+          activeIcon: Icons.article,
+          builder: (ref) => const PostsFeedScreen(),
+          route: '/posts',
+        ),
+        NavItem(
+          label: 'Orders',
+          icon: Icons.inventory_2_outlined,
+          activeIcon: Icons.inventory_2,
+          builder: (ref) => const PharmacyOrdersScreen(),
+          route: '/pharmacy/orders',
+        ),
+        NavItem(
+          label: 'Profile',
+          icon: Icons.person_outline,
+          activeIcon: Icons.person,
+          builder: (ref) => const ProfileScreen(),
+          route: '/profile',
+        ),
+      ];
+    }
+
     return [
       NavItem(
-        label: isPharmacyMode ? 'Dashboard' : 'Home',
-        icon: isPharmacyMode ? Icons.dashboard_outlined : Icons.medical_services_outlined,
-        activeIcon: isPharmacyMode ? Icons.dashboard : Icons.medical_services,
-        builder: (ref) => isPharmacyMode 
-            ? const PharmacyDashboardScreen() 
-            : const PatientHomeScreen(),
-        route: isPharmacyMode ? '/pharmacy/dashboard' : '/home',
+        label: 'Home',
+        icon: Icons.medical_services_outlined,
+        activeIcon: Icons.medical_services,
+        builder: (ref) => const PatientHomeScreen(),
+        route: '/home',
       ),
       NavItem(
-        label: isPharmacyMode ? 'Chats' : 'Posts',
-        icon: isPharmacyMode ? Icons.chat_bubble_outline : Icons.article_outlined,
-        activeIcon: isPharmacyMode ? Icons.chat_bubble : Icons.article,
-        builder: (ref) => isPharmacyMode 
-            ? const ChatsListScreen() 
-            : const PostsFeedScreen(),
-        route: isPharmacyMode ? '/chats' : '/posts',
+        label: 'Posts',
+        icon: Icons.article_outlined,
+        activeIcon: Icons.article,
+        builder: (ref) => const PostsFeedScreen(),
+        route: '/posts',
       ),
-      // Center FAB - no regular nav item (index 2 is skipped for FAB)
       NavItem(
-        label: isPharmacyMode ? 'Orders' : 'Chat',
-        icon: isPharmacyMode ? Icons.inventory_2_outlined : Icons.chat_bubble_outline,
-        activeIcon: isPharmacyMode ? Icons.inventory_2 : Icons.chat_bubble,
-        builder: (ref) => isPharmacyMode 
-            ? const PharmacyOrdersScreen() 
-            : const ChatsListScreen(),
-        route: isPharmacyMode ? '/pharmacy/orders' : '/chat',
+        label: 'Chat',
+        icon: Icons.chat_bubble_outline,
+        activeIcon: Icons.chat_bubble,
+        builder: (ref) => const ChatsListScreen(),
+        route: '/chat',
       ),
       NavItem(
         label: 'Profile',
@@ -113,4 +146,3 @@ class UserNavItems {
     return items(ref)[index].route;
   }
 }
-

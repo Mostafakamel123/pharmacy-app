@@ -15,6 +15,7 @@ class ApiEndpoints {
     if (data == null) return {};
     if (data is Map) return Map<String, dynamic>.from(data);
     if (data is String) {
+      if (data.trim().isEmpty) return {};
       try {
         final parsed = jsonDecode(data);
         if (parsed is Map) return Map<String, dynamic>.from(parsed);
@@ -29,6 +30,7 @@ class ApiEndpoints {
     if (data == null) return [];
     if (data is List) return data;
     if (data is String) {
+      if (data.trim().isEmpty) return [];
       try {
         final parsed = jsonDecode(data);
         if (parsed is List) return parsed;
@@ -513,6 +515,91 @@ class ApiEndpoints {
     );
     return _safeParseMap(response.data);
   }
+
+  /// GET /api/Posts/my-posts
+  /// Get current user's posts
+  /// Query params: pageNumber (int32, default: 1), pageSize (int32, default: 10)
+  Future<List<dynamic>> getMyPosts({
+    int pageNumber = 1,
+    int pageSize = 10,
+  }) async {
+    final response = await _dio.get(
+      '/api/Posts/my-posts',
+      queryParameters: {
+        'pageNumber': pageNumber,
+        'pageSize': pageSize,
+      },
+    );
+    final data = _safeParseMap(response.data);
+    if (data.containsKey('items')) {
+      return data['items'] as List;
+    }
+    final listData = _safeParseList(response.data);
+    if (listData.isNotEmpty) {
+      return listData;
+    }
+    return [];
+  }
+
+  /// PUT /api/Posts/{postId}
+  /// Update an existing post (requires auth token)
+  /// multipart/form-data: Content (string), File (binary?)
+  Future<Map<String, dynamic>> updatePost({
+    required String postId,
+    required String content,
+    String? filePath,
+  }) async {
+    FormData formData;
+    
+    if (filePath != null && filePath.isNotEmpty && !filePath.startsWith('http') && !filePath.startsWith('/images')) {
+      // With file upload
+      formData = FormData.fromMap({
+        'Content': content,
+        'File': await MultipartFile.fromFile(
+          filePath,
+          filename: filePath.split('/').last,
+        ),
+      });
+    } else {
+      // Without file
+      formData = FormData.fromMap({
+        'Content': content,
+      });
+    }
+
+    final response = await _dio.put(
+      '/api/Posts/$postId',
+      data: formData,
+    );
+    return _safeParseMap(response.data);
+  }
+
+  /// DELETE /api/Posts/{postId}
+  /// Delete an existing post (requires auth token)
+  Future<Map<String, dynamic>> deletePost({
+    required String postId,
+  }) async {
+    final response = await _dio.delete(
+      '/api/Posts/$postId',
+    );
+    return _safeParseMap(response.data);
+  }
+
+  /// POST /api/Posts/{postId}/replies
+  /// Submit a pharmacy reply to a community post (requires auth token)
+  Future<Map<String, dynamic>> replyToPost({
+    required String postId,
+    required String message,
+  }) async {
+    final response = await _dio.post(
+      '/api/Posts/$postId/replies',
+      data: {
+        'message': message,
+      },
+    );
+    return _safeParseMap(response.data);
+  }
+
 
   // ========================= Prescriptions Endpoints =========================
 

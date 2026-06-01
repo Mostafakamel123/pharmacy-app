@@ -7,6 +7,7 @@ import 'package:pharmacy_app/features/home/model/home_post_model.dart';
 import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
 import 'package:pharmacy_app/features/posts/view/post_details_screen.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
+import 'package:pharmacy_app/features/posts/view/widgets/post_card.dart';
 
 class RecentPostsSection extends ConsumerWidget {
   const RecentPostsSection({super.key});
@@ -25,7 +26,7 @@ class RecentPostsSection extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Latest Responses',
+                  'Latest Posts',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -122,7 +123,7 @@ class _PostCard extends StatelessWidget {
                 userId: 'unknown',
                 userName: 'User',
                 content: post.question,
-                category: PostCategory.advice,
+                category: PostCategory.general,
                 imageUrl: post.attachmentUrl,
                 replyCount: post.replyCount,
                 status: post.hasResponse ? PostStatus.replied : PostStatus.open,
@@ -153,193 +154,145 @@ class _PostCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                // Pharmacy avatar
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0EA5E9), Color(0xFF10B981)],
-                    ),
-                    borderRadius:
-                        BorderRadius.all(Radius.circular(10)),
-                  ),
-                  child: const Icon(
-                    Icons.local_pharmacy_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.pharmacyName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1F2937),
+            // Post Image (or placeholder) at the front/left
+            GestureDetector(
+              onTap: post.attachmentUrl != null && post.attachmentUrl!.isNotEmpty
+                  ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FullScreenImageViewer(imageUrl: post.attachmentUrl!),
                         ),
-                      ),
+                      );
+                    }
+                  : null,
+              child: Hero(
+                tag: post.attachmentUrl ?? 'placeholder_${post.id}',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: post.attachmentUrl != null && post.attachmentUrl!.isNotEmpty
+                      ? Image.network(
+                          post.attachmentUrl!,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 64,
+                              height: 64,
+                              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF0EA5E9),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark),
+                        )
+                      : _buildPlaceholder(isDark),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Post Content (Question) on the right
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    post.question,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
                       Text(
                         '${post.timeAgo} ago',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: isDark
-                              ? const Color(0xFF6B7280)
-                              : const Color(0xFF9CA3AF),
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF6B7280),
                         ),
                       ),
+                      if (post.replyCount > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 3,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF6B7280),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 11,
+                          color: isDark
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF6B7280),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${post.replyCount}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                ),
-                // Reply count badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: const BoxDecoration(
-                    color: Color(0x1F0EA5E9), // replaced withOpacity(0.12)
-                    borderRadius:
-                        BorderRadius.all(Radius.circular(8)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.chat_bubble_rounded,
-                        size: 14,
-                        color: Color(0xFF0EA5E9),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        post.replyCount.toString(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF0EA5E9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Question
-            Text(
-              post.question,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
-              ),
-            ),
-            const SizedBox(height: 3),
-            // Preview
-            Text(
-              post.preview,
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark
-                    ? const Color(0xFF9CA3AF)
-                    : const Color(0xFF6B7280),
-                height: 1.4,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            // Response indicator
-            if (post.hasResponse)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0x1A10B981), // replaced withOpacity(0.1)
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(10)),
-                  border: Border.fromBorderSide(BorderSide(
-                    color: Color(0x3310B981), // replaced withOpacity(0.2)
-                    width: 1,
-                  )),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_circle_rounded,
-                        size: 14, color: Color(0xFF10B981)),
-                    SizedBox(width: 4),
-                    Text(
-                      'Pharmacy responded',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF10B981),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 6),
-            // View details button
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  // Navigate to post details screen directly
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PostDetailsScreen(
-                        post: PostModel(
-                          id: post.id,
-                          userId: 'unknown',
-                          userName: 'User',
-                          content: post.question,
-                          category: PostCategory.advice,
-                          imageUrl: post.attachmentUrl,
-                          replyCount: post.replyCount,
-                          status: post.hasResponse ? PostStatus.replied : PostStatus.open,
-                          createdAt: post.createdAt,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 6),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.all(Radius.circular(8)),
-                  ),
-                  backgroundColor: isDark
-                      ? const Color(0xFF374151)
-                      : const Color(0xFFF3F4F6),
-                ),
-                child: Text(
-                  'View Details',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? const Color(0xFF90CAF9)
-                        : const Color(0xFF0EA5E9),
-                  ),
-                ),
+                ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder(bool isDark) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF1E293B), const Color(0xFF334155)]
+              : [const Color(0xFFF0F9FF), const Color(0xFFE0F2FE)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Icon(
+        Icons.chat_bubble_outline_rounded,
+        color: Color(0xFF0EA5E9),
+        size: 24,
       ),
     );
   }

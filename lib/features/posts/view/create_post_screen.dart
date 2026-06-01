@@ -1,12 +1,13 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
-import 'package:pharmacy_app/features/posts/model/post_model.dart';
 import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CreatePostScreen extends ConsumerStatefulWidget {
   const CreatePostScreen({super.key});
@@ -17,11 +18,77 @@ class CreatePostScreen extends ConsumerStatefulWidget {
 
 class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final FocusNode _textFocus = FocusNode();
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
     _textFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1080,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      if (pickedFile != null) {
+        ref.read(createPostFormProvider.notifier).setPickedImage(pickedFile.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
+    }
+  }
+
+  void _showImagePickerOptions() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? DarkColors.card : LightColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? DarkColors.divider : LightColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryBlue),
+              title: const Text('Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryBlue),
+              title: const Text('Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -68,7 +135,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                       }
                     }
                   : null,
-                style: ElevatedButton.styleFrom(
+              style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
                 disabledBackgroundColor:
                     AppColors.primaryBlue.withOpacity(0.3),
@@ -117,21 +184,21 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               duration: const Duration(milliseconds: 300),
               height: hasContent ? 32 : 0,
               child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                  child: Row(
-                    children: [
-                      Text(
-                        '$charCount',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: charCount > 500
-                              ? AppColors.accentRed
-                              : isDark
-                                  ? DarkColors.textHint
-                                  : LightColors.textHint,
-                        ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                child: Row(
+                  children: [
+                    Text(
+                      '$charCount',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: charCount > 500
+                            ? AppColors.accentRed
+                            : isDark
+                                ? DarkColors.textHint
+                                : LightColors.textHint,
                       ),
+                    ),
                     Text(
                       ' / 500',
                       style: TextStyle(
@@ -278,13 +345,15 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                     ? DarkColors.divider
                                     : LightColors.divider,
                             width: 1,
-                          ),                          boxShadow: [
+                          ),
+                          boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
-                          ],                        ),
+                          ],
+                        ),
                         child: TextField(
                           focusNode: _textFocus,
                           maxLines: null,
@@ -299,8 +368,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             letterSpacing: 0.2,
                           ),
                           decoration: InputDecoration(
-                            hintText:
-                                'What medicine or health question do you have?',
+                            hintText: 'What medicine or health question do you have?',
                             hintStyle: TextStyle(
                               color: isDark
                                   ? DarkColors.textHint.withOpacity(0.5)
@@ -323,12 +391,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                               const Icon(Icons.error_outline_rounded,
                                   size: 16, color: AppColors.accentRed),
                               const SizedBox(width: 6),
-                              Text(
-                                formState.error!,
-                                style: const TextStyle(
-                                  color: AppColors.accentRed,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: Text(
+                                  formState.error!,
+                                  style: const TextStyle(
+                                    color: AppColors.accentRed,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -336,72 +406,18 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                         ),
                       const SizedBox(height: 28),
 
-                      // Category selector
-                      Text(
-                        'Category',
+                      // Image upload
+                      const Text(
+                        'Post Image',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: isDark
-                              ? DarkColors.textPrimary
-                              : LightColors.textPrimary,
                           letterSpacing: -0.3,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Select the type of your inquiry',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? DarkColors.textHint
-                              : LightColors.textHint,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isDark ? DarkColors.card : LightColors.card,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(
-                            color: isDark
-                                ? DarkColors.divider
-                                : LightColors.divider,
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: PostCategory.values.map((cat) {
-                            final isSelected = formState.category == cat;
-                            return _ModernCategoryChip(
-                              category: cat,
-                              isSelected: isSelected,
-                              onTap: () => ref
-                                  .read(createPostFormProvider.notifier)
-                                  .updateCategory(cat),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-
-                      // Image upload
+                      const SizedBox(height: 12),
                       GestureDetector(
-                        onTap: () => ref
-                            .read(createPostFormProvider.notifier)
-                            .toggleImage(),
+                        onTap: _showImagePickerOptions,
                         child: Container(
                           height: 200,
                           width: double.infinity,
@@ -415,7 +431,6 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                   ? DarkColors.divider
                                   : LightColors.divider,
                               width: 1,
-                              style: BorderStyle.solid,
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -425,46 +440,38 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                               ),
                             ],
                           ),
-                          child: formState.hasImage
+                          child: (formState.pickedImagePath != null && formState.hasImage)
                               ? Stack(
                                   alignment: Alignment.center,
                                   children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: isDark
-                                              ? [
-                                                  const Color(0xFF1E3A4A),
-                                                  const Color(0xFF2C5364)
-                                                ]
-                                              : [
-                                                  const Color(0xFFE0F7FA),
-                                                  const Color(0xFFE8F5E9)
-                                                ],
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(AppRadius.xl),
-                                      ),
-                                      child: const Icon(
-                                        Icons.image_rounded,
-                                        size: 56,
-                                        color: AppColors.primaryBlue,
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      child: Image.file(
+                                        File(formState.pickedImagePath!),
+                                        width: double.infinity,
+                                        height: 200,
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
                                     Positioned(
                                       top: 12,
                                       right: 12,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(
-                                          Icons.delete_outline_rounded,
-                                          size: 18,
-                                          color: Colors.white,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          HapticFeedback.lightImpact();
+                                          ref.read(createPostFormProvider.notifier).clearImage();
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(0.6),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.delete_outline_rounded,
+                                            size: 20,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -474,9 +481,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          color: Colors.black.withOpacity(0.6),
+                                          borderRadius: BorderRadius.circular(AppRadius.sm),
                                         ),
                                         child: const Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -485,7 +491,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                                 size: 14, color: Colors.white),
                                             SizedBox(width: 4),
                                             Text(
-                                              'Tap to change',
+                                              'Tap to change image',
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 12,
@@ -522,7 +528,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      'Upload Prescription',
+                                      'Add Image',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
@@ -545,6 +551,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                 ),
                         ),
                       ),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -556,62 +563,3 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     );
   }
 }
-
-class _ModernCategoryChip extends StatelessWidget {
-  final PostCategory category;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ModernCategoryChip({
-    required this.category,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.primaryBlue 
-              : (isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant),
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: isSelected 
-              ? null 
-              : Border.all(
-                  color: isDark 
-                      ? DarkColors.divider 
-                      : LightColors.divider,
-                  width: 1,
-                ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryBlue.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          category.label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? Colors.white : (isDark ? DarkColors.textSecondary : LightColors.textSecondary),
-            letterSpacing: 0.3,
-          ),
-        ),
-      ),
-    );
-  }
-}
-

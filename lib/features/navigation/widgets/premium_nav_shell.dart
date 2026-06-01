@@ -43,8 +43,8 @@ class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
   // Get navigation items from provider (reactive to mode changes)
   List<NavItem> get _navItems => UserNavItems.items(ref);
 
-  // Always show FAB for all users
-  bool get _showFab => true;
+  // Always show FAB for normal users, hide in pharmacy mode
+  bool get _showFab => !ref.watch(isPharmacyModeProvider);
 
 
   void _onTabChanged(int index) {

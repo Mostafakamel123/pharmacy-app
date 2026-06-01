@@ -1,10 +1,15 @@
 // ignore_for_file: deprecated_member_use, unused_local_variable
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
+import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
+import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
+import 'package:pharmacy_app/features/posts/view/edit_post_screen.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends ConsumerWidget {
   final PostModel post;
   final VoidCallback onTap;
   final VoidCallback? onBookmark;
@@ -17,8 +22,12 @@ class PostCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Get current user profile to determine ownership
+    final profile = ref.watch(profileProvider).value;
+    final isOwner = profile != null && profile.id == post.userId;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -53,16 +62,16 @@ class PostCard extends StatelessWidget {
                   // Header row
                   Row(
                     children: [
-                      // User avatar
+                      // User avatar (Clean, Harmonious & Premium unified style)
                       Container(
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          gradient: _getCategoryGradient(post.category),
+                          gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
-                        child: Icon(
-                          _getCategoryIcon(post.category),
+                        child: const Icon(
+                          Icons.person_rounded,
                           color: Colors.white,
                           size: 20,
                         ),
@@ -73,7 +82,7 @@ class PostCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              post.userName,
+                              post.userName.isNotEmpty ? post.userName : 'Patient',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -83,50 +92,139 @@ class PostCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Text(
-                                  post.timeAgo,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: isDark
-                                        ? DarkColors.textHint
-                                        : LightColors.textHint,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                _CategoryChip(category: post.category),
-                              ],
+                            Text(
+                              post.timeAgo,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? DarkColors.textHint
+                                    : LightColors.textHint,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      // Bookmark + Status
+                      
+                      // Options or Bookmark Badge row
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (post.replyCount > 0)
                             _ReplyBadge(count: post.replyCount),
-                          const SizedBox(width: 6),
-                          GestureDetector(
-                            onTap: onBookmark,
-                            child: Icon(
-                              post.isBookmarked
-                                  ? Icons.bookmark_rounded
-                                  : Icons.bookmark_border_rounded,
-                              size: 20,
-                              color: post.isBookmarked
-                                  ? AppColors.primaryBlue
-                                  : isDark
-                                      ? DarkColors.textHint
-                                      : LightColors.textHint,
+                          const SizedBox(width: 4),
+                          
+                          // Bookmark Button (Only show if not the owner for clarity)
+                          if (!isOwner && onBookmark != null)
+                            GestureDetector(
+                              onTap: onBookmark,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: Icon(
+                                  post.isBookmarked
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_border_rounded,
+                                  size: 20,
+                                  color: post.isBookmarked
+                                      ? AppColors.primaryBlue
+                                      : isDark
+                                          ? DarkColors.textHint
+                                          : LightColors.textHint,
+                                ),
+                              ),
                             ),
-                          ),
+                          
+                          // Owner Options Menu (Edit / Delete)
+                          if (isOwner)
+                            PopupMenuButton<String>(
+                              icon: Icon(
+                                Icons.more_vert_rounded,
+                                size: 20,
+                                color: isDark ? DarkColors.textHint : LightColors.textHint,
+                              ),
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.md),
+                              ),
+                              onSelected: (value) async {
+                                if (value == 'edit') {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => EditPostScreen(post: post),
+                                    ),
+                                  );
+                                } else if (value == 'delete') {
+                                  HapticFeedback.heavyImpact();
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                                      ),
+                                      backgroundColor: isDark ? DarkColors.card : LightColors.card,
+                                      title: const Text('Delete Post', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      content: const Text('Are you sure you want to delete this post? This action cannot be undone.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: Text('Cancel', style: TextStyle(color: isDark ? DarkColors.textSecondary : LightColors.textSecondary)),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.accentRed,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                                          ),
+                                          child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirm == true) {
+                                    final success = await ref
+                                        .read(myPostsProvider.notifier)
+                                        .deletePost(post.id);
+                                    if (success && context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Post deleted successfully'),
+                                          backgroundColor: AppColors.accentRed,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_outlined, size: 18, color: AppColors.primaryBlue),
+                                      SizedBox(width: 8),
+                                      Text('Edit Post'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.accentRed),
+                                      SizedBox(width: 8),
+                                      Text('Delete', style: TextStyle(color: AppColors.accentRed)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+                  
                   // Content
                   Text(
                     post.content,
@@ -140,55 +238,66 @@ class PostCard extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  // Image placeholder
+                  
+                  // Real High-Resolution Network Image
                   if (post.imageUrl != null) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Container(
-                      height: 120,
+                      height: 180,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isDark
-                              ? [const Color(0xFF1E3A4A), const Color(0xFF2C5364)]
-                              : [const Color(0xFFE0F7FA), const Color(0xFFE8F5E9)],
-                        ),
                         borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(
+                          color: isDark ? DarkColors.divider : LightColors.divider,
+                          width: 1,
+                        ),
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Icon(
-                            Icons.image_rounded,
-                            size: 32,
-                            color: isDark
-                                ? const Color(0xFF90CAF9)
-                                : AppColors.primaryBlue,
-                          ),
-                          Positioned(
-                            bottom: 6,
-                            right: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(6),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FullScreenImageViewer(imageUrl: post.imageUrl!),
                               ),
-                              child: const Text(
-                                'Prescription',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
+                            );
+                          },
+                          child: Hero(
+                            tag: post.imageUrl!,
+                            child: Image.network(
+                              post.imageUrl!,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  color: isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: AppColors.primaryBlue,
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.image_not_supported_rounded,
+                                    size: 40,
+                                    color: AppColors.primaryBlue,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+                  
                   // Action row
                   Row(
                     children: [
@@ -205,7 +314,7 @@ class PostCard extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            'View Details',
+                            'View Details & Discussion',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -226,77 +335,6 @@ class PostCard extends StatelessWidget {
       ),
     );
   }
-
-  Gradient _getCategoryGradient(PostCategory category) {
-    switch (category) {
-      case PostCategory.general:
-        return const LinearGradient(
-            colors: [AppColors.primaryBlue, Color(0xFF38BDF8)]);
-      case PostCategory.prescription:
-        return const LinearGradient(
-            colors: [AppColors.primaryGreen, Color(0xFF34D399)]);
-      case PostCategory.emergency:
-        return const LinearGradient(
-            colors: [AppColors.accentRed, Color(0xFFF87171)]);
-      case PostCategory.advice:
-        return const LinearGradient(
-            colors: [AppColors.accentPurple, Color(0xFFA78BFA)]);
-    }
-  }
-
-  IconData _getCategoryIcon(PostCategory category) {
-    switch (category) {
-      case PostCategory.general:
-        return Icons.help_outline_rounded;
-      case PostCategory.prescription:
-        return Icons.description_rounded;
-      case PostCategory.emergency:
-        return Icons.local_hospital_rounded;
-      case PostCategory.advice:
-        return Icons.lightbulb_outline_rounded;
-    }
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  final PostCategory category;
-
-  const _CategoryChip({required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = _getCategoryColor();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        category.label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  Color _getCategoryColor() {
-    switch (category) {
-      case PostCategory.general:
-        return AppColors.primaryBlue;
-      case PostCategory.prescription:
-        return AppColors.primaryGreen;
-      case PostCategory.emergency:
-        return AppColors.accentRed;
-      case PostCategory.advice:
-        return AppColors.accentPurple;
-    }
-  }
 }
 
 class _ReplyBadge extends StatelessWidget {
@@ -315,7 +353,7 @@ class _ReplyBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.chat_bubble_rounded, size: 12, color: AppColors.primaryGreen),
+          const Icon(Icons.chat_bubble_rounded, size: 12, color: AppColors.primaryGreen),
           const SizedBox(width: 3),
           Text(
             '$count',
@@ -326,6 +364,48 @@ class _ReplyBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+
+  const FullScreenImageViewer({super.key, required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+          onPressed: () => Navigator.pop(context),
+        ),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+      ),
+      extendBodyBehindAppBar: true,
+      body: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Center(
+          child: InteractiveViewer(
+            clipBehavior: Clip.none,
+            maxScale: 4.0,
+            minScale: 0.5,
+            child: Hero(
+              tag: imageUrl,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
