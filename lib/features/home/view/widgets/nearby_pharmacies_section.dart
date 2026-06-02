@@ -120,6 +120,7 @@ class _NearbyPharmaciesBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pharmaciesAsync = ref.watch(filteredNearbyPharmaciesProvider);
+    print('📦 filteredNearbyPharmaciesProvider = $pharmaciesAsync');
 
     return pharmaciesAsync.when(
       data: (pharmacies) => pharmacies.isEmpty

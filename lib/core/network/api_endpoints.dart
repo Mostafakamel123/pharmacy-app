@@ -119,15 +119,19 @@ class ApiEndpoints {
     return _safeParseMap(response.data);
   }
 
-  /// POST /api/identity/refresh
+  /// POST /api/Auth/refresh-token
   /// Refresh access token using refresh token
   Future<Map<String, dynamic>> refreshToken({
     required String refreshToken,
+    String? expiredToken,
   }) async {
     final response = await _dio.post(
-      '/api/identity/refresh',
+      '/api/Auth/refresh-token',
       data: {'refreshToken': refreshToken},
-      options: Options(headers: {'Accept': 'application/json'}),
+      options: Options(headers: {
+        'Accept': 'application/json',
+        if (expiredToken != null) 'Authorization': 'Bearer $expiredToken',
+      }),
     );
     return _safeParseMap(response.data);
   }
@@ -240,6 +244,46 @@ class ApiEndpoints {
   /// Get user profile (requires auth token)
   Future<Map<String, dynamic>> getProfile() async {
     final response = await _dio.get('/api/identity/profile');
+    return _safeParseMap(response.data);
+  }
+
+  /// PUT /api/identity/profile
+  /// Update user profile (requires auth token)
+  Future<Map<String, dynamic>> updateProfile({
+    required String fullName,
+    required String dateOfBirth,
+    String? imagePath,
+    required String address,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final formDataMap = {
+      'FullName': fullName,
+      'DateOfBirth': dateOfBirth,
+      'Address': address,
+      'Latitude': latitude.toString(),
+      'Longitude': longitude.toString(),
+    };
+
+    final formData = FormData.fromMap(formDataMap);
+
+    if (imagePath != null &&
+        imagePath.isNotEmpty &&
+        !imagePath.startsWith('http') &&
+        !imagePath.startsWith('/images')) {
+      formData.files.add(MapEntry(
+        'ImageFile',
+        await MultipartFile.fromFile(
+          imagePath,
+          filename: imagePath.split('/').last,
+        ),
+      ));
+    }
+
+    final response = await _dio.put(
+      '/api/identity/profile',
+      data: formData,
+    );
     return _safeParseMap(response.data);
   }
 
@@ -420,8 +464,36 @@ class ApiEndpoints {
 
   /// DELETE /api/Pharmacies/{id}
   /// Delete a pharmacy (requires auth token)
-  Future<void> deletePharmacy({required String id}) async {
-    await _dio.delete('/api/Pharmacies/$id');
+  Future<Map<String, dynamic>> deletePharmacy({required String id}) async {
+    try {
+      final response = await _dio.delete('/api/Pharmacies/$id');
+      return _safeParseMap(response.data) ?? {'message': 'Pharmacy deleted successfully'};
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode ?? 0;
+      final responseBody = e.response?.data;
+      
+      print('DEBUG ApiEndpoints: Error deleting pharmacy $id');
+      print('  Status Code: $statusCode');
+      print('  Response Body: $responseBody');
+      print('  Error Message: ${e.message}');
+      
+      String errorMsg = 'Failed to delete pharmacy';
+      if (responseBody is Map && responseBody.containsKey('message')) {
+        errorMsg = responseBody['message'] as String;
+      } else if (statusCode == 403) {
+        errorMsg = 'Permission denied - Only the owner can delete this pharmacy';
+      } else if (statusCode == 404) {
+        errorMsg = 'Pharmacy not found';
+      } else if (statusCode == 401) {
+        errorMsg = 'Unauthorized - Please log in again';
+      } else {
+        errorMsg = 'Error: ${e.message}';
+      }
+      throw Exception(errorMsg);
+    } catch (e) {
+      print('DEBUG ApiEndpoints: Unexpected error deleting pharmacy $id: $e');
+      rethrow;
+    }
   }
 
   /// GET /api/Pharmacies/nearby

@@ -30,15 +30,27 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
       final detailedPharmacies = await Future.wait(
         response.map((item) async {
           final id = item['id'] as String;
+          final mapItem = item as Map<String, dynamic>;
+          final role = mapItem['role'] as String?;
+          final isOwner = role == 'Owner' || role == 'PharmacyOwner';
+          final fallbackOwnerId = isOwner ? ref.read(currentUserIdProvider) : '';
+
           try {
             final fullDetails = await _apiEndpoints.getPharmacyById(id: id);
-            return UserPharmacyModel.fromJson(fullDetails);
+            // Merge fallback owner ID and role into fullDetails if fullDetails doesn't have them
+            final Map<String, dynamic> mergedDetails = {
+              ...fullDetails,
+              if ((fullDetails['ownerId'] == null || (fullDetails['ownerId'] as String).isEmpty) && fallbackOwnerId.isNotEmpty)
+                'ownerId': fallbackOwnerId,
+              if (fullDetails['role'] == null && role != null)
+                'role': role,
+            };
+            return UserPharmacyModel.fromJson(mergedDetails);
           } catch (e) {
             // Fallback to basic info if full details fetch fails
-            final mapItem = item as Map<String, dynamic>;
             return UserPharmacyModel.fromJson({
               ...mapItem,
-              'ownerId': mapItem['role'] == 'Owner' ? ref.read(currentUserIdProvider) : '',
+              'ownerId': fallbackOwnerId,
             });
           }
         }),
@@ -131,10 +143,12 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
   }
 
   /// Delete a pharmacy
-  Future<bool> deletePharmacy(String pharmacyId) async {
+  /// Returns the success message from the API, or throws an exception on failure
+  Future<String> deletePharmacy(String pharmacyId) async {
     try {
       // Call API to delete pharmacy
-      await _apiEndpoints.deletePharmacy(id: pharmacyId);
+      final result = await _apiEndpoints.deletePharmacy(id: pharmacyId);
+      final message = result['message'] as String? ?? 'Pharmacy deleted successfully';
       
       // Remove from local list
       final currentState = state.value ?? [];
@@ -145,10 +159,10 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
       
       state = AsyncValue.data(updatedList);
       
-      return true;
+      return message;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
-      return false;
+      rethrow;
     }
   }
 

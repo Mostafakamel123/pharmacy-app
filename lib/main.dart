@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/routing/app_router.dart';
 import 'package:pharmacy_app/core/theme/app_theme.dart';
 import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
+import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -30,12 +31,13 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final isDarkMode = ref.watch(darkModeProvider);
 
     return MaterialApp.router(
       title: 'Elaaj',
       theme: lightTheme,
       darkTheme: darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

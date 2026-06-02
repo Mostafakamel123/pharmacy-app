@@ -21,6 +21,14 @@ abstract class AuthService {
   Future<void> updateAccountInfo({String? newEmail, String? newPassword, String? oldPassword});
   Future<void> updateUserDetails({String? fullName, String? dateOfBirth, String? imageUrl, double? latitude, double? longitude});
   Future<Map<String, dynamic>?> getProfile();
+  Future<Map<String, dynamic>?> updateUserProfile({
+    required String fullName,
+    required String dateOfBirth,
+    String? imagePath,
+    required String address,
+    required double latitude,
+    required double longitude,
+  });
   Future<Map<String, dynamic>> refreshToken(String refreshTokenValue);
   
   // User Role Management
@@ -375,12 +383,68 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
+  Future<Map<String, dynamic>?> updateUserProfile({
+    required String fullName,
+    required String dateOfBirth,
+    String? imagePath,
+    required String address,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final formDataMap = {
+        'FullName': fullName,
+        'DateOfBirth': dateOfBirth,
+        'Address': address,
+        'Latitude': latitude.toString(),
+        'Longitude': longitude.toString(),
+      };
+
+      final formData = FormData.fromMap(formDataMap);
+
+      if (imagePath != null &&
+          imagePath.isNotEmpty &&
+          !imagePath.startsWith('http') &&
+          !imagePath.startsWith('/images')) {
+        formData.files.add(MapEntry(
+          'ImageFile',
+          await MultipartFile.fromFile(
+            imagePath,
+            filename: imagePath.split('/').last,
+          ),
+        ));
+      }
+
+      final response = await _dio.put(
+        '/api/identity/profile',
+        data: formData,
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>?;
+      } else {
+        throw _failureFromResponse(response);
+      }
+    } on Failure catch (e) {
+      rethrow;
+    } catch (e) {
+      throw AppFailure(message: e.toString(), code: 'UPDATE_PROFILE_ERROR');
+    }
+  }
+
+  @override
   Future<Map<String, dynamic>> refreshToken(String refreshTokenValue) async {
     try {
+      final expiredToken = await LocalStorageHelper.getString(AppConstants.authTokenKey);
+
       final response = await _dio.post(
-        '/api/identity/refresh',
+        '/api/Auth/refresh-token',
         data: {'refreshToken': refreshTokenValue},
-        options: Options(headers: {'Accept': 'application/json'}),
+        options: Options(headers: {
+          'Accept': 'application/json',
+          if (expiredToken != null) 'Authorization': 'Bearer $expiredToken',
+        }),
       );
 
       if (response.statusCode == 200) {

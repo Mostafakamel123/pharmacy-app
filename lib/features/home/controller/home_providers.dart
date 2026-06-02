@@ -1,16 +1,26 @@
-// ignore_for_file: unused_catch_stack
+// ignore_for_file: avoid_print
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/network/api_endpoints.dart';
 import 'package:pharmacy_app/features/posts/model/post_model.dart';
 import 'package:pharmacy_app/core/models/pharmacy_model.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:pharmacy_app/core/services/geocoding_service.dart';
 
 // ============================================================================
 // LOCATION PROVIDER - Get user's current location
 // ============================================================================
 
 final locationProvider = FutureProvider<LocationData?>((ref) async {
+  // Return Cairo fallback immediately on Desktop/Web to avoid platform channel delays or MissingPluginExceptions
+  if (kIsWeb || 
+      defaultTargetPlatform == TargetPlatform.windows || 
+      defaultTargetPlatform == TargetPlatform.macOS || 
+      defaultTargetPlatform == TargetPlatform.linux) {
+    return LocationData(latitude: 30.0444, longitude: 31.2357);
+  }
+
   try {
     // 1. Check if location services are enabled on the device
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -58,6 +68,30 @@ class LocationData {
   LocationData({required this.latitude, required this.longitude});
 }
 
+// Separate provider for geocoded location name (non-blocking)
+final locationNameProvider = FutureProvider<String?>((ref) async {
+  final locationAsync = await ref.watch(locationProvider.future);
+  if (locationAsync == null) return null;
+  
+  // If coordinates are the Cairo fallback or we are on desktop/web, return a default name directly
+  if ((locationAsync.latitude == 30.0444 && locationAsync.longitude == 31.2357) ||
+      kIsWeb || 
+      defaultTargetPlatform == TargetPlatform.windows || 
+      defaultTargetPlatform == TargetPlatform.macOS || 
+      defaultTargetPlatform == TargetPlatform.linux) {
+    return 'Cairo, Egypt';
+  }
+
+  try {
+    return await GeocodingService.getAddressFromCoordinates(
+      locationAsync.latitude,
+      locationAsync.longitude,
+    );
+  } catch (_) {
+    return null;
+  }
+});
+
 // ============================================================================
 // NEARBY PHARMACIES PROVIDER - Connected to /api/Pharmacies/nearby
 // ============================================================================
@@ -75,29 +109,32 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
   }
 
   Future<void> _loadPharmacies() async {
+    print('1️⃣ _loadPharmacies started');
     try {
       state = const AsyncValue.loading();
       
       // Get user location (always returns a value — real GPS or Cairo fallback)
       final locationAsync = await ref.read(locationProvider.future);
+      print('2️⃣ location loaded');
       final loc = locationAsync ?? LocationData(latitude: 30.0444, longitude: 31.2357);
 
       // Call API: GET /api/Pharmacies/nearby
+      print('3️⃣ calling nearby api');
       final response = await _api.getNearbyPharmacies(
         lat: loc.latitude,
         lon: loc.longitude,
-        radius: 5.0,
+        radius: 50.0,
       );
+      print('4️⃣ nearby api returned');
 
       // Map API response to PharmacyModel
       final pharmacies = (response).map((item) {
         return PharmacyModel.fromJson(item as Map<String, dynamic>);
       }).toList();
-
+print('✅ Nearby API returned ${pharmacies.length} pharmacies');
       state = AsyncValue.data(pharmacies);
     } catch (e, stack) {
-      // On error, return empty list instead of showing error immediately
-      state = AsyncValue.data([]);
+      state = AsyncValue.error(e, stack);
       print('Error loading nearby pharmacies: $e');
     }
   }
@@ -184,6 +221,15 @@ class PharmacySearchNotifier
   PharmacySearchNotifier(this._ref) : super(const AsyncValue.loading()) {
     // Start with the nearby list.
     _syncWithNearby();
+    
+    // Listen to changes in the nearby pharmacies list, and sync if query is empty
+    _ref.listen<AsyncValue<List<PharmacyModel>>>(nearbyPharmaciesProvider, (previous, next) {
+      final query = _ref.read(searchQueryProvider);
+      if (query.isEmpty) {
+        state = next;
+      }
+    });
+
     // Re-run search whenever the query changes.
     _ref.listen<String>(searchQueryProvider, (_, query) {
       if (query.isEmpty) {

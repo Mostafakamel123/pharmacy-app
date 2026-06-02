@@ -46,6 +46,7 @@ dependencies:
   
   # Location services
   geolocator: ^14.0.2
+  geocoding: ^3.0.0
 
   # Image Picker
   image_picker: ^1.1.2

@@ -5,6 +5,9 @@ class UserProfileModel {
   final String phone;
   final String? location;
   final String? avatarUrl;
+  final double? latitude;
+  final double? longitude;
+  final String? dateOfBirth;
   final int postsCount;
   final int repliesCount;
   final int savedCount;
@@ -18,6 +21,9 @@ class UserProfileModel {
     required this.phone,
     this.location,
     this.avatarUrl,
+    this.latitude,
+    this.longitude,
+    this.dateOfBirth,
     this.postsCount = 0,
     this.repliesCount = 0,
     this.savedCount = 0,
@@ -26,8 +32,9 @@ class UserProfileModel {
   });
 
   String get initials {
+    if (name.trim().isEmpty) return 'U';
     final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
     return name[0].toUpperCase();
@@ -43,18 +50,34 @@ class UserProfileModel {
 
   /// Create from API response (Elaaj API)
   factory UserProfileModel.fromApi(Map<String, dynamic> json) {
+    final name = json['fullName'] as String? ?? 
+            '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim();
+    final cleanName = name.isEmpty ? 'User' : name;
+    final email = json['email'] as String? ?? '';
+    final address = json['address'] as String? ?? json['location'] as String?;
+    final dob = json['dateOfBirth'] as String?;
+    
+    // Dynamic completion percentage calculation
+    double score = 0;
+    if (cleanName != 'User' && cleanName.isNotEmpty) score += 0.3;
+    if (email.isNotEmpty) score += 0.3;
+    if (address != null && address.isNotEmpty) score += 0.2;
+    if (dob != null && dob.isNotEmpty) score += 0.2;
+
     return UserProfileModel(
       id: json['id']?.toString() ?? json['userId']?.toString() ?? 'unknown',
-      name: json['fullName'] as String? ?? 
-            '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim() ?? 'User',
-      email: json['email'] as String? ?? '',
+      name: cleanName,
+      email: email,
       phone: json['phoneNumber'] as String? ?? json['phone'] as String? ?? '',
-      location: json['address'] as String?,
-      avatarUrl: json['avatarUrl'] as String? ?? json['imageUrl'] as String?,
-      postsCount: 0, // Can be extended with actual data
+      location: address,
+      avatarUrl: json['imageUrl'] as String? ?? json['avatarUrl'] as String?,
+      latitude: json['latitude'] != null ? double.tryParse(json['latitude'].toString()) : null,
+      longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
+      dateOfBirth: dob,
+      postsCount: 0, 
       repliesCount: 0,
       savedCount: 0,
-      completionPercentage: 0, // Will be calculated
+      completionPercentage: score,
       joinDate: _parseDateTime(json['createdAt']) ?? DateTime.now(),
     );
   }
@@ -81,10 +104,13 @@ class UserProfileModel {
       email: 'mostafa.k@email.com',
       phone: '+20 101 234 5678',
       location: 'Mohandessin, Giza',
+      latitude: 27.189,
+      longitude: 31.1954,
+      dateOfBirth: '2000-01-01',
       postsCount: 12,
       repliesCount: 8,
       savedCount: 5,
-      completionPercentage: 100,
+      completionPercentage: 1.0,
       joinDate: DateTime(2024, 6),
     );
   }

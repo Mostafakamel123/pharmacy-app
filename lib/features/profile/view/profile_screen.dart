@@ -7,7 +7,6 @@ import 'package:pharmacy_app/features/profile/view/my_posts_screen.dart';
 import 'package:pharmacy_app/features/profile/view/saved_posts_screen.dart';
 import 'package:pharmacy_app/features/profile/view/widgets/profile_actions.dart';
 import 'package:pharmacy_app/features/profile/view/widgets/profile_header.dart';
-import 'package:pharmacy_app/features/profile/view/widgets/quick_stats.dart';
 import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 import 'package:pharmacy_app/features/prescription/view/screens/my_prescriptions_screen.dart';
 
@@ -51,12 +50,28 @@ class ProfileScreen extends ConsumerWidget {
                 },
               ),
             ),
-            // Stats
-            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            // Personal Information
             SliverToBoxAdapter(
-              child: Transform.translate(
-                offset: const Offset(0, -16),
-                child: QuickStats(profile: profile),
+              child: ProfileSection(
+                title: 'Personal Information',
+                items: [
+                  ProfileActionItem(
+                    title: profile.dateOfBirth != null && profile.dateOfBirth!.isNotEmpty
+                        ? profile.dateOfBirth!
+                        : 'Date of Birth (Not set)',
+                    icon: Icons.cake_rounded,
+                    iconColor: AppColors.accentRed,
+                    trailingIcon: Icons.info_outline,
+                  ),
+                  ProfileActionItem(
+                    title: profile.location != null && profile.location!.isNotEmpty
+                        ? profile.location!
+                        : 'Address (Not set)',
+                    icon: Icons.location_on_rounded,
+                    iconColor: AppColors.primaryGreen,
+                    trailingIcon: Icons.info_outline,
+                  ),
+                ],
               ),
             ),
             // Activity section
@@ -77,19 +92,7 @@ class ProfileScreen extends ConsumerWidget {
                       );
                     },
                   ),
-                  ProfileActionItem(
-                    title: 'Saved Posts',
-                    icon: Icons.bookmark_rounded,
-                    iconColor: AppColors.accentYellow,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SavedPostsScreen(),
-                        ),
-                      );
-                    },
-                  ),
+
                   ProfileActionItem(
                     title: 'My Prescriptions',
                     icon: Icons.assignment_outlined,
@@ -132,34 +135,7 @@ class ProfileScreen extends ConsumerWidget {
                         toggleValue: isDarkMode,
                         onToggle: (value) {
                           ref.read(darkModeProvider.notifier).state = value;
-                          // In production, use ThemeModeProvider or similar
                         },
-                      ),
-                      ProfileActionItem(
-                        title: 'Language',
-                        icon: Icons.language_rounded,
-                        iconColor: const Color(0xFF8B5CF6),
-                        onTap: () {},
-                      ),
-                      ProfileActionItem(
-                        title: 'Security',
-                        icon: Icons.security_rounded,
-                        iconColor: AppColors.primaryGreen,
-                        onTap: () {},
-                      ),
-                      ProfileActionItem(
-                        title: 'Help & Support',
-                        icon: Icons.help_outline_rounded,
-                        iconColor: const Color(0xFF0EA5E9),
-                        onTap: () {},
-                      ),
-                      ProfileActionItem(
-                        title: 'About Elaaj',
-                        icon: Icons.info_outline_rounded,
-                        iconColor: isDark
-                            ? const Color(0xFF90CAF9)
-                            : const Color(0xFF6366F1),
-                        onTap: () {},
                       ),
                     ],
                   );

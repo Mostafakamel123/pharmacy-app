@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
+import 'package:pharmacy_app/core/services/geocoding_service.dart';
 
 /// Screen for creating a new pharmacy
 class CreatePharmacyScreen extends ConsumerStatefulWidget {
@@ -116,12 +117,25 @@ class _CreatePharmacyScreenState extends ConsumerState<CreatePharmacyScreen> {
         ),
       );
 
+      String? addressName;
+      try {
+        addressName = await GeocodingService.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+      } catch (e) {
+        debugPrint('Geocoding error: $e');
+      }
+
       if (mounted) {
         setState(() {
           _latitude = position.latitude;
           _longitude = position.longitude;
           _gpsStatus = 'Success';
           _gpsLoading = false;
+          if (addressName != null) {
+            _addressController.text = addressName;
+          }
         });
       }
     } catch (e) {

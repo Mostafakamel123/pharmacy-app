@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pharmacy_app/core/routing/app_routes.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/home/model/quick_action_model.dart';
+import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // QUICK ACTIONS SECTION
@@ -165,7 +167,26 @@ class _PressableActionCardState extends State<_PressableActionCard>
         context.push(AppRoutes.uploadPrescription);
         break;
       case '2':
-        // Future: navigate to chat/ask-now screen
+        HapticFeedback.mediumImpact();
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const CreatePostScreen(),
+            transitionsBuilder: (_, animation, __, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: child,
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 300),
+          ),
+        );
         break;
     }
   }

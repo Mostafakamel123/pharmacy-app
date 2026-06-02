@@ -203,15 +203,15 @@ class _ProfileLocationWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profileAsync = ref.watch(profileProvider);
+    final locationNameAsync = ref.watch(locationNameProvider);
 
-    return ref.watch(profileProvider).when(
-          data: (profile) => _LocationPill(location: profile.location),
-          loading: () => RepaintBoundary(
-            child: _FlatShimmer(width: 80, height: 28, borderRadius: 20, isDark: isDark),
-          ),
-          error: (_, __) => const _LocationPill(location: 'Assiut'),
-        );
+    final String displayLocation = locationNameAsync.maybeWhen(
+      data: (name) => name ?? profileAsync.valueOrNull?.location ?? 'Assiut',
+      orElse: () => profileAsync.valueOrNull?.location ?? 'Assiut',
+    );
+
+    return _LocationPill(location: displayLocation);
   }
 }
 

@@ -83,6 +83,8 @@ class _AuthInterceptor extends Interceptor {
     try {
       final refreshToken =
           await LocalStorageHelper.getString(AppConstants.refreshTokenKey);
+      final expiredToken =
+          await LocalStorageHelper.getString(AppConstants.authTokenKey);
 
       if (refreshToken != null && refreshToken.isNotEmpty) {
         // Create a dedicated Dio instance without interceptors to avoid loops
@@ -94,13 +96,16 @@ class _AuthInterceptor extends Interceptor {
         ));
 
         final response = await dio.post(
-          '/api/identity/refresh',
+          '/api/Auth/refresh-token',
           data: {'refreshToken': refreshToken},
-          options: Options(headers: {'Accept': 'application/json'}),
+          options: Options(headers: {
+            'Accept': 'application/json',
+            if (expiredToken != null) 'Authorization': 'Bearer $expiredToken',
+          }),
         );
 
         if (response.statusCode == 200) {
-          final newToken = response.data['accessToken'] as String?;
+          final newToken = response.data['token'] as String?;
           final newRefreshToken = response.data['refreshToken'] as String?;
 
           if (newToken != null && newToken.isNotEmpty) {
@@ -133,7 +138,7 @@ class _AuthInterceptor extends Interceptor {
     // Handle 401 Unauthorized - refresh token
     // (since validateStatus: status < 500 allows 401 to be processed as successful)
     if (response.statusCode == 401 &&
-        !response.requestOptions.path.contains('/api/identity/refresh')) {
+        !response.requestOptions.path.contains('/api/Auth/refresh-token')) {
       final newToken = await _performTokenRefresh(response.requestOptions.baseUrl);
 
       if (newToken != null) {
@@ -180,7 +185,7 @@ class _AuthInterceptor extends Interceptor {
   ) async {
     // Handle 401 Unauthorized - refresh token
     if (err.response?.statusCode == 401 &&
-        !err.requestOptions.path.contains('/api/identity/refresh')) {
+        !err.requestOptions.path.contains('/api/Auth/refresh-token')) {
       final newToken = await _performTokenRefresh(err.requestOptions.baseUrl);
 
       if (newToken != null) {

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/network/api_endpoints.dart';
 import 'package:pharmacy_app/features/auth/service/auth_service.dart';
 import 'package:pharmacy_app/features/profile/model/profile_model.dart';
 
@@ -12,7 +11,6 @@ final profileProvider =
 class ProfileNotifier extends StateNotifier<AsyncValue<UserProfileModel>> {
   final Ref ref;
   final AuthService _authService = AuthServiceImpl();
-  final ApiEndpoints _apiEndpoints = ApiEndpoints();
 
   ProfileNotifier(this.ref) : super(const AsyncValue.loading()) {
     _loadProfile();
@@ -42,60 +40,33 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfileModel>> {
   }
 
   Future<bool> updateProfile({
-    String? name,
-    String? phone,
-    String? location,
+    required String name,
+    required String dateOfBirth,
+    String? imagePath,
+    required String address,
+    required double latitude,
+    required double longitude,
   }) async {
     try {
-      // Call API to update user details
-      await _authService.updateUserDetails(
+      final profileData = await _authService.updateUserProfile(
         fullName: name,
-        imageUrl: null,
-        latitude: null,
-        longitude: null,
+        dateOfBirth: dateOfBirth,
+        imagePath: imagePath,
+        address: address,
+        latitude: latitude,
+        longitude: longitude,
       );
       
-      // Update local state
-      final current = state.asData?.value;
-      if (current == null) return false;
-
-      state = AsyncValue.data(UserProfileModel(
-        id: current.id,
-        name: name ?? current.name,
-        email: current.email,
-        phone: phone ?? current.phone,
-        location: location ?? current.location,
-        avatarUrl: current.avatarUrl,
-        postsCount: current.postsCount,
-        repliesCount: current.repliesCount,
-        savedCount: current.savedCount,
-        completionPercentage: _calculateCompletion(
-          name ?? current.name,
-          current.email,
-          phone ?? current.phone,
-          location ?? current.location,
-        ),
-        joinDate: current.joinDate,
-      ));
+      if (profileData != null) {
+        final userProfile = UserProfileModel.fromApi(profileData);
+        state = AsyncValue.data(userProfile);
+      } else {
+        await refresh();
+      }
       return true;
     } catch (e) {
       return false;
     }
-  }
-
-  double _calculateCompletion(
-      String name, String email, String phone, String? location) {
-    double score = 0;
-    if (name.isNotEmpty) score += 0.3;
-    if (email.isNotEmpty) score += 0.3;
-    if (phone.isNotEmpty) score += 0.2;
-    if (location != null && location.isNotEmpty) score += 0.2;
-    return score;
-  }
-
-  Future<void> uploadAvatar() async {
-    // Simulate avatar upload
-    await Future.delayed(const Duration(milliseconds: 800));
   }
 }
 
@@ -110,32 +81,47 @@ final editFormProvider =
 
 class EditFormState {
   final String name;
-  final String phone;
-  final String? location;
+  final String dateOfBirth;
+  final String location;
+  final double latitude;
+  final double longitude;
+  final String? imagePath;
   final bool isSaving;
   final Map<String, String?> errors;
 
   const EditFormState({
     this.name = '',
-    this.phone = '',
-    this.location,
+    this.dateOfBirth = '',
+    this.location = '',
+    this.latitude = 0.0,
+    this.longitude = 0.0,
+    this.imagePath,
     this.isSaving = false,
     this.errors = const {},
   });
 
-  bool get isValid => name.trim().isNotEmpty && phone.trim().isNotEmpty;
+  bool get isValid =>
+      name.trim().isNotEmpty &&
+      location.trim().isNotEmpty &&
+      dateOfBirth.isNotEmpty;
 
   EditFormState copyWith({
     String? name,
-    String? phone,
+    String? dateOfBirth,
     String? location,
+    double? latitude,
+    double? longitude,
+    String? imagePath,
     bool? isSaving,
     Map<String, String?>? errors,
   }) {
     return EditFormState(
       name: name ?? this.name,
-      phone: phone ?? this.phone,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       location: location ?? this.location,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      imagePath: imagePath ?? this.imagePath,
       isSaving: isSaving ?? this.isSaving,
       errors: errors ?? this.errors,
     );
@@ -145,11 +131,19 @@ class EditFormState {
 class EditFormNotifier extends StateNotifier<EditFormState> {
   EditFormNotifier() : super(const EditFormState());
 
-  void initialize(String name, String phone, String? location) {
+  void initialize({
+    required String name,
+    required String dateOfBirth,
+    required String location,
+    required double latitude,
+    required double longitude,
+  }) {
     state = EditFormState(
       name: name,
-      phone: phone,
+      dateOfBirth: dateOfBirth,
       location: location,
+      latitude: latitude,
+      longitude: longitude,
     );
   }
 
@@ -160,15 +154,29 @@ class EditFormNotifier extends StateNotifier<EditFormState> {
     );
   }
 
-  void updatePhone(String phone) {
+  void updateDateOfBirth(String dateOfBirth) {
     state = state.copyWith(
-      phone: phone,
-      errors: {...state.errors, 'phone': _validatePhone(phone)},
+      dateOfBirth: dateOfBirth,
+      errors: {...state.errors, 'dateOfBirth': _validateDateOfBirth(dateOfBirth)},
     );
   }
 
-  void updateLocation(String? location) {
-    state = state.copyWith(location: location);
+  void updateLocation(String location) {
+    state = state.copyWith(
+      location: location,
+      errors: {...state.errors, 'location': _validateLocation(location)},
+    );
+  }
+
+  void updateCoordinates(double latitude, double longitude) {
+    state = state.copyWith(
+      latitude: latitude,
+      longitude: longitude,
+    );
+  }
+
+  void updateImagePath(String? path) {
+    state = state.copyWith(imagePath: path);
   }
 
   String? _validateName(String value) {
@@ -177,8 +185,13 @@ class EditFormNotifier extends StateNotifier<EditFormState> {
     return null;
   }
 
-  String? _validatePhone(String value) {
-    if (value.trim().isEmpty) return 'Phone is required';
+  String? _validateDateOfBirth(String value) {
+    if (value.trim().isEmpty) return 'Date of birth is required';
+    return null;
+  }
+
+  String? _validateLocation(String value) {
+    if (value.trim().isEmpty) return 'Address is required';
     return null;
   }
 
@@ -186,7 +199,7 @@ class EditFormNotifier extends StateNotifier<EditFormState> {
     if (!state.isValid) return false;
 
     state = state.copyWith(isSaving: true);
-    await Future.delayed(const Duration(milliseconds: 1000));
+    await Future.delayed(const Duration(milliseconds: 500));
     state = state.copyWith(isSaving: false);
     return true;
   }

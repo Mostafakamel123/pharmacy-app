@@ -9,6 +9,7 @@ import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/config/env_config.dart';
 import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
+import 'package:pharmacy_app/core/services/geocoding_service.dart';
 
 /// Screen for editing pharmacy details
 class EditPharmacyScreen extends ConsumerStatefulWidget {
@@ -125,12 +126,25 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
         ),
       );
 
+      String? addressName;
+      try {
+        addressName = await GeocodingService.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+      } catch (e) {
+        debugPrint('Geocoding error: $e');
+      }
+
       if (mounted) {
         setState(() {
           _latitude = position.latitude;
           _longitude = position.longitude;
           _gpsStatus = 'Success';
           _gpsLoading = false;
+          if (addressName != null) {
+            _addressController.text = addressName;
+          }
         });
       }
     } catch (e) {
@@ -195,29 +209,26 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
     });
 
     try {
-      final result = await ref.read(myPharmaciesProvider.notifier).deletePharmacy(
+      final successMessage = await ref.read(myPharmaciesProvider.notifier).deletePharmacy(
             widget.pharmacy.id,
           );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              result ? 'Pharmacy deleted successfully' : 'Failed to delete pharmacy',
-            ),
-            backgroundColor: result ? AppColors.primaryGreen : AppColors.accentRed,
+            content: Text(successMessage),
+            backgroundColor: AppColors.primaryGreen,
           ),
         );
 
-        if (result) {
-          Navigator.pop(context);
-        }
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
+        final errorText = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text(errorText),
             backgroundColor: AppColors.accentRed,
           ),
         );

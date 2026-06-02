@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/profile/model/profile_model.dart';
+import 'package:pharmacy_app/core/config/env_config.dart';
 
 class ProfileHeader extends StatelessWidget {
   final UserProfileModel profile;
@@ -55,7 +56,7 @@ class ProfileHeader extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${(profile.completionPercentage ).toInt()}%',
+                    '${(profile.completionPercentage * 100).toInt()}%',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -109,16 +110,38 @@ class ProfileHeader extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Center(
-                        child: Text(
-                          profile.initials,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 1,
-                          ),
-                        ),
+                      child: ClipOval(
+                        child: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                            ? Image.network(
+                                profile.avatarUrl!.startsWith('http')
+                                    ? profile.avatarUrl!
+                                    : '${EnvConfig.apiBaseUrl}${profile.avatarUrl}',
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Text(
+                                      profile.initials,
+                                      style: const TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Center(
+                                child: Text(
+                                  profile.initials,
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                     // Edit button
@@ -172,7 +195,7 @@ class ProfileHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
               child: Text(
-                profile.name,
+                profile.email,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -182,7 +205,7 @@ class ProfileHeader extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               'Joined ${profile.joinDateFormatted}',
               style: TextStyle(
