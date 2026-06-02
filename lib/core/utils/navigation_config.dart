@@ -72,13 +72,6 @@ class UserNavItems {
           builder: (ref) => const PharmacyOrdersScreen(),
           route: '/pharmacy/orders',
         ),
-        NavItem(
-          label: 'Profile',
-          icon: Icons.person_outline,
-          activeIcon: Icons.person,
-          builder: (ref) => const ProfileScreen(),
-          route: '/profile',
-        ),
       ];
     }
 

@@ -3,12 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pharmacy_app/core/routing/app_routes.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_text_field.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_button.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
+  /// The email the OTP was sent to (passed from ForgotPasswordScreen via route extra)
   final String email;
 
   const ResetPasswordScreen({super.key, required this.email});
@@ -18,42 +20,29 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
-  final _emailController = TextEditingController();
-  final _resetCodeController = TextEditingController();
+  final _otpController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  String? _emailError;
-  String? _resetCodeError;
+  String? _otpError;
   String? _passwordError;
   String? _confirmPasswordError;
   bool _isSuccess = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _resetCodeController.dispose();
+    _otpController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  bool _validateEmail(String value) {
-    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-    if (!emailRegex.hasMatch(value)) {
-      setState(() => _emailError = 'Please enter a valid email');
-      return false;
-    }
-    setState(() => _emailError = null);
-    return true;
-  }
-
-  bool _validateResetCode(String value) {
+  bool _validateOtp(String value) {
     if (value.isEmpty || value.length < 4) {
-      setState(() => _resetCodeError = 'Please enter a valid reset code');
+      setState(() => _otpError = 'Please enter the verification code');
       return false;
     }
-    setState(() => _resetCodeError = null);
+    setState(() => _otpError = null);
     return true;
   }
 
@@ -76,15 +65,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_validateEmail(_emailController.text.trim())) return;
-    if (!_validateResetCode(_resetCodeController.text.trim())) return;
+    if (!_validateOtp(_otpController.text.trim())) return;
     if (!_validatePassword(_passwordController.text)) return;
     if (!_validateConfirmPassword(_confirmPasswordController.text)) return;
 
+    // Clear any previous errors
+    ref.read(authProvider.notifier).clearError();
+
     final success = await ref.read(authProvider.notifier).resetPassword(
-          _emailController.text.trim(),
-          _resetCodeController.text.trim(),
+          _otpController.text.trim(),
           _passwordController.text,
+          _confirmPasswordController.text,
         );
 
     if (success && mounted) {
@@ -92,9 +83,28 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     }
   }
 
+  Future<void> _handleResendCode() async {
+    ref.read(authProvider.notifier).clearError();
+    final success = await ref
+        .read(authProvider.notifier)
+        .sendPasswordResetEmail(widget.email);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'A new verification code has been sent to your email.'
+                : 'Failed to resend code. Please try again.',
+          ),
+          backgroundColor: success ? AppColors.primaryGreen : AppColors.accentRed,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Removed ref.watch(authProvider) from here! The screen no longer rebuilds on auth state changes.
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -149,7 +159,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Create a new strong password for your account.',
+                  'Enter the verification code sent to\n${widget.email}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -158,31 +168,21 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 32),
 
+                // OTP / Verification Code field
                 AuthTextField(
-                  label: 'Email',
-                  hint: 'Enter your email',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  controller: _emailController,
-                  errorText: _emailError,
-                  onChanged: (value) => _validateEmail(value),
-                ),
-                const SizedBox(height: 20),
-
-                AuthTextField(
-                  label: 'Reset Code',
-                  hint: 'Enter the code you received',
+                  label: 'Verification Code',
+                  hint: 'Enter the code from your email',
                   icon: Icons.pin_outlined,
                   keyboardType: TextInputType.number,
-                  controller: _resetCodeController,
-                  errorText: _resetCodeError,
-                  onChanged: (value) => _validateResetCode(value),
+                  controller: _otpController,
+                  errorText: _otpError,
+                  onChanged: (value) => _validateOtp(value),
                 ),
                 const SizedBox(height: 20),
 
                 AuthTextField(
                   label: 'New Password',
-                  hint: 'Create a password',
+                  hint: 'Create a strong password',
                   icon: Icons.lock_outline,
                   isPassword: true,
                   controller: _passwordController,
@@ -200,8 +200,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   errorText: _confirmPasswordError,
                   onChanged: (value) => _validateConfirmPassword(value),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
+                // Password requirements hint
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -212,7 +213,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Password must contain:',
+                        'Password requirements:',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -226,7 +227,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         isDark: isDark,
                       ),
                       _RequirementItem(
-                        text: 'Match in both fields',
+                        text: 'Passwords match',
                         isValid: _confirmPasswordController.text == _passwordController.text &&
                             _passwordController.text.isNotEmpty,
                         isDark: isDark,
@@ -236,11 +237,27 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Extracted Error Banner
+                // Error Banner
                 const _ResetErrorBanner(),
-                
-                // Extracted Reset Button
+
+                // Reset Button
                 _ResetPasswordButton(onPressed: _handleSubmit),
+                const SizedBox(height: 16),
+
+                // Resend code option
+                Center(
+                  child: TextButton(
+                    onPressed: _handleResendCode,
+                    child: Text(
+                      'Didn\'t receive a code? Resend',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
               ] else ...[
                 const SizedBox(height: 40),
                 Center(
@@ -271,7 +288,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Your password has been successfully reset. You can now login with your new password.',
+                  'Your password has been successfully updated. You can now sign in with your new password.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -283,7 +300,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 AuthButton(
                   text: 'Go to Login',
                   isLoading: false,
-                  onPressed: () => context.go('/auth/login'),
+                  onPressed: () => context.go(AppRoutes.login),
                 ),
               ],
             ],

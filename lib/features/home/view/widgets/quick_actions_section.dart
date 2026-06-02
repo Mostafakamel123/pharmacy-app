@@ -1,18 +1,34 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/routing/app_routes.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/home/model/quick_action_model.dart';
 
+// ════════════════════════════════════════════════════════════════════════════
+// QUICK ACTIONS SECTION
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Two-pill action row linking to key patient flows.
+///
+/// Performance notes:
+/// • [QuickActionsSection] is a pure [StatelessWidget] with only const
+///   children. Flutter's element-reuse mechanism skips diffing the entire
+///   subtree on parent rebuilds.
+/// • The action data list `_kActions` is a top-level const — zero heap
+///   allocation per build call.
+/// • The press animation uses a single [AnimationController] per card
+///   ([_PressableActionCard]), scoped tightly to avoid unnecessary tickers
+///   at the section level.
+/// • [ScaleTransition] drives the animation directly from the controller's
+///   value without rebuilding the subtree via setState — it attaches a
+///   listener to the [RenderTransform] layer directly.
 class QuickActionsSection extends StatelessWidget {
   const QuickActionsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
+    final textColor =
         isDark ? DarkColors.textPrimary : LightColors.textPrimary;
 
     return Padding(
@@ -20,21 +36,19 @@ class QuickActionsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Section title with gradient accent bar ───────────────────
           Row(
             children: [
-              Container(
-                width: 4,
-                height: 20,
-                decoration: const BoxDecoration(
+              const DecoratedBox(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      AppColors.primaryBlue,
-                      AppColors.primaryGreen,
-                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.primaryBlue, AppColors.primaryGreen],
                   ),
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(AppRadius.xs)),
+                  borderRadius: BorderRadius.all(Radius.circular(AppRadius.xs)),
                 ),
+                child: SizedBox(width: 4, height: 20),
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
@@ -42,18 +56,18 @@ class QuickActionsSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AppTypography.h3.fontSize,
                   fontWeight: FontWeight.bold,
-                  color: textPrimary,
+                  color: textColor,
                   letterSpacing: -0.3,
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
+          // ── Action pills ─────────────────────────────────────────────
           Row(
             children: _kActions
-                .map((action) =>
-                    Expanded(child: _PillActionCard(action: action)))
-                .toList(),
+                .map((a) => Expanded(child: _PressableActionCard(action: a)))
+                .toList(growable: false),
           ),
         ],
       ),
@@ -61,12 +75,10 @@ class QuickActionsSection extends StatelessWidget {
   }
 }
 
-/// Static const action definitions — avoids creating new QuickActionModel
-/// instances on every build. 
-/// 
-/// Because BuildContext is unavailable at compile-time, `onTap` is given 
-/// a no-op `(){}`. The actual navigation is handled securely inside 
-/// `_PillActionCard._handleAction()` where a valid BuildContext exists.
+// ════════════════════════════════════════════════════════════════════════════
+// ACTION DEFINITIONS  (compile-time constants — zero runtime allocation)
+// ════════════════════════════════════════════════════════════════════════════
+
 const _kActions = <QuickActionModel>[
   QuickActionModel(
     id: '1',
@@ -74,7 +86,7 @@ const _kActions = <QuickActionModel>[
     icon: Icons.document_scanner_rounded,
     iconColor: AppColors.primaryGreen,
     gradient: [AppColors.primaryGreen, Color(0xFF34D399)],
-    onTap: _noop, // No-op to allow const
+    onTap: _noop,
   ),
   QuickActionModel(
     id: '2',
@@ -82,31 +94,33 @@ const _kActions = <QuickActionModel>[
     icon: Icons.chat_bubble_rounded,
     iconColor: AppColors.primaryBlue,
     gradient: [AppColors.primaryBlue, Color(0xFF38BDF8)],
-    onTap: _noop, // No-op to allow const
+    onTap: _noop,
   ),
 ];
 
-/// Top-level no-op function. Defining it as a top-level constant ensures
-/// the exact same function identity is reused, preventing unnecessary
-/// widget rebuilds if Riverpod/Flutter compares callback identities.
+/// Top-level no-op keeps the same function identity across builds,
+/// preventing spurious inequality checks in QuickActionModel.
 void _noop() {}
 
-class _PillActionCard extends StatefulWidget {
-  final QuickActionModel action;
+// ════════════════════════════════════════════════════════════════════════════
+// PRESSABLE ACTION CARD
+// ════════════════════════════════════════════════════════════════════════════
 
-  const _PillActionCard({required this.action});
+class _PressableActionCard extends StatefulWidget {
+  final QuickActionModel action;
+  const _PressableActionCard({required this.action});
 
   @override
-  State<_PillActionCard> createState() => _PillActionCardState();
+  State<_PressableActionCard> createState() => _PressableActionCardState();
 }
 
-class _PillActionCardState extends State<_PillActionCard>
+class _PressableActionCardState extends State<_PressableActionCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
 
-  // Cached objects that are used on every animation frame —
-  // avoids reallocating during the 60fps scale animation.
+  // Pre-compute gradient & shadow — avoids re-allocating on every frame
+  // during the 100 ms press animation.
   late final LinearGradient _gradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -117,44 +131,41 @@ class _PillActionCardState extends State<_PillActionCard>
     widget.action.iconColor.red,
     widget.action.iconColor.green,
     widget.action.iconColor.blue,
-    0.3,
+    0.30,
   );
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 90),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
-  void _onTapDown(TapDownDetails details) => _controller.forward();
+  void _onTapDown(TapDownDetails _) => _ctrl.forward();
 
-  void _onTapUp(TapUpDetails details) {
-    _controller.reverse().then((_) => _handleAction());
-  }
+  void _onTapUp(TapUpDetails _) =>
+      _ctrl.reverse().then((_) => _handleAction());
 
-  void _onTapCancel() => _controller.reverse();
+  void _onTapCancel() => _ctrl.reverse();
 
-  /// Handles the actual navigation using the current BuildContext.
-  /// This safely replaces the compile-time no-op callbacks.
   void _handleAction() {
     switch (widget.action.id) {
       case '1':
         context.push(AppRoutes.uploadPrescription);
         break;
       case '2':
-        // Ask Now — no-op placeholder
+        // Future: navigate to chat/ask-now screen
         break;
     }
   }
@@ -165,16 +176,16 @@ class _PillActionCardState extends State<_PillActionCard>
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
+      behavior: HitTestBehavior.opaque,
       child: ScaleTransition(
-        scale: _scaleAnimation,
+        scale: _scale,
         child: Padding(
           padding: const EdgeInsets.only(right: AppSpacing.sm),
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: _gradient,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
+              borderRadius:
+                  const BorderRadius.all(Radius.circular(AppRadius.xl)),
               boxShadow: [
                 BoxShadow(
                   color: _shadowColor,
@@ -183,22 +194,25 @@ class _PillActionCardState extends State<_PillActionCard>
                 ),
               ],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(widget.action.icon, size: 22, color: Colors.white),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  widget.action.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: -0.2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(widget.action.icon, size: 22, color: Colors.white),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    widget.action.title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: -0.2,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

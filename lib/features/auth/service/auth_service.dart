@@ -13,7 +13,7 @@ abstract class AuthService {
   Future<void> register(String fullName, String email, String password, String confirmPassword);
   Future<void> logout();
   Future<void> forgotPassword(String email);
-  Future<void> resetPassword(String email, String resetCode, String newPassword);
+  Future<void> resetPassword(String otp, String newPassword, String confirmPassword);
   Future<void> resendConfirmationEmail(String email);
   Future<void> verifyEmail(String email, String code);
   Future<void> confirmEmail(String userId, String code, {String? changedEmail});
@@ -170,10 +170,10 @@ class AuthServiceImpl implements AuthService {
   @override
   Future<void> forgotPassword(String email) async {
     try {
-      // Use /api/identity/forgotPassword POST endpoint
+      // Use /api/Auth/forgot-password POST endpoint
       // ForgotPasswordRequest: { email: string (required) }
       final response = await _dio.post(
-        '/api/identity/forgotPassword',
+        '/api/Auth/forgot-password',
         data: {'email': email},
         options: Options(headers: {'Accept': 'application/json'}),
       );
@@ -189,16 +189,16 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<void> resetPassword(String email, String resetCode, String newPassword) async {
+  Future<void> resetPassword(String otp, String newPassword, String confirmPassword) async {
     try {
-      // Use /api/identity/resetPassword POST endpoint
-      // ResetPasswordRequest: { email: string, resetCode: string, newPassword: string }
+      // Use /api/Auth/reset-password POST endpoint
+      // ResetPasswordRequest: { otp: string, newPassword: string, confirmPassword: string }
       final response = await _dio.post(
-        '/api/identity/resetPassword',
+        '/api/Auth/reset-password',
         data: {
-          'email': email,
-          'resetCode': resetCode,
+          'otp': otp,
           'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
         },
         options: Options(headers: {'Accept': 'application/json'}),
       );

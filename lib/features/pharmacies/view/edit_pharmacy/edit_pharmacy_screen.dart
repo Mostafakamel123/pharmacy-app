@@ -119,7 +119,10 @@ class _EditPharmacyScreenState extends ConsumerState<EditPharmacyScreen> {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
       );
 
       if (mounted) {

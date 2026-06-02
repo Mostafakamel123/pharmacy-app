@@ -443,6 +443,31 @@ class ApiEndpoints {
     return _safeParseList(response.data);
   }
 
+  /// GET /api/Pharmacies/search
+  /// Search pharmacies by keyword (name or address).
+  /// Returns the `items` array from the paginated response wrapper.
+  Future<List<dynamic>> searchPharmacies({
+    required String keyword,
+    int pageNumber = 1,
+    int pageSize = 10,
+  }) async {
+    final response = await _dio.get(
+      '/api/Pharmacies/search',
+      queryParameters: {
+        'keyword': keyword,
+        'pageNumber': pageNumber,
+        'pageSize': pageSize,
+      },
+    );
+    // Response is a paginated wrapper: { items: [...], totalCount, ... }
+    final data = _safeParseMap(response.data);
+    if (data.containsKey('items')) {
+      return data['items'] as List;
+    }
+    // Fallback: plain list (defensive)
+    return _safeParseList(response.data);
+  }
+
   /// POST /api/Pharmacies/toggle-favorite
   /// Toggle pharmacy favorite status (requires auth token)
   /// Body: ToggleFavoriteCommand

@@ -261,11 +261,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return resendConfirmationEmail(email);
   }
 
-  /// Reset password with email and reset code
-  Future<bool> resetPassword(String email, String resetCode, String newPassword) async {
+  /// Reset password with OTP code
+  Future<bool> resetPassword(String otp, String newPassword, String confirmPassword) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      await _authService.resetPassword(email, resetCode, newPassword);
+      await _authService.resetPassword(otp, newPassword, confirmPassword);
       state = state.copyWith(isLoading: false);
       return true;
     } on Failure catch (e) {

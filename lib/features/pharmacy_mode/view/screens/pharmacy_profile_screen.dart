@@ -298,21 +298,23 @@ class _PharmacyProfileScreenState extends ConsumerState<PharmacyProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Open Drawer Button
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Scaffold.of(context).openDrawer();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                          ),
-                          child: const Icon(
-                            Icons.menu_rounded,
-                            color: Colors.white,
-                            size: 22,
+                      Builder(
+                        builder: (innerContext) => GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Scaffold.of(innerContext).openDrawer();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                            child: const Icon(
+                              Icons.menu_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
                           ),
                         ),
                       ),

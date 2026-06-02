@@ -157,7 +157,8 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((ref) {
       path: AppRoutes.resetPassword,
       name: 'resetPassword',
       builder: (context, state) {
-        final email = state.uri.queryParameters['email'] ?? '';
+        // Email is passed via extra from ForgotPasswordScreen
+        final email = state.extra as String? ?? '';
         return ResetPasswordScreen(email: email);
       },
     ),

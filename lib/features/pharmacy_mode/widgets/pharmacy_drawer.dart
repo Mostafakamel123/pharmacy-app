@@ -1,19 +1,24 @@
-// ignore_for_file: file_names, deprecated_member_use
+// ignore_for_file: deprecated_member_use
 
-import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:pharmacy_app/features/pharmacies/view/create_pharmacy/create_pharmacy_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/edit_pharmacy/edit_pharmacy_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/my_pharmacies/my_pharmacies_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/pharmacy_admins/pharmacy_admins_screen.dart';
+import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
+import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 
-/// Pharmacy Drawer - Provides access to pharmacy management features
-/// and allows switching between pharmacy modes
+// ════════════════════════════════════════════════════════════════════════════
+// PHARMACY DRAWER - PREMIUM REBUILD
+// ════════════════════════════════════════════════════════════════════════════
+
 class PharmacyDrawer extends ConsumerStatefulWidget {
   const PharmacyDrawer(this.pharmacy, {super.key});
   final UserPharmacyModel? pharmacy;
@@ -22,99 +27,315 @@ class PharmacyDrawer extends ConsumerStatefulWidget {
   ConsumerState<PharmacyDrawer> createState() => _PharmacyDrawerState();
 }
 
-class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
+class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animCtrl;
+  late final Animation<double> _fadeAnim;
+  late final Animation<Offset> _slideAnim;
+
   @override
   void initState() {
     super.initState();
-    // Load user's pharmacies when drawer is initialized
+
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(-0.05, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic));
+
+    // Play entrance animation & load pharmacies lazily (once).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(myPharmaciesProvider.notifier).loadUserPharmacies();
+      _animCtrl.forward();
+      _maybeLoadPharmacies();
     });
   }
 
   @override
-  Widget build(BuildContext context) {
-    final pharmacyModeState = ref.watch(pharmacyModeProvider);
-    final notifier = ref.read(pharmacyModeProvider.notifier);
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Only triggers a network load when the list is empty — avoids
+  /// re-fetching on every drawer open if data is already present.
+  void _maybeLoadPharmacies() {
+    final asyncPharmacies = ref.read(myPharmaciesProvider);
+    if (asyncPharmacies is! AsyncData || asyncPharmacies.value == null) {
+      ref.read(myPharmaciesProvider.notifier).loadUserPharmacies();
+    }
+  }
+
+  // ── Navigation helpers ────────────────────────────────────────────────────
+
+  void _navigate(Widget screen) {
+    Navigator.pop(context); // close drawer
+    Navigator.push(
+      context,
+      _slideUpRoute(screen),
+    );
+  }
+
+  static PageRoute<void> _slideUpRoute(Widget page) {
+    return PageRouteBuilder(
+      pageBuilder: (_, __, ___) => page,
+      transitionDuration: const Duration(milliseconds: 320),
+      reverseTransitionDuration: const Duration(milliseconds: 280),
+      transitionsBuilder: (_, animation, __, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutQuart),
+          ),
+          child: FadeTransition(
+            opacity: animation,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Pharmacy switching ────────────────────────────────────────────────────
+
+  void _switchToPharmacy(UserPharmacyModel pharmacy, BuildContext sheetContext) {
+    HapticFeedback.selectionClick();
+    final messenger = ScaffoldMessenger.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Drawer(
-      width: MediaQuery.of(context).size.width * 0.85,
-      backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
-      elevation: 16,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      child: RepaintBoundary(
-        child: Column(
-          children: [
-            // Header with gradient background
-            _buildHeader(context, pharmacyModeState, isDark),
-            // Mode toggle section
-            _buildModeToggleSection(context, notifier, pharmacyModeState),
-            // Menu items
-            Expanded(
-              child: _buildMenuItems(context, notifier, pharmacyModeState),
-            ),
-            // Footer
-            _buildFooter(context, isDark),
-          ],
+    Navigator.pop(sheetContext); // Close the bottom sheet safely
+    Navigator.pop(context); // Close the drawer safely
+
+    ref.read(pharmacyModeProvider.notifier).switchToPharmacyMode(pharmacy);
+    ref.read(navigationIndexProvider.notifier).state = 0; // Force active tab to Pharmacy Profile (index 0)
+
+    // Lightweight feedback — no dialog, no overlay, just a SnackBar.
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.business_rounded,
+                  color: AppColors.primaryBlue, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Switched to ${pharmacy.name}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor:
+              isDark ? DarkColors.surface : LightColors.surface,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          duration: const Duration(seconds: 2),
         ),
+      );
+  }
+
+  // ── Bottom-sheet: pharmacy selector ──────────────────────────────────────
+
+  void _showPharmacySelector() {
+    final state = ref.read(pharmacyModeProvider);
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (ctx) => _PharmacySelectorSheet(
+        pharmacies: state.userPharmacies,
+        currentPharmacyId: state.currentPharmacy?.id,
+        onSelect: (pharmacy) => _switchToPharmacy(pharmacy, ctx),
+        onCreateNew: () {
+          Navigator.pop(ctx);
+          _navigate(const CreatePharmacyScreen());
+        },
       ),
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    PharmacyModeState state,
-    bool isDark,
-  ) {
+  // ── Build ─────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final pharmacyState = ref.watch(pharmacyModeProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Drawer(
+      width: MediaQuery.of(context).size.width * 0.84,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(AppRadius.xxl),
+          bottomRight: Radius.circular(AppRadius.xxl),
+        ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: (isDark ? DarkColors.surface : LightColors.surface)
+                  .withOpacity(0.97),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(AppRadius.xxl),
+                bottomRight: Radius.circular(AppRadius.xxl),
+              ),
+              border: Border(
+                right: BorderSide(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.06)
+                      : Colors.black.withOpacity(0.05),
+                ),
+              ),
+            ),
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: SafeArea(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Header
+                      _DrawerHeader(state: pharmacyState),
+
+                      // Mode toggle
+                      _ModeToggleSection(
+                        state: pharmacyState,
+                        onPersonalTap: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.pop(context);
+                          ref
+                              .read(pharmacyModeProvider.notifier)
+                              .switchToPersonalMode();
+                        },
+                        onPharmacyTap: () {
+                          _showPharmacySelector();
+                        },
+                      ),
+
+                      // Divider
+                      Divider(
+                        height: 1,
+                        color: isDark
+                            ? DarkColors.divider
+                            : LightColors.divider,
+                        indent: 20,
+                        endIndent: 20,
+                      ),
+
+                      // Menu items
+                      Expanded(
+                        child: _MenuSection(
+                          state: pharmacyState,
+                          onMyPharmacies: () =>
+                              _navigate(const MyPharmaciesScreen()),
+                          onCreatePharmacy: () =>
+                              _navigate(const CreatePharmacyScreen()),
+                          onAdmins: pharmacyState.isPharmacyMode &&
+                                  pharmacyState.currentPharmacy != null
+                              ? () => _navigate(PharmacyAdminsScreen(
+                                  pharmacy: pharmacyState.currentPharmacy!))
+                              : null,
+                          onEdit: pharmacyState.isPharmacyMode &&
+                                  pharmacyState.currentPharmacy != null
+                              ? () => _navigate(EditPharmacyScreen(
+                                  pharmacy: pharmacyState.currentPharmacy!))
+                              : null,
+                        ),
+                      ),
+
+                      // Footer
+                      _DrawerFooter(isDark: isDark),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// HEADER
+// ════════════════════════════════════════════════════════════════════════════
+
+class _DrawerHeader extends StatelessWidget {
+  const _DrawerHeader({required this.state});
+  final PharmacyModeState state;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
-        borderRadius: const BorderRadius.only(
-          bottomRight: Radius.circular(AppRadius.xxl),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(AppRadius.xxl),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
+          // Icon row
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.25),
+                    width: 1.5,
+                  ),
                 ),
                 child: const Icon(
                   Icons.business_rounded,
                   color: Colors.white,
-                  size: 28,
+                  size: 26,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Pharmacy Hub',
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                         color: Colors.white,
-                        letterSpacing: -0.5,
+                        letterSpacing: -0.4,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       state.isPharmacyMode
-                          ? state.currentPharmacy?.name ?? 'Select Pharmacy'
+                          ? (state.currentPharmacy?.name ?? 'Select Pharmacy')
                           : 'Personal Mode',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withOpacity(0.85),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -123,66 +344,97 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
               ),
             ],
           ),
+
+          // Active pharmacy badge (pharmacy mode only)
           if (state.isPharmacyMode && state.currentPharmacy != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.location_on_outlined,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      state.currentPharmacy!.address,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 14),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              child: _PharmacyBadge(pharmacy: state.currentPharmacy!),
             ),
           ],
         ],
       ),
     );
   }
+}
 
-  Widget _buildModeToggleSection(
-    BuildContext context,
-    PharmacyModeNotifier notifier,
-    PharmacyModeState state,
-  ) {
+class _PharmacyBadge extends StatelessWidget {
+  const _PharmacyBadge({required this.pharmacy});
+  final UserPharmacyModel pharmacy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.location_on_rounded,
+            color: Colors.white,
+            size: 13,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              pharmacy.address,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withOpacity(0.9),
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODE TOGGLE
+// ════════════════════════════════════════════════════════════════════════════
+
+class _ModeToggleSection extends StatelessWidget {
+  const _ModeToggleSection({
+    required this.state,
+    required this.onPersonalTap,
+    required this.onPharmacyTap,
+  });
+
+  final PharmacyModeState state;
+  final VoidCallback onPersonalTap;
+  final VoidCallback onPharmacyTap;
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Mode',
+            'ACTIVE MODE',
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
               color: isDark ? DarkColors.textHint : LightColors.textHint,
-              letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Container(
+            height: 48,
             decoration: BoxDecoration(
               color: isDark
                   ? DarkColors.surfaceVariant
@@ -190,668 +442,77 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer> {
               borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.08)
-                    : Colors.black.withOpacity(0.06),
+                    ? Colors.white.withOpacity(0.07)
+                    : Colors.black.withOpacity(0.05),
               ),
             ),
-            padding: const EdgeInsets.all(4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _ModeToggleButton(
-                    label: 'Personal',
-                    icon: Icons.person_outline,
-                    isActive: state.isPersonalMode,
-                    onTap: () => notifier.switchToPersonalMode(),
-                  ),
-                ),
-                Expanded(
-                  child: _ModeToggleButton(
-                    label: 'Pharmacy',
-                    icon: Icons.business_outlined,
-                    isActive: state.isPharmacyMode,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showPharmacySelector(context, ref);
-                    },
-                    badgeCount: state.userPharmacies.length,
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.all(3),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  children: [
+                    // Sliding indicator
+                    AnimatedAlign(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      alignment: state.isPersonalMode
+                          ? Alignment.centerLeft
+                          : Alignment.centerRight,
+                      child: FractionallySizedBox(
+                        widthFactor: 0.5,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    AppColors.primaryBlue.withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ToggleButton(
+                            label: 'Personal',
+                            icon: Icons.person_rounded,
+                            isActive: state.isPersonalMode,
+                            onTap: onPersonalTap,
+                          ),
+                        ),
+                        Expanded(
+                          child: _ToggleButton(
+                            label: 'Pharmacy',
+                            icon: Icons.business_rounded,
+                            isActive: state.isPharmacyMode,
+                            badgeCount: state.userPharmacies.length,
+                            onTap: onPharmacyTap,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildMenuItems(
-    BuildContext context,
-    PharmacyModeNotifier notifier,
-    PharmacyModeState state,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      children: [
-        // Manage Pharmacies Section
-        _buildSectionTitle('Manage', isDark),
-        _MenuItem(
-          icon: Icons.storefront_outlined,
-          activeIcon: Icons.storefront,
-          title: 'My Pharmacies',
-          subtitle: 'View & manage your pharmacies',
-          iconColor: AppColors.primaryBlue,
-          isDark: isDark,
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (_, __, ___) => const MyPharmaciesScreen(),
-                transitionsBuilder: (_, animation, __, child) {
-                  return SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: const Offset(0, 1),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        ),
-                    child: child,
-                  );
-                },
-              ),
-            );
-          },
-        ),
-        _MenuItem(
-          icon: Icons.add_business_outlined,
-          activeIcon: Icons.add_business,
-          title: 'Create Pharmacy',
-          subtitle: 'Add a new pharmacy',
-          iconColor: AppColors.primaryGreen,
-          isDark: isDark,
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (_, __, ___) => const CreatePharmacyScreen(),
-                transitionsBuilder: (_, animation, __, child) {
-                  return SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: const Offset(0, 1),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        ),
-                    child: child,
-                  );
-                },
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 8),
-
-        // Administration Section
-        _buildSectionTitle('Administration', isDark),
-        _MenuItem(
-          icon: Icons.admin_panel_settings_outlined,
-          activeIcon: Icons.admin_panel_settings,
-          title: 'Pharmacy Admins',
-          subtitle: 'Manage administrators',
-          iconColor: AppColors.accentPurple,
-          isDark: isDark, // Assuming isDark is defined nearby
-          isEnabled: state.isPharmacyMode && state.currentPharmacy != null,
-          onTap: () {
-            // Check if pharmacy exists before navigating
-            if (state.currentPharmacy == null) {
-              Navigator.pop(context); // Close drawer
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please select a pharmacy first'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              return;
-            }
-
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (_, __, ___) =>
-                    PharmacyAdminsScreen(pharmacy: state.currentPharmacy!),
-                transitionsBuilder: (_, animation, __, child) {
-                  return SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: const Offset(0, 1),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        ),
-                    child: child,
-                  );
-                },
-              ),
-            );
-          },
-        ),
-        _MenuItem(
-          icon: Icons.edit_outlined,
-          activeIcon: Icons.edit,
-          title: 'Edit Pharmacy',
-          subtitle: 'Update pharmacy details',
-          iconColor: AppColors.accentYellow,
-          isDark: isDark,
-          isEnabled: state.isPharmacyMode && state.currentPharmacy != null,
-          onTap: () {
-            Navigator.pop(context);
-            if (state.currentPharmacy != null) {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) =>
-                      EditPharmacyScreen(pharmacy: state.currentPharmacy!),
-                  transitionsBuilder: (_, animation, __, child) {
-                    return SlideTransition(
-                      position:
-                          Tween<Offset>(
-                            begin: const Offset(0, 1),
-                            end: Offset.zero,
-                          ).animate(
-                            CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOutCubic,
-                            ),
-                          ),
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            } else {
-              _showSelectPharmacySnackbar(context);
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(String title, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 20, 12, 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: isDark ? DarkColors.textHint : LightColors.textHint,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFooter(BuildContext context, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? DarkColors.surfaceVariant
-              : LightColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: const Icon(
-                Icons.info_outline_rounded,
-                color: AppColors.primaryBlue,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Pharmacy Mode',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? DarkColors.textPrimary
-                          : LightColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    'Switch modes to manage pharmacies',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark
-                          ? DarkColors.textSecondary
-                          : LightColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPharmacySelector(BuildContext context, WidgetRef ref) {
-    final state = ref.read(pharmacyModeProvider);
-    final pharmacyModeNotifier = ref.read(pharmacyModeProvider.notifier);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? DarkColors.surface
-              : LightColors.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xxl),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Handle
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? DarkColors.textHint
-                          : LightColors.textHint,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Select Pharmacy',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Choose a pharmacy to manage',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Divider(height: 1),
-              if (state.userPharmacies.isEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.all(40),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.store_outlined,
-                        size: 64,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? DarkColors.textHint
-                            : LightColors.textHint,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No Pharmacies Yet',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? DarkColors.textPrimary
-                              : LightColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Create your first pharmacy to start managing',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? DarkColors.textSecondary
-                              : LightColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                Flexible(
-                  child: ListView.builder(
-                    physics: const ClampingScrollPhysics(),
-                    itemCount: state.userPharmacies.length,
-                    itemBuilder: (context, index) {
-                      final pharmacy = state.userPharmacies[index];
-                      final isCurrentPharmacy =
-                          state.currentPharmacy?.id == pharmacy.id;
-
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        leading: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: isCurrentPharmacy
-                                ? AppColors.primaryBlue.withOpacity(0.1)
-                                : (Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? DarkColors.surfaceVariant
-                                      : LightColors.surfaceVariant),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                          ),
-                          child: Icon(
-                            Icons.business_rounded,
-                            color: isCurrentPharmacy
-                                ? AppColors.primaryBlue
-                                : (Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? DarkColors.textSecondary
-                                      : LightColors.textSecondary),
-                            size: 24,
-                          ),
-                        ),
-                        title: Text(
-                          pharmacy.name,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: isCurrentPharmacy
-                                ? FontWeight.w700
-                                : FontWeight.w600,
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? DarkColors.textPrimary
-                                : LightColors.textPrimary,
-                          ),
-                        ),
-                        subtitle: Text(
-                          pharmacy.address,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? DarkColors.textSecondary
-                                : LightColors.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: isCurrentPharmacy
-                            ? Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primaryGreen,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              )
-                            : null,
-                        onTap: () {
-                          // Close the bottom sheet first
-                          Navigator.pop(context);
-                          
-                          // Switch pharmacy immediately (don't wait for animation)
-                          _switchPharmacyWithTransition(
-                            context,
-                            pharmacyModeNotifier,
-                            pharmacy,
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) =>
-                            const CreatePharmacyScreen(),
-                        transitionsBuilder: (_, animation, __, child) {
-                          return SlideTransition(
-                            position:
-                                Tween<Offset>(
-                                  begin: const Offset(0, 1),
-                                  end: Offset.zero,
-                                ).animate(
-                                  CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                  ),
-                                ),
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.add_business_rounded),
-                  label: const Text('Create New Pharmacy'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Switch pharmacy with smooth loading transition (Facebook-style)
-  void _switchPharmacyWithTransition(
-    BuildContext context,
-    dynamic pharmacyModeNotifier, // PharmacyModeNotifier from provider
-    dynamic pharmacy,
-  ) async {
-    // Cache values before any navigation
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    BuildContext? dialogContext;
-    bool dialogClosed = false;
-    
-    // Show loading overlay immediately
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.transparent,
-      builder: (ctx) {
-        dialogContext = ctx;
-        return Center(
-          child: Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: isDark ? DarkColors.surface : LightColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Switching...',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    // Wait a bit for dialog to show
-    await Future.delayed(const Duration(milliseconds: 100));
-    
-    // Switch pharmacy mode immediately
-    pharmacyModeNotifier.switchToPharmacyMode(pharmacy);
-    
-    // Wait for 150 milliseconds to allow for a smooth premium fade transition
-    await Future.delayed(const Duration(milliseconds: 150));
-
-    // Close loading dialog safely using dialogContext with fade out animation
-    if (!dialogClosed && dialogContext != null && dialogContext!.mounted) {
-      dialogClosed = true;
-      
-      // Fade out the dialog - pop returns void so we don't await it
-      Navigator.of(dialogContext!).pop();
-      
-      // Small delay before showing snackbar and navigating
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      // Show success snackbar after dialog is closed
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    color: AppColors.primaryGreen,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text('Switched to ${pharmacy.name}'),
-                ),
-              ],
-            ),
-            backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-
-  void _showSelectPharmacySnackbar(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Please select a pharmacy first'),
-        backgroundColor: AppColors.accentYellow,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        action: SnackBarAction(
-          label: 'Select',
-          textColor: Colors.black,
-          onPressed: () {
-            _showPharmacySelector(context, ref);
-          },
-        ),
-      ),
-    );
-  }
 }
 
-class _ModeToggleButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isActive;
-  final VoidCallback onTap;
-  final int? badgeCount;
-
-  const _ModeToggleButton({
+class _ToggleButton extends StatelessWidget {
+  const _ToggleButton({
     required this.label,
     required this.icon,
     required this.isActive,
@@ -859,30 +520,31 @@ class _ModeToggleButton extends StatelessWidget {
     this.badgeCount,
   });
 
+  final String label;
+  final IconData icon;
+  final bool isActive;
+  final VoidCallback onTap;
+  final int? badgeCount;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryBlue : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox.expand(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 18,
+              size: 16,
               color: isActive
                   ? Colors.white
                   : (isDark
-                        ? DarkColors.textSecondary
-                        : LightColors.textSecondary),
+                      ? DarkColors.textSecondary
+                      : LightColors.textSecondary),
             ),
             const SizedBox(width: 6),
             Text(
@@ -893,23 +555,24 @@ class _ModeToggleButton extends StatelessWidget {
                 color: isActive
                     ? Colors.white
                     : (isDark
-                          ? DarkColors.textSecondary
-                          : LightColors.textSecondary),
+                        ? DarkColors.textSecondary
+                        : LightColors.textSecondary),
               ),
             ),
-            if (badgeCount != null && badgeCount! > 0 && !isActive) ...[
-              const SizedBox(width: 6),
+            if (!isActive && badgeCount != null && badgeCount! > 0) ...[
+              const SizedBox(width: 5),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
                   color: AppColors.primaryBlue,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(99),
                 ),
                 child: Text(
                   '$badgeCount',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -922,80 +585,653 @@ class _ModeToggleButton extends StatelessWidget {
   }
 }
 
-class _MenuItem extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final String title;
-  final String subtitle;
-  final Color iconColor;
-  final bool isDark;
-  final bool isEnabled;
-  final VoidCallback onTap;
+// ════════════════════════════════════════════════════════════════════════════
+// MENU SECTION
+// ════════════════════════════════════════════════════════════════════════════
 
-  const _MenuItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.title,
-    required this.subtitle,
-    required this.iconColor,
-    required this.isDark,
-    this.isEnabled = true,
-    required this.onTap,
+class _MenuSection extends StatelessWidget {
+  const _MenuSection({
+    required this.state,
+    required this.onMyPharmacies,
+    required this.onCreatePharmacy,
+    required this.onAdmins,
+    required this.onEdit,
   });
+
+  final PharmacyModeState state;
+  final VoidCallback onMyPharmacies;
+  final VoidCallback onCreatePharmacy;
+  final VoidCallback? onAdmins;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      enabled: isEnabled,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      leading: Container(
-        width: 44,
-        height: 44,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        // ── MANAGE ────────────────────────────────────────────────────────
+        _SectionLabel(label: 'MANAGE', isDark: isDark),
+
+        _DrawerMenuItem(
+          icon: Icons.storefront_rounded,
+          title: 'My Pharmacies',
+          subtitle: 'View & manage your pharmacies',
+          accentColor: AppColors.primaryBlue,
+          isDark: isDark,
+          onTap: onMyPharmacies,
+        ),
+
+        _DrawerMenuItem(
+          icon: Icons.add_business_rounded,
+          title: 'Create Pharmacy',
+          subtitle: 'Register a new pharmacy',
+          accentColor: AppColors.primaryGreen,
+          isDark: isDark,
+          onTap: onCreatePharmacy,
+        ),
+
+        const SizedBox(height: 4),
+
+        // ── ADMINISTRATION ─────────────────────────────────────────────
+        _SectionLabel(label: 'ADMINISTRATION', isDark: isDark),
+
+        _DrawerMenuItem(
+          icon: Icons.admin_panel_settings_rounded,
+          title: 'Pharmacy Admins',
+          subtitle: !state.isPharmacyMode
+              ? 'Switch to Pharmacy Mode first'
+              : state.currentPharmacy == null
+                  ? 'Select a pharmacy to continue'
+                  : 'Manage admins for ${state.currentPharmacy!.name}',
+          accentColor: AppColors.accentPurple,
+          isDark: isDark,
+          isEnabled: onAdmins != null,
+          onTap: onAdmins,
+          lockedReason: !state.isPharmacyMode
+              ? _LockReason.notPharmacyMode
+              : state.currentPharmacy == null
+                  ? _LockReason.noPharmacySelected
+                  : null,
+        ),
+
+        _DrawerMenuItem(
+          icon: Icons.edit_rounded,
+          title: 'Edit Pharmacy',
+          subtitle: !state.isPharmacyMode
+              ? 'Switch to Pharmacy Mode first'
+              : state.currentPharmacy == null
+                  ? 'Select a pharmacy to continue'
+                  : 'Update details for ${state.currentPharmacy!.name}',
+          accentColor: AppColors.accentYellow,
+          isDark: isDark,
+          isEnabled: onEdit != null,
+          onTap: onEdit,
+          lockedReason: !state.isPharmacyMode
+              ? _LockReason.notPharmacyMode
+              : state.currentPharmacy == null
+                  ? _LockReason.noPharmacySelected
+                  : null,
+        ),
+      ],
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// FOOTER
+// ════════════════════════════════════════════════════════════════════════════
+
+class _DrawerFooter extends StatelessWidget {
+  const _DrawerFooter({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isEnabled
-              ? iconColor.withOpacity(0.1)
-              : (isDark
-                    ? DarkColors.surfaceVariant
-                    : LightColors.surfaceVariant),
+          color: AppColors.primaryBlue.withOpacity(isDark ? 0.12 : 0.07),
           borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: AppColors.primaryBlue.withOpacity(isDark ? 0.2 : 0.12),
+          ),
         ),
-        child: Icon(
-          isEnabled ? icon : Icons.lock_outline,
-          color: isEnabled
-              ? iconColor
-              : (isDark ? DarkColors.textHint : LightColors.textHint),
-          size: 22,
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_rounded,
+              size: 18,
+              color: AppColors.primaryBlue.withOpacity(0.8),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Switch to Pharmacy Mode to manage your pharmacies and admins.',
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.5,
+                  color: isDark
+                      ? DarkColors.textSecondary
+                      : LightColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      title: Text(
-        title,
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SHARED SMALL WIDGETS
+// ════════════════════════════════════════════════════════════════════════════
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label, required this.isDark});
+  final String label;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 6),
+      child: Text(
+        label,
         style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: isEnabled
-              ? (isDark ? DarkColors.textPrimary : LightColors.textPrimary)
-              : (isDark ? DarkColors.textHint : LightColors.textHint),
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.2,
+          color: isDark ? DarkColors.textHint : LightColors.textHint,
         ),
       ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: isEnabled
-              ? (isDark ? DarkColors.textSecondary : LightColors.textSecondary)
-              : (isDark ? DarkColors.textHint : LightColors.textHint),
+    );
+  }
+}
+
+enum _LockReason {
+  notPharmacyMode,
+  noPharmacySelected,
+}
+
+class _DrawerMenuItem extends StatefulWidget {
+  const _DrawerMenuItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accentColor,
+    required this.isDark,
+    this.isEnabled = true,
+    this.onTap,
+    this.lockedReason,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accentColor;
+  final bool isDark;
+  final bool isEnabled;
+  final VoidCallback? onTap;
+  final _LockReason? lockedReason;
+
+  @override
+  State<_DrawerMenuItem> createState() => _DrawerMenuItemState();
+}
+
+class _DrawerMenuItemState extends State<_DrawerMenuItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _press;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _press = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      reverseDuration: const Duration(milliseconds: 200),
+      lowerBound: 0,
+      upperBound: 1,
+    );
+    _scale = Tween<double>(begin: 1, end: 0.97).animate(_press);
+  }
+
+  @override
+  void dispose() {
+    _press.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.isEnabled && widget.onTap != null;
+    final isDark = widget.isDark;
+    final color = enabled
+        ? widget.accentColor
+        : (isDark ? DarkColors.textHint : LightColors.textHint);
+
+    return ScaleTransition(
+      scale: _scale,
+      child: GestureDetector(
+        onTapDown: enabled ? (_) => _press.forward() : null,
+        onTapUp: enabled
+            ? (_) {
+                _press.reverse();
+                widget.onTap?.call();
+              }
+            : null,
+        onTapCancel: enabled ? () => _press.reverse() : null,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Row(
+            children: [
+              // Icon box
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: enabled
+                      ? widget.accentColor.withOpacity(isDark ? 0.14 : 0.1)
+                      : (isDark
+                          ? DarkColors.surfaceVariant
+                          : LightColors.surfaceVariant),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(
+                  enabled ? widget.icon : Icons.lock_outline_rounded,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Texts
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: enabled
+                            ? (isDark
+                                ? DarkColors.textPrimary
+                                : LightColors.textPrimary)
+                            : (isDark
+                                ? DarkColors.textHint
+                                : LightColors.textHint),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: enabled
+                            ? (isDark
+                                ? DarkColors.textSecondary
+                                : LightColors.textSecondary)
+                            : (isDark
+                                ? DarkColors.textHint
+                                : LightColors.textHint),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Chevron
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: enabled
+                    ? (isDark
+                        ? DarkColors.textSecondary
+                        : LightColors.textSecondary)
+                    : Colors.transparent,
+              ),
+            ],
+          ),
         ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
       ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: isEnabled
-            ? (isDark ? DarkColors.textSecondary : LightColors.textSecondary)
-            : (isDark ? DarkColors.textHint : LightColors.textHint),
-        size: 20,
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHARMACY SELECTOR BOTTOM SHEET  (standalone, no context leaks)
+// ════════════════════════════════════════════════════════════════════════════
+
+class _PharmacySelectorSheet extends StatelessWidget {
+  const _PharmacySelectorSheet({
+    required this.pharmacies,
+    required this.currentPharmacyId,
+    required this.onSelect,
+    required this.onCreateNew,
+  });
+
+  final List<UserPharmacyModel> pharmacies;
+  final String? currentPharmacyId;
+  final ValueChanged<UserPharmacyModel> onSelect;
+  final VoidCallback onCreateNew;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? DarkColors.surface : LightColors.surface;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
-      onTap: isEnabled ? onTap : null,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+            blurRadius: 30,
+            offset: const Offset(0, -8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? DarkColors.divider : LightColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
+          // Title
+          Padding(
+            padding:
+                const EdgeInsets.fromLTRB(20, 20, 20, 4),
+            child: Text(
+              'Select Pharmacy',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+                color:
+                    isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            child: Text(
+              pharmacies.isEmpty
+                  ? 'You have no pharmacies yet.'
+                  : 'Choose a pharmacy to switch into pharmacy mode.',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark
+                    ? DarkColors.textSecondary
+                    : LightColors.textSecondary,
+              ),
+            ),
+          ),
+
+          Divider(
+            height: 1,
+            color: isDark ? DarkColors.divider : LightColors.divider,
+          ),
+
+          // Empty state
+          if (pharmacies.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Column(
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? DarkColors.surfaceVariant
+                          : LightColors.surfaceVariant,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.store_mall_directory_rounded,
+                      size: 36,
+                      color: isDark
+                          ? DarkColors.textHint
+                          : LightColors.textHint,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No Pharmacies Yet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: isDark
+                          ? DarkColors.textPrimary
+                          : LightColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Create your first pharmacy to get started.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? DarkColors.textSecondary
+                          : LightColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Flexible(
+              child: ListView.separated(
+                physics: const ClampingScrollPhysics(),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                itemCount: pharmacies.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 2),
+                itemBuilder: (context, index) {
+                  final pharmacy = pharmacies[index];
+                  final isCurrent = pharmacy.id == currentPharmacyId;
+
+                  return _PharmacyTile(
+                    pharmacy: pharmacy,
+                    isCurrent: isCurrent,
+                    isDark: isDark,
+                    onTap: () => onSelect(pharmacy),
+                  );
+                },
+              ),
+            ),
+
+          Divider(
+            height: 1,
+            color: isDark ? DarkColors.divider : LightColors.divider,
+          ),
+
+          // Create button
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ElevatedButton.icon(
+              onPressed: onCreateNew,
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text(
+                'Create New Pharmacy',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PharmacyTile extends StatefulWidget {
+  const _PharmacyTile({
+    required this.pharmacy,
+    required this.isCurrent,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final UserPharmacyModel pharmacy;
+  final bool isCurrent;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  State<_PharmacyTile> createState() => _PharmacyTileState();
+}
+
+class _PharmacyTileState extends State<_PharmacyTile> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+    final isCurrent = widget.isCurrent;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: _pressed
+              ? AppColors.primaryBlue.withOpacity(0.07)
+              : isCurrent
+                  ? AppColors.primaryBlue.withOpacity(isDark ? 0.12 : 0.06)
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: isCurrent
+                ? AppColors.primaryBlue.withOpacity(0.25)
+                : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isCurrent
+                    ? AppColors.primaryBlue.withOpacity(isDark ? 0.2 : 0.12)
+                    : (isDark
+                        ? DarkColors.surfaceVariant
+                        : LightColors.surfaceVariant),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(
+                Icons.business_rounded,
+                color: isCurrent
+                    ? AppColors.primaryBlue
+                    : (isDark
+                        ? DarkColors.textSecondary
+                        : LightColors.textSecondary),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.pharmacy.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          isCurrent ? FontWeight.w700 : FontWeight.w600,
+                      color: isDark
+                          ? DarkColors.textPrimary
+                          : LightColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.pharmacy.address,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? DarkColors.textSecondary
+                          : LightColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            // Active check
+            if (isCurrent)
+              Container(
+                width: 26,
+                height: 26,
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryGreen,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

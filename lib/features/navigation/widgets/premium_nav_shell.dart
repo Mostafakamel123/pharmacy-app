@@ -14,6 +14,8 @@ import 'package:pharmacy_app/core/theme/nav_colors.dart';
 import 'package:pharmacy_app/core/theme/nav_theme.dart';
 import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
 import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 
 /// Global provider for unified bottom navigation active index
 final navigationIndexProvider = StateProvider<int>((ref) => 0);
@@ -46,6 +48,32 @@ class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
   // Always show FAB for normal users, hide in pharmacy mode
   bool get _showFab => !ref.watch(isPharmacyModeProvider);
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationPermission();
+    });
+  }
+
+  Future<void> _requestLocationPermission() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
+          ref.invalidate(locationProvider);
+          ref.read(nearbyPharmaciesProvider.notifier).refresh();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error requesting location permission on startup: $e');
+    }
+  }
 
   void _onTabChanged(int index) {
     ref.read(navigationIndexProvider.notifier).state = index;
@@ -76,6 +104,15 @@ class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
 
   @override
   Widget build(BuildContext context) {
+    // Centralized listener to reset active navigation index to 0 when switching app modes
+    ref.listen<PharmacyModeState>(pharmacyModeProvider, (previous, next) {
+      if (previous?.currentMode != next.currentMode) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(navigationIndexProvider.notifier).state = 0;
+        });
+      }
+    });
+
     return Scaffold(
       extendBody: true,
       body: NotificationListener<UserScrollNotification>(

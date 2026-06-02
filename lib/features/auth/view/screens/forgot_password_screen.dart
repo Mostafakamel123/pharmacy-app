@@ -3,12 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pharmacy_app/core/routing/app_routes.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_text_field.dart';
 import 'package:pharmacy_app/features/auth/view/widgets/auth_button.dart';
 
-// 1. Compile-time constant for Regex
+// Compile-time constant for Regex
 final _emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -21,7 +22,6 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
   String? _emailError;
-  bool _isSubmitted = false;
 
   @override
   void dispose() {
@@ -39,20 +39,24 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_validateEmail(_emailController.text.trim())) return;
+    final email = _emailController.text.trim();
+    if (!_validateEmail(email)) return;
+
+    // Clear any previous errors
+    ref.read(authProvider.notifier).clearError();
 
     final success = await ref
         .read(authProvider.notifier)
-        .sendPasswordResetEmail(_emailController.text.trim());
+        .sendPasswordResetEmail(email);
 
     if (success && mounted) {
-      setState(() => _isSubmitted = true);
+      // Navigate to reset password screen, passing the email
+      context.push(AppRoutes.resetPassword, extra: email);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Removed ref.watch(authProvider) from here!
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -78,135 +82,85 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 20),
 
-              if (!_isSubmitted) ...[
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.lock_reset_rounded,
-                      size: 40,
-                      color: AppColors.primaryBlue,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                Text(
-                  'Forgot Password?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'No worries! Enter your email address and we\'ll send you a link to reset your password.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                AuthTextField(
-                  label: 'Email',
-                  hint: 'Enter your email',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  controller: _emailController,
-                  errorText: _emailError,
-                  onChanged: (value) => _validateEmail(value),
-                ),
-                const SizedBox(height: 24),
-
-                // Extracted Error Banner
-                const _ForgotErrorBanner(),
-                
-                // Extracted Submit Button
-                _ForgotSubmitButton(onPressed: _handleSubmit),
-              ] else ...[
-                const SizedBox(height: 40),
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check_circle_outline_rounded,
-                      size: 40,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                Text(
-                  'Email Sent!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'We\'ve sent a password reset link to\n${_emailController.text}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                Container(
-                  padding: const EdgeInsets.all(16),
+              Center(
+                child: Container(
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
                     color: AppColors.primaryBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
+                    shape: BoxShape.circle,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Didn\'t receive the email? Check your spam folder or try again.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                          ),
-                        ),
+                  child: const Icon(
+                    Icons.lock_reset_rounded,
+                    size: 40,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              Text(
+                'Forgot Password?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Enter your email address and we\'ll send you a verification code to reset your password.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              AuthTextField(
+                label: 'Email',
+                hint: 'Enter your email',
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                controller: _emailController,
+                errorText: _emailError,
+                onChanged: (value) => _validateEmail(value),
+              ),
+              const SizedBox(height: 24),
+
+              // Error Banner
+              const _ForgotErrorBanner(),
+
+              // Submit Button
+              _ForgotSubmitButton(onPressed: _handleSubmit),
+              const SizedBox(height: 20),
+
+              // Back to login link
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Remember your password? ',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.pop(),
+                    child: const Text(
+                      'Sign In',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryBlue,
                       ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-
-                // Extracted Resend Button
-                _ForgotResendButton(onPressed: _handleSubmit),
-                const SizedBox(height: 16),
-
-                AuthButton(
-                  text: 'Back to Login',
-                  isLoading: false,
-                  isOutlined: true,
-                  onPressed: () => context.pop(),
-                ),
-              ],
+                ],
+              ),
             ],
           ),
         ),
@@ -225,22 +179,7 @@ class _ForgotSubmitButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
     return AuthButton(
-      text: 'Send Reset Link',
-      isLoading: isLoading,
-      onPressed: onPressed,
-    );
-  }
-}
-
-class _ForgotResendButton extends ConsumerWidget {
-  final VoidCallback onPressed;
-  const _ForgotResendButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
-    return AuthButton(
-      text: 'Resend Email',
+      text: 'Send Verification Code',
       isLoading: isLoading,
       onPressed: onPressed,
     );

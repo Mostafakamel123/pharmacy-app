@@ -12,19 +12,33 @@ import 'package:geolocator/geolocator.dart';
 
 final locationProvider = FutureProvider<LocationData?>((ref) async {
   try {
+    // 1. Check if location services are enabled on the device
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return null;
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return null;
+    if (!serviceEnabled) {
+      // Services off — fall back to Cairo so nearby pharmacies still load
+      return LocationData(latitude: 30.0444, longitude: 31.2357);
     }
 
-    if (permission == LocationPermission.deniedForever) return null;
+    // 2. Check current permission state
+    LocationPermission permission = await Geolocator.checkPermission();
 
+    // 3. Request permission if not yet granted
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    // 4. If user permanently denied — fall back to Cairo
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return LocationData(latitude: 30.0444, longitude: 31.2357);
+    }
+
+    // 5. Permission granted — get real position
     final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 15),
+      ),
     );
 
     return LocationData(
@@ -32,7 +46,7 @@ final locationProvider = FutureProvider<LocationData?>((ref) async {
       longitude: position.longitude,
     );
   } catch (e) {
-    // Return default location (Cairo) if geolocation fails
+    // Any other failure — fall back to Cairo
     return LocationData(latitude: 30.0444, longitude: 31.2357);
   }
 });
@@ -64,17 +78,14 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
     try {
       state = const AsyncValue.loading();
       
-      // Get user location
+      // Get user location (always returns a value — real GPS or Cairo fallback)
       final locationAsync = await ref.read(locationProvider.future);
-      if (locationAsync == null) {
-        state = const AsyncValue.data([]);
-        return;
-      }
+      final loc = locationAsync ?? LocationData(latitude: 30.0444, longitude: 31.2357);
 
       // Call API: GET /api/Pharmacies/nearby
       final response = await _api.getNearbyPharmacies(
-        lat: locationAsync.latitude,
-        lon: locationAsync.longitude,
+        lat: loc.latitude,
+        lon: loc.longitude,
         radius: 5.0,
       );
 
@@ -149,33 +160,79 @@ class RecentPostsNotifier extends StateNotifier<AsyncValue<List<PostModel>>> {
 }
 
 // ============================================================================
-// FILTERED NEARBY PHARMACIES PROVIDER - Combines nearbyPharmaciesProvider & searchQueryProvider
-// ============================================================================
-
-final filteredNearbyPharmaciesProvider = Provider<AsyncValue<List<PharmacyModel>>>((ref) {
-  final pharmaciesAsync = ref.watch(nearbyPharmaciesProvider);
-  final searchQuery = ref.watch(searchQueryProvider).toLowerCase();
-
-  if (searchQuery.isEmpty) {
-    return pharmaciesAsync;
-  }
-
-  return pharmaciesAsync.whenData((list) {
-    return list.where((pharmacy) {
-      return pharmacy.name.toLowerCase().contains(searchQuery) ||
-             pharmacy.address.toLowerCase().contains(searchQuery);
-    }).toList();
-  });
-});
-
-// ============================================================================
 // SEARCH QUERY PROVIDER
 // ============================================================================
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
 // ============================================================================
-// NOTIFICATION COUNT PROVIDER - Placeholder for future implementation
+// PHARMACY SEARCH PROVIDER  - GET /api/Pharmacies/search
+// When query is empty  → re-exposes nearbyPharmaciesProvider (no extra call).
+// When query is set    → calls the search endpoint and returns live results.
+// ============================================================================
+
+final pharmacySearchProvider =
+    StateNotifierProvider<PharmacySearchNotifier, AsyncValue<List<PharmacyModel>>>(
+  (ref) => PharmacySearchNotifier(ref),
+);
+
+class PharmacySearchNotifier
+    extends StateNotifier<AsyncValue<List<PharmacyModel>>> {
+  final Ref _ref;
+  final ApiEndpoints _api = ApiEndpoints();
+
+  PharmacySearchNotifier(this._ref) : super(const AsyncValue.loading()) {
+    // Start with the nearby list.
+    _syncWithNearby();
+    // Re-run search whenever the query changes.
+    _ref.listen<String>(searchQueryProvider, (_, query) {
+      if (query.isEmpty) {
+        _syncWithNearby();
+      } else {
+        search(query);
+      }
+    });
+  }
+
+  /// Mirror the current nearbyPharmaciesProvider state directly.
+  void _syncWithNearby() {
+    state = _ref.read(nearbyPharmaciesProvider);
+  }
+
+  /// Call GET /api/Pharmacies/search?keyword=...
+  Future<void> search(String keyword) async {
+    if (keyword.trim().isEmpty) {
+      _syncWithNearby();
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final raw = await _api.searchPharmacies(
+        keyword: keyword.trim(),
+        pageSize: 20,
+      );
+      final results = raw
+          .map((item) => PharmacyModel.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false);
+      state = AsyncValue.data(results);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+// ============================================================================
+// FILTERED NEARBY PHARMACIES PROVIDER
+// Kept for backward-compatibility — delegates to pharmacySearchProvider.
+// ============================================================================
+
+final filteredNearbyPharmaciesProvider =
+    Provider<AsyncValue<List<PharmacyModel>>>(
+  (ref) => ref.watch(pharmacySearchProvider),
+);
+
+// ============================================================================
+// NOTIFICATION COUNT PROVIDER
 // ============================================================================
 
 final notificationCountProvider = StateProvider<int>((ref) => 0);

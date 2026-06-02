@@ -1,59 +1,81 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 import 'package:pharmacy_app/core/models/pharmacy_model.dart';
+import 'package:pharmacy_app/core/theme/app_colors.dart';
+import 'package:pharmacy_app/features/home/controller/home_providers.dart';
 import 'package:pharmacy_app/features/pharmacies/view/nearby_pharmacies_screen.dart';
 import 'package:pharmacy_app/features/pharmacies/view/pharmacy_details_screen.dart';
 
-class NearbyPharmaciesSection extends StatelessWidget {
+// ════════════════════════════════════════════════════════════════════════════
+// NEARBY PHARMACIES SECTION
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Horizontally scrolling list of pharmacies filtered by the search query.
+///
+/// Performance notes:
+/// • The outer [NearbyPharmaciesSection] is a plain [StatelessWidget] — it
+///   never watches any provider, so it is allocated once and reused.
+/// • Provider watching is scoped to [_NearbyPharmaciesBody], the minimal
+///   subtree that needs to rebuild on data changes.
+/// • [RepaintBoundary] is NOT placed here because this section is static
+///   once data arrives. Overusing RepaintBoundary adds GPU layer overhead.
+/// • The horizontal [ListView.separated] has:
+///   - A fixed-height [SizedBox] parent (138 px) so Flutter never measures
+///     intrinsic height — avoiding an O(N) layout pass.
+///   - `cacheExtent: 350` — keeps ~2 cards pre-rendered off each side.
+///   - `addAutomaticKeepAlives: false` — stateless cards don't need
+///     KeepAlive wrappers.
+///   - `addRepaintBoundaries: false` — each simple card does not warrant
+///     its own compositing layer; batching draws is cheaper.
+class NearbyPharmaciesSection extends ConsumerWidget {
   const NearbyPharmaciesSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor =
+        isDark ? const Color(0xFFF9FAFB) : const Color(0xFF1F2937);
 
-    return RepaintBoundary(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Nearby Pharmacies',
+    // Watch the query so the title updates reactively.
+    final query = ref.watch(searchQueryProvider);
+    final isSearching = query.isNotEmpty;
+
+    // When searching, show how many results came back.
+    final resultsAsync = ref.watch(filteredNearbyPharmaciesProvider);
+    final resultCount = resultsAsync.valueOrNull?.length;
+
+    final title = isSearching
+        ? (resultCount != null
+            ? 'Search Results ($resultCount)'
+            : 'Searching...')
+        : 'Nearby Pharmacies';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Header row ───────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Animated title transition between modes
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: Text(
+                  title,
+                  key: ValueKey(title),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    color: textColor,
+                    letterSpacing: -0.3,
                   ),
                 ),
-                // Removed unnecessary Builder wrapper — Navigator.of(context)
-                // works fine with the outer context.
+              ),
+              if (!isSearching)
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) =>
-                            const NearbyPharmaciesScreen(),
-                        transitionsBuilder: (_, animation, __, child) {
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(1, 0),
-                              end: Offset.zero,
-                            ).animate(CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOutCubic,
-                            )),
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
-                  },
+                  onPressed: () => _navigateToAll(context),
                   child: const Text(
                     'View All',
                     style: TextStyle(
@@ -63,15 +85,34 @@ class NearbyPharmaciesSection extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
-          const _NearbyPharmaciesBody(),
-        ],
+        ),
+        // ── Body: async state switching ──────────────────────────────────
+        const _NearbyPharmaciesBody(),
+      ],
+    );
+  }
+
+  static void _navigateToAll(BuildContext context) {
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        pageBuilder: (_, __, ___) => const NearbyPharmaciesScreen(),
+        transitionsBuilder: (_, animation, __, child) => SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          ),
+          child: child,
+        ),
       ),
     );
   }
 }
+
+// ────────────────────────────────────────────────────────────────────────────
 
 class _NearbyPharmaciesBody extends ConsumerWidget {
   const _NearbyPharmaciesBody();
@@ -81,20 +122,23 @@ class _NearbyPharmaciesBody extends ConsumerWidget {
     final pharmaciesAsync = ref.watch(filteredNearbyPharmaciesProvider);
 
     return pharmaciesAsync.when(
-      data: (pharmacies) => _PharmacyList(pharmacies: pharmacies),
-      loading: () => const _ShimmerLoading(),
-      error: (error, stack) => _ErrorState(
-        onRetry: () => ref
-            .read(nearbyPharmaciesProvider.notifier)
-            .refresh(),
+      data: (pharmacies) => pharmacies.isEmpty
+          ? const _EmptyPharmacyState()
+          : _PharmacyList(pharmacies: pharmacies),
+      loading: () => const _PharmacyShimmerList(),
+      error: (_, __) => _PharmacyErrorState(
+        onRetry: () => ref.read(nearbyPharmaciesProvider.notifier).refresh(),
       ),
     );
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// PHARMACY LIST
+// ════════════════════════════════════════════════════════════════════════════
+
 class _PharmacyList extends StatelessWidget {
   final List<PharmacyModel> pharmacies;
-
   const _PharmacyList({required this.pharmacies});
 
   @override
@@ -105,197 +149,203 @@ class _PharmacyList extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: pharmacies.length,
-        // Pre-render ~2 cards off-screen for smoother scrolling
         cacheExtent: 350,
-        // Stateless children don't need KeepAlive overhead
         addAutomaticKeepAlives: false,
+        addRepaintBoundaries: false,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
-        itemBuilder: (context, index) {
-          return _PharmacyCard(pharmacy: pharmacies[index]);
-        },
+        itemBuilder: (context, index) =>
+            _PharmacyCard(pharmacy: pharmacies[index]),
       ),
     );
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// PHARMACY CARD
+// ════════════════════════════════════════════════════════════════════════════
+
 class _PharmacyCard extends StatelessWidget {
   final PharmacyModel pharmacy;
-
   const _PharmacyCard({required this.pharmacy});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? DarkColors.surface : LightColors.surface;
+    final borderColor = isDark ? DarkColors.divider : LightColors.divider;
+    final nameColor = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF1F2937);
+    final metaColor =
+        isDark ? const Color(0xFF90CAF9) : const Color(0xFF6B7280);
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PharmacyDetailsScreen(pharmacy: pharmacy),
-          ),
-        );
-      },
-      // Replaced AnimatedContainer with Container — no animated properties exist,
-      // so AnimatedContainer's implicit animation machinery is pure overhead.
-      child: Container(
-        width: 170,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1F2937) : Colors.white,
-          borderRadius: const BorderRadius.all(Radius.circular(18)),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF374151)
-                : const Color(0xFFE5E7EB),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? const Color(0x33000000) // black @ 0.2
-                  : const Color(0x0F0EA5E9), // blue @ 0.06
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => PharmacyDetailsScreen(pharmacy: pharmacy),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Map placeholder
-            Container(
-              height: 42,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? const [
-                          Color(0xFF1E3A4A),
-                          Color(0xFF2C5364),
-                        ]
-                      : const [
-                          Color(0xFFE0F7FA),
-                          Color(0xFFE8F5E9),
-                        ],
-                ),
-                borderRadius:
-                    const BorderRadius.all(Radius.circular(10)),
+      ),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 170,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: const BorderRadius.all(Radius.circular(18)),
+            border: Border.all(color: borderColor, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? const Color(0x33000000)
+                    : const Color(0x0F0EA5E9),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              child: Center(
-                child: Icon(
-                  Icons.location_on_rounded,
-                  color: isDark
-                      ? const Color(0xFF90CAF9)
-                      : const Color(0xFF0EA5E9),
-                  size: 22,
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            // Pharmacy name
-            Text(
-              pharmacy.name,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 3),
-            // Distance & Rating
-            Row(
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.directions_walk_rounded,
-                  size: 12,
-                  color: isDark
-                      ? const Color(0xFF90CAF9)
-                      : const Color(0xFF6B7280),
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  '${pharmacy.distance.toStringAsFixed(1)} km',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark
-                        ? const Color(0xFF90CAF9)
-                        : const Color(0xFF6B7280),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.star_rounded,
-                  size: 12,
-                  color: Color(0xFFF59E0B),
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  pharmacy.rating.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFF59E0B),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            // Status row
-            Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                // ── Map placeholder ──────────────────────────────────────
+                DecoratedBox(
                   decoration: BoxDecoration(
-                    color: pharmacy.isOpen
-                        ? const Color(0x2610B981) // replaced withOpacity(0.15)
-                        : const Color(0x26EF4444), // replaced withOpacity(0.15)
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? const [Color(0xFF1E3A4A), Color(0xFF2C5364)]
+                          : const [Color(0xFFE0F7FA), Color(0xFFE8F5E9)],
+                    ),
                     borderRadius:
-                        const BorderRadius.all(Radius.circular(6)),
+                        const BorderRadius.all(Radius.circular(10)),
                   ),
-                  child: Text(
-                    pharmacy.isOpen ? 'Open' : 'Closed',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: pharmacy.isOpen
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
+                  child: SizedBox(
+                    height: 42,
+                    width: double.infinity,
+                    child: Center(
+                      child: Icon(
+                        Icons.location_on_rounded,
+                        color: isDark
+                            ? const Color(0xFF90CAF9)
+                            : AppColors.primaryBlue,
+                        size: 22,
+                      ),
                     ),
                   ),
                 ),
-                if (pharmacy.hasDelivery) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: const BoxDecoration(
-                      color: Color(0x260EA5E9), // replaced withOpacity(0.15)
-                      borderRadius:
-                          BorderRadius.all(Radius.circular(6)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.delivery_dining_rounded,
-                            size: 12, color: Color(0xFF0EA5E9)),
-                        SizedBox(width: 3),
-                        Text(
-                          'Delivery',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF0EA5E9),
-                          ),
-                        ),
-                      ],
-                    ),
+                const SizedBox(height: 6),
+                // ── Name ─────────────────────────────────────────────────
+                Text(
+                  pharmacy.name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: nameColor,
                   ),
-                ],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                // ── Distance & Rating ────────────────────────────────────
+                Row(
+                  children: [
+                    Icon(Icons.directions_walk_rounded,
+                        size: 12, color: metaColor),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${pharmacy.distance.toStringAsFixed(1)} km',
+                      style: TextStyle(fontSize: 11, color: metaColor),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.star_rounded,
+                        size: 12, color: Color(0xFFF59E0B)),
+                    const SizedBox(width: 2),
+                    Text(
+                      pharmacy.rating.toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFF59E0B),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                // ── Status badges ────────────────────────────────────────
+                Row(
+                  children: [
+                    _StatusBadge(isOpen: pharmacy.isOpen),
+                    if (pharmacy.hasDelivery) ...[
+                      const SizedBox(width: 6),
+                      const _DeliveryBadge(),
+                    ],
+                  ],
+                ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
+class _StatusBadge extends StatelessWidget {
+  final bool isOpen;
+  const _StatusBadge({required this.isOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: isOpen
+            ? const Color(0x2610B981)
+            : const Color(0x26EF4444),
+        borderRadius: const BorderRadius.all(Radius.circular(6)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Text(
+          isOpen ? 'Open' : 'Closed',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isOpen
+                ? const Color(0xFF10B981)
+                : const Color(0xFFEF4444),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DeliveryBadge extends StatelessWidget {
+  const _DeliveryBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        color: Color(0x260EA5E9),
+        borderRadius: BorderRadius.all(Radius.circular(6)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delivery_dining_rounded,
+                size: 12, color: Color(0xFF0EA5E9)),
+            SizedBox(width: 3),
+            Text(
+              'Delivery',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0EA5E9),
+              ),
             ),
           ],
         ),
@@ -304,13 +354,22 @@ class _PharmacyCard extends StatelessWidget {
   }
 }
 
-class _ShimmerLoading extends StatelessWidget {
-  const _ShimmerLoading();
+// ════════════════════════════════════════════════════════════════════════════
+// SHIMMER LOADING (flat, no per-widget AnimationController)
+// ════════════════════════════════════════════════════════════════════════════
+
+/// A flat, unanimated skeleton placeholder for the pharmacy list.
+///
+/// Deliberately static (no animation ticker) to avoid creating AnimationController
+/// objects during a loading state that typically lasts < 1 second.
+/// A gentle pulse could be added later with a single shared ticker at the
+/// screen level if desired.
+class _PharmacyShimmerList extends StatelessWidget {
+  const _PharmacyShimmerList();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return SizedBox(
       height: 138,
       child: ListView.separated(
@@ -318,99 +377,129 @@ class _ShimmerLoading extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: 3,
         addAutomaticKeepAlives: false,
+        addRepaintBoundaries: false,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
-        itemBuilder: (context, index) => _ShimmerCard(isDark: isDark),
+        itemBuilder: (_, __) => _PharmacyShimmerCard(isDark: isDark),
       ),
     );
   }
 }
 
-/// Extracted shimmer item to avoid recreating identical decorations per index.
-class _ShimmerCard extends StatelessWidget {
+class _PharmacyShimmerCard extends StatelessWidget {
   final bool isDark;
-
-  const _ShimmerCard({required this.isDark});
+  const _PharmacyShimmerCard({required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    final shimmerColor =
-        isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final base = isDark ? DarkColors.surface : LightColors.surface;
+    final shimmer = isDark ? DarkColors.divider : LightColors.divider;
 
-    return Container(
+    return SizedBox(
       width: 170,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : Colors.white,
-        borderRadius: const BorderRadius.all(Radius.circular(18)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 42,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: shimmerColor,
-              borderRadius:
-                  const BorderRadius.all(Radius.circular(10)),
-            ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: base,
+          borderRadius: const BorderRadius.all(Radius.circular(18)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: shimmer,
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                ),
+                child: const SizedBox(height: 42, width: double.infinity),
+              ),
+              const SizedBox(height: 8),
+              DecoratedBox(
+                decoration: BoxDecoration(color: shimmer),
+                child: const SizedBox(height: 12, width: 100),
+              ),
+              const SizedBox(height: 6),
+              DecoratedBox(
+                decoration: BoxDecoration(color: shimmer),
+                child: const SizedBox(height: 11, width: 70),
+              ),
+              const SizedBox(height: 6),
+              DecoratedBox(
+                decoration: BoxDecoration(color: shimmer),
+                child: const SizedBox(height: 11, width: 60),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Container(
-            height: 12,
-            width: 100,
-            color: shimmerColor,
-          ),
-          const SizedBox(height: 6),
-          Container(
-            height: 11,
-            width: 70,
-            color: shimmerColor,
-          ),
-          const SizedBox(height: 6),
-          Container(
-            height: 11,
-            width: 60,
-            color: shimmerColor,
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  final VoidCallback onRetry;
+// ════════════════════════════════════════════════════════════════════════════
+// EMPTY / ERROR STATES
+// ════════════════════════════════════════════════════════════════════════════
 
-  const _ErrorState({required this.onRetry});
+class _EmptyPharmacyState extends StatelessWidget {
+  const _EmptyPharmacyState();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      height: 100,
+      child: Center(
+        child: Text(
+          'No pharmacies found nearby',
+          style: TextStyle(
+            fontSize: 13,
+            color:
+                isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
+class _PharmacyErrorState extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _PharmacyErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: 138,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline_rounded,
-                size: 40,
-                color: isDark
-                    ? const Color(0xFF6B7280)
-                    : const Color(0xFF9CA3AF)),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 36,
+              color: isDark ? DarkColors.textHint : LightColors.textHint,
+            ),
             const SizedBox(height: 8),
             Text(
               'Failed to load pharmacies',
               style: TextStyle(
-                  color: isDark
-                      ? const Color(0xFF9CA3AF)
-                      : const Color(0xFF6B7280)),
+                fontSize: 13,
+                color: isDark
+                    ? DarkColors.textSecondary
+                    : LightColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: onRetry,
-              child: const Text('Retry'),
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  color: AppColors.primaryBlue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
