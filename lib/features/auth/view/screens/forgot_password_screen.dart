@@ -67,19 +67,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                    size: 20,
-                  ),
-                  onPressed: () => context.pop(),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ),
+              // Align(
+              //   alignment: Alignment.topLeft,
+              //   child: IconButton(
+              //     icon: Icon(
+              //       Icons.arrow_back_ios_new_rounded,
+              //       color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+              //       size: 20,
+              //     ),
+              //     onPressed: () => context.pop(),
+              //     padding: EdgeInsets.zero,
+              //     constraints: const BoxConstraints(),
+              //   ),
+              // ),
               const SizedBox(height: 20),
 
               Center(
@@ -117,7 +117,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 100),
 
               AuthTextField(
                 label: 'Email',
@@ -142,7 +142,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Remember your password? ',
+                    'Remember your password ?',
                     style: TextStyle(
                       fontSize: 14,
                       color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,

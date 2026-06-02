@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, unused_element
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -110,12 +110,15 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               Align(
                 alignment: Alignment.topLeft,
                 child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                    size: 20,
+                  icon: Padding(
+                    padding: const EdgeInsets.only(right:20 ),
+                    child: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                      size: 20,
+                    ),
                   ),
-                  onPressed: () => context.pop(),
+                  onPressed: () => context.go(AppRoutes.register),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -205,19 +208,19 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                 const SizedBox(height: 16),
 
                 // Resend Button
-                _ResendCodeButton(onPressed: _handleResendEmail),
-                const SizedBox(height: 16),
+                // _ResendCodeButton(onPressed: _handleResendEmail),
+                // const SizedBox(height: 16),
 
-                TextButton(
-                  onPressed: () => context.go(AppRoutes.home),
-                  child: Text(
-                    'Skip for now',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? DarkColors.textHint : LightColors.textHint,
-                    ),
-                  ),
-                ),
+                // TextButton(
+                //   onPressed: () => context.go(AppRoutes.home),
+                //   child: Text(
+                //     'Skip for now',
+                //     style: TextStyle(
+                //       fontSize: 14,
+                //       color: isDark ? DarkColors.textHint : LightColors.textHint,
+                //     ),
+                //   ),
+                // ),
               ] else ...[
                 const SizedBox(height: 40),
                 Center(

@@ -51,6 +51,10 @@ dependencies:
   # Image Picker
   image_picker: ^1.1.2
 
+  # URL Launcher
+  url_launcher: ^6.3.0
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

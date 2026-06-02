@@ -2,31 +2,82 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pharmacy_app/core/theme/app_colors.dart';
 import 'package:pharmacy_app/core/models/pharmacy_model.dart';
+import 'package:pharmacy_app/core/services/geocoding_service.dart';
 
-class PharmacyDetailsScreen extends StatelessWidget {
+class PharmacyDetailsScreen extends StatefulWidget {
   final PharmacyModel pharmacy;
 
   const PharmacyDetailsScreen({super.key, required this.pharmacy});
 
   @override
+  State<PharmacyDetailsScreen> createState() => _PharmacyDetailsScreenState();
+}
+
+class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
+  String? _geocodedAddress;
+  bool _isLoadingAddress = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveAddress();
+  }
+
+  Future<void> _resolveAddress() async {
+    if (widget.pharmacy.latitude == 0 && widget.pharmacy.longitude == 0) {
+      if (mounted) {
+        setState(() {
+          _geocodedAddress = widget.pharmacy.address;
+          _isLoadingAddress = false;
+        });
+      }
+      return;
+    }
+
+    try {
+      final resolved = await GeocodingService.getAddressFromCoordinates(
+        widget.pharmacy.latitude,
+        widget.pharmacy.longitude,
+      );
+      if (mounted) {
+        setState(() {
+          _geocodedAddress = resolved ?? widget.pharmacy.address;
+          _isLoadingAddress = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error resolving pharmacy details address: $e');
+      if (mounted) {
+        setState(() {
+          _geocodedAddress = widget.pharmacy.address;
+          _isLoadingAddress = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final pharmacy = widget.pharmacy;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
       body: Stack(
         children: [
-          // Scrollable content
+          // Content Area
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Hero header
+              // Clean Header (Cover Image + Refactored Profile Card)
               SliverToBoxAdapter(child: _HeroHeader(pharmacy: pharmacy)),
-              // Spacer after hero
+              
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              // Info section title
+              
+              // Information Section Title
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -61,7 +112,8 @@ class PharmacyDetailsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Info cards
+              
+              // Info Cards
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -72,7 +124,10 @@ class PharmacyDetailsScreen extends StatelessWidget {
                         iconColor: AppColors.accentRed,
                         iconBg: AppColors.accentRed.withOpacity(0.1),
                         label: 'Address',
-                        value: pharmacy.address,
+                        value: _isLoadingAddress
+                            ? 'Loading address...'
+                            : (_geocodedAddress ?? pharmacy.address),
+                        isLoading: _isLoadingAddress,
                       ),
                       const SizedBox(height: 8),
                       _InfoCard(
@@ -107,7 +162,8 @@ class PharmacyDetailsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Services section
+              
+              // Services Section
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
               SliverToBoxAdapter(
                 child: Padding(
@@ -177,11 +233,12 @@ class PharmacyDetailsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Bottom padding for sticky actions
+              // Bottom padding for actions
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
-          // Sticky bottom actions
+          
+          // Sticky Bottom Actions
           Positioned(
             left: 0,
             right: 0,
@@ -203,108 +260,46 @@ class _HeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Stack(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Background gradient with pattern
-        Container(
-          height: 264,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: pharmacy.isOpen
-                  ? [
-                      const Color(0xFF06B6D4),
-                      const Color(0xFF0EA5E9),
-                      const Color(0xFF10B981),
-                    ]
-                  : [const Color(0xFFF59E0B), const Color(0xFFEF4444)],
+        // 1. Clean Banner Cover Image
+        Stack(
+          children: [
+            Container(
+              height: 200,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+                child: (pharmacy.imageUrl != null && pharmacy.imageUrl!.isNotEmpty)
+                    ? Image.network(
+                        pharmacy.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => _buildDefaultGradient(),
+                      )
+                    : _buildDefaultGradient(),
+              ),
             ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(32),
-              bottomRight: Radius.circular(32),
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Decorative circles
-              Positioned(
-                top: -30,
-                right: -30,
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -40,
-                left: -40,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.08),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 40,
-                left: 40,
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.06),
-                  ),
-                ),
-              ),
-              // Pharmacy icon in center
-              Positioned(
-                bottom: 30,
-                right: 24,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.15),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 2,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.local_pharmacy_rounded,
-                    size: 48,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Back + Favorite buttons
-        Positioned(
-          top: 12,
-          left: 12,
-          right: 12,
-          child: SafeArea(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
+            // Back button positioned safely on top of the banner image
+            Positioned(
+              top: 16,
+              left: 16,
+              child: SafeArea(
+                child: GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.black.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -314,185 +309,185 @@ class _HeroHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.favorite_border_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-        // Info card overlapping
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 10,
+        
+        // 2. Pharmacy Info Profile Card (No text overlaps!)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF111827) : Colors.white,
               borderRadius: BorderRadius.circular(AppRadius.xl),
               border: Border.all(
-                color: isDark
-                    ? const Color(0xFF1F2937)
-                    : const Color(0xFFE5E7EB),
+                color: isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
-                  blurRadius: 20,
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                  blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
+                // Clear Circular Avatar Image
+                Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isDark ? const Color(0xFF1F2937) : Colors.white,
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withOpacity(0.2),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: (pharmacy.imageUrl != null && pharmacy.imageUrl!.isNotEmpty)
+                        ? Image.network(
+                            pharmacy.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.local_pharmacy_rounded,
+                              size: 32,
+                              color: isDark ? Colors.white : AppColors.primaryBlue,
+                            ),
+                          )
+                        : Icon(
+                            Icons.local_pharmacy_rounded,
+                            size: 32,
+                            color: isDark ? Colors.white : AppColors.primaryBlue,
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                
+                // Pharmacy details column
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         pharmacy.name,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: isDark
-                              ? DarkColors.textPrimary
-                              : LightColors.textPrimary,
+                          color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                           letterSpacing: -0.3,
                         ),
                       ),
-                    ),
-                    if (pharmacy.isVerified)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primaryBlue, Color(0xFF38BDF8)],
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.verified_rounded,
-                              size: 12,
-                              color: Colors.white,
+                      const SizedBox(height: 6),
+                      if (pharmacy.isVerified) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.primaryBlue, Color(0xFF38BDF8)],
                             ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'Verified',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.verified_rounded, size: 12, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'Verified',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      
+                      // Status, Rating and Distance Wrap (Responsive wrap)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _StatusPill(isOpen: pharmacy.isOpen),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF59E0B).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  pharmacy.rating.toStringAsFixed(1),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFF59E0B)),
+                                ),
+                                Text(
+                                  ' (${pharmacy.reviewCount})',
+                                  style: TextStyle(fontSize: 10, color: isDark ? DarkColors.textHint : LightColors.textHint),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (pharmacy.distance > 0.0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.near_me_rounded,
+                                    size: 14,
+                                    color: isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${pharmacy.distance.toStringAsFixed(1)} km',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _StatusPill(isOpen: pharmacy.isOpen),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            size: 14,
-                            color: Color(0xFFF59E0B),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            pharmacy.rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFFF59E0B),
-                            ),
-                          ),
-                          Text(
-                            ' (${pharmacy.reviewCount})',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: isDark
-                                  ? DarkColors.textHint
-                                  : LightColors.textHint,
-                            ),
-                          ),
                         ],
                       ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.near_me_rounded,
-                            size: 14,
-                            color: isDark
-                                ? const Color(0xFF90CAF9)
-                                : AppColors.primaryBlue,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${pharmacy.distance.toStringAsFixed(1)} km',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: isDark
-                                  ? const Color(0xFF90CAF9)
-                                  : AppColors.primaryBlue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDefaultGradient() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: pharmacy.isOpen
+              ? [const Color(0xFF06B6D4), const Color(0xFF0EA5E9), const Color(0xFF10B981)]
+              : [const Color(0xFFF59E0B), const Color(0xFFEF4444)],
+        ),
+      ),
     );
   }
 }
@@ -544,6 +539,7 @@ class _InfoCard extends StatelessWidget {
   final Color iconBg;
   final String label;
   final String value;
+  final bool isLoading;
 
   const _InfoCard({
     required this.icon,
@@ -551,6 +547,7 @@ class _InfoCard extends StatelessWidget {
     required this.iconBg,
     required this.label,
     required this.value,
+    this.isLoading = false,
   });
 
   @override
@@ -592,20 +589,71 @@ class _InfoCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
+                if (isLoading)
+                  const _ShimmerText(width: 180, height: 14)
+                else
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? DarkColors.textPrimary
+                          : LightColors.textPrimary,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ShimmerText extends StatefulWidget {
+  final double width;
+  final double height;
+
+  const _ShimmerText({required this.width, required this.height});
+
+  @override
+  State<_ShimmerText> createState() => _ShimmerTextState();
+}
+
+class _ShimmerTextState extends State<_ShimmerText>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 0.3, end: 0.8).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return FadeTransition(
+      opacity: _opacity,
+      child: Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+          borderRadius: BorderRadius.circular(4),
+        ),
       ),
     );
   }
@@ -654,6 +702,66 @@ class _BottomActions extends StatelessWidget {
 
   const _BottomActions({required this.pharmacy});
 
+  String _formatWhatsAppNumber(String phone) {
+    final String digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('01') && digits.length == 11) {
+      return '2$digits';
+    }
+    return digits;
+  }
+
+  Future<void> _makeCall(String? phone, BuildContext context) async {
+    if (phone == null || phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No phone number available for this pharmacy')),
+      );
+      return;
+    }
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phone,
+    );
+    try {
+      final bool launched = await launchUrl(launchUri);
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch phone call to $phone')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error dialing: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _openWhatsApp(String? phone, BuildContext context) async {
+    if (phone == null || phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No WhatsApp number available for this pharmacy')),
+      );
+      return;
+    }
+    final String formatted = _formatWhatsAppNumber(phone);
+    final Uri whatsappUri = Uri.parse("https://wa.me/$formatted");
+    try {
+      final bool launched = await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch WhatsApp')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error launching WhatsApp: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -672,35 +780,31 @@ class _BottomActions extends StatelessWidget {
       child: SafeArea(
         child: Row(
           children: [
-            // Call
+            // Call Button (Primary Styled CTA)
             Expanded(
               child: _ActionBtn(
                 icon: Icons.phone_rounded,
                 label: 'Call',
-                color: AppColors.primaryGreen,
-                onTap: () => HapticFeedback.lightImpact(),
-              ),
-            ),
-            const SizedBox(width: 10),
-            // Chat (primary)
-            Expanded(
-              flex: 2,
-              child: _ActionBtn(
-                icon: Icons.chat_rounded,
-                label: 'Chat Now',
                 color: AppColors.primaryBlue,
                 isPrimary: true,
-                onTap: () => HapticFeedback.mediumImpact(),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _makeCall(pharmacy.phone, context);
+                },
               ),
             ),
-            const SizedBox(width: 10),
-            // Directions
+            const SizedBox(width: 12),
+            // WhatsApp Button
             Expanded(
               child: _ActionBtn(
-                icon: Icons.directions_rounded,
-                label: 'Map',
-                color: AppColors.accentPurple,
-                onTap: () => HapticFeedback.lightImpact(),
+                icon: Icons.chat_bubble_outline_rounded,
+                label: 'WhatsApp',
+                color: const Color(0xFF25D366),
+                isPrimary: false,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _openWhatsApp(pharmacy.phone, context);
+                },
               ),
             ),
           ],
@@ -764,31 +868,34 @@ class _ActionBtnState extends State<_ActionBtn>
       child: ScaleTransition(
         scale: _scale,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
           decoration: BoxDecoration(
             color: widget.isPrimary
                 ? widget.color
                 : widget.color.withOpacity(isDark ? 0.15 : 0.1),
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                widget.icon,
-                size: 20,
-                color: widget.isPrimary ? Colors.white : widget.color,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 18,
                   color: widget.isPrimary ? Colors.white : widget.color,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: widget.isPrimary ? Colors.white : widget.color,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

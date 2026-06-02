@@ -94,35 +94,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Back button
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: isDark
-                          ? DarkColors.textPrimary
-                          : LightColors.textPrimary,
-                      size: 20,
-                    ),
-                    onPressed: () => context.go(AppRoutes.onboarding),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ),
+                // Align(
+                //   alignment: Alignment.topLeft,
+                //   child: IconButton(
+                //     icon: Icon(
+                //       Icons.arrow_back_ios_new_rounded,
+                //       color: isDark
+                //           ? DarkColors.textPrimary
+                //           : LightColors.textPrimary,
+                //       size: 20,
+                //     ),
+                //     onPressed: () => context.go(AppRoutes.onboarding),
+                //     padding: EdgeInsets.zero,
+                //     constraints: const BoxConstraints(),
+                //   ),
+                // ),
                 const SizedBox(height: 20),
                 // Logo/Title
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(12),
+                SizedBox(
+                  width: 150,
+                  height:150,
+                  child: Center(
                     child: Image.asset(
                       'assets/logo.png',
-                      fit: BoxFit.contain,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
@@ -199,87 +194,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Extracted Login button
                 _LoginSubmitButton(onPressed: _handleLogin),
                 const SizedBox(height: 24),
-
-                // Divider
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: isDark ? DarkColors.divider : LightColors.divider,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'or continue with',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark
-                              ? DarkColors.textHint
-                              : LightColors.textHint,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: isDark ? DarkColors.divider : LightColors.divider,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Social login buttons (placeholder)
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                        
-                        },
-                        icon: const Icon(Icons.g_mobiledata, size: 24),
-                        label: const Text('Google'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                          side: BorderSide(
-                            color: isDark
-                                ? DarkColors.divider
-                                : LightColors.divider,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          // TODO: Implement Apple login
-                        },
-                        icon: const Icon(Icons.apple, size: 22),
-                        label: const Text('Apple'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                          side: BorderSide(
-                            color: isDark
-                                ? DarkColors.divider
-                                : LightColors.divider,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
 
                 // Register link
                 Row(

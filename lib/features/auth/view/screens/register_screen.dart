@@ -121,37 +121,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
-                      size: 20,
-                    ),
-                    onPressed: () => context.go(AppRoutes.login),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Logo/Title
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(12),
+                // Align(
+                //   alignment: Alignment.topLeft,
+                //   child: IconButton(
+                //     icon: Icon(
+                //       Icons.arrow_back_ios_new_rounded,
+                //       color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                //       size: 20,
+                //     ),
+                //     onPressed: () => context.go(AppRoutes.login),
+                //     padding: EdgeInsets.zero,
+                //     constraints: const BoxConstraints(),
+                //   ),
+                // ),
+                // const SizedBox(height: 20),
+                // // Logo/Title
+               SizedBox(
+                  width: 150,
+                  height:150,
+                  child: Center(
                     child: Image.asset(
                       'assets/logo.png',
-                      fit: BoxFit.contain,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                // const SizedBox(height: 24),
                 Text(
                   'Create Account',
                   textAlign: TextAlign.center,
@@ -170,7 +165,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 15),
 
                 AuthTextField(
                   label: 'Full Name',
@@ -180,7 +175,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   errorText: _fullNameError,
                   onChanged: (value) => _validateFullName(value),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 5),
 
                 AuthTextField(
                   label: 'Email',
@@ -191,7 +186,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   errorText: _emailError,
                   onChanged: (value) => _validateEmail(value),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 5),
 
                 AuthTextField(
                   label: 'Password',
@@ -202,7 +197,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   errorText: _passwordError,
                   onChanged: (value) => _validatePassword(value),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 5),
 
                 AuthTextField(
                   label: 'Confirm Password',
@@ -259,7 +254,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 10),
 
                 // Extracted Error Banner
                 const _RegisterAuthErrorBanner(),
@@ -267,7 +262,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Extracted Register Button
                 _RegisterButton(onPressed: _handleRegister),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 15),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

@@ -60,15 +60,18 @@ class _AuthTextFieldState extends State<AuthTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: _isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: _isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+            ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 2),
         Container(
           decoration: BoxDecoration(
             color: _isDark ? DarkColors.card : LightColors.card,
