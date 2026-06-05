@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:Elaaj/core/routing/app_routes.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/auth/controller/auth_controllers.dart';
 import 'package:Elaaj/features/auth/view/widgets/auth_text_field.dart';
 import 'package:Elaaj/features/auth/view/widgets/auth_button.dart';
 
@@ -32,21 +33,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _acceptTerms = false;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authProvider.notifier).clearError();
-    });
-  }
-
-  @override
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    // Clear error on dispose to prevent leaks
-    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -102,7 +93,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    final success = await ref.read(authProvider.notifier).register(
+    final success = await ref.read(registerControllerProvider.notifier).register(
           _fullNameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text,
@@ -286,7 +277,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        ref.read(authProvider.notifier).clearError();
                         context.push(AppRoutes.login);
                       },
                       child: const Text(
@@ -315,10 +305,10 @@ class _RegisterButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    final registerState = ref.watch(registerControllerProvider);
     return AuthButton(
       text: 'Create Account',
-      isLoading: isLoading,
+      isLoading: registerState.isLoading,
       onPressed: onPressed,
     );
   }
@@ -329,7 +319,8 @@ class _RegisterAuthErrorBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final error = ref.watch(authProvider.select((s) => s.error));
+    final registerState = ref.watch(registerControllerProvider);
+    final error = registerState.error;
     if (error == null) return const SizedBox.shrink();
 
     return Column(
@@ -349,7 +340,7 @@ class _RegisterAuthErrorBanner extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  error,
+                  getErrorMessage(error),
                   style: const TextStyle(color: AppColors.accentRed, fontSize: 13),
                 ),
               ),

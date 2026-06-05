@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:Elaaj/core/routing/app_routes.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
-import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/auth/controller/auth_controllers.dart';
 import 'package:Elaaj/features/auth/view/widgets/auth_text_field.dart';
 import 'package:Elaaj/features/auth/view/widgets/auth_button.dart';
 
@@ -30,20 +30,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   bool _isSuccess = false;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authProvider.notifier).clearError();
-    });
-  }
-
-  @override
   void dispose() {
     _otpController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    // Clear error on dispose to prevent leaks
-    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -79,10 +69,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     if (!_validatePassword(_passwordController.text)) return;
     if (!_validateConfirmPassword(_confirmPasswordController.text)) return;
 
-    // Clear any previous errors
-    ref.read(authProvider.notifier).clearError();
-
-    final success = await ref.read(authProvider.notifier).resetPassword(
+    final success = await ref.read(resetPasswordControllerProvider.notifier).resetPassword(
           _otpController.text.trim(),
           _passwordController.text,
           _confirmPasswordController.text,
@@ -94,10 +81,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   Future<void> _handleResendCode() async {
-    ref.read(authProvider.notifier).clearError();
     final success = await ref
-        .read(authProvider.notifier)
-        .sendPasswordResetEmail(widget.email);
+        .read(resetPasswordControllerProvider.notifier)
+        .resendCode(widget.email);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -311,7 +297,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   text: 'Go to Login',
                   isLoading: false,
                   onPressed: () {
-                    ref.read(authProvider.notifier).clearError();
                     context.go(AppRoutes.login);
                   },
                 ),
@@ -368,10 +353,10 @@ class _ResetPasswordButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    final resetState = ref.watch(resetPasswordControllerProvider);
     return AuthButton(
       text: 'Reset Password',
-      isLoading: isLoading,
+      isLoading: resetState.isLoading,
       onPressed: onPressed,
     );
   }
@@ -382,7 +367,8 @@ class _ResetErrorBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final error = ref.watch(authProvider.select((s) => s.error));
+    final resetState = ref.watch(resetPasswordControllerProvider);
+    final error = resetState.error;
     if (error == null) return const SizedBox.shrink();
 
     return Column(
@@ -399,7 +385,10 @@ class _ResetErrorBanner extends ConsumerWidget {
               const Icon(Icons.error_outline, color: AppColors.accentRed, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(error, style: const TextStyle(color: AppColors.accentRed, fontSize: 13)),
+                child: Text(
+                  getErrorMessage(error),
+                  style: const TextStyle(color: AppColors.accentRed, fontSize: 13),
+                ),
               ),
             ],
           ),

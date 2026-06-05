@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:Elaaj/core/routing/app_routes.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/auth/controller/auth_controllers.dart';
 import 'package:Elaaj/features/auth/view/widgets/auth_text_field.dart';
 import 'package:Elaaj/features/auth/view/widgets/auth_button.dart';
 
@@ -24,18 +25,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   String? _emailError;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authProvider.notifier).clearError();
-    });
-  }
-
-  @override
   void dispose() {
     _emailController.dispose();
-    // Clear error on dispose to prevent leaks
-    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -52,12 +43,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final email = _emailController.text.trim();
     if (!_validateEmail(email)) return;
 
-    // Clear any previous errors
-    ref.read(authProvider.notifier).clearError();
-
     final success = await ref
-        .read(authProvider.notifier)
-        .sendPasswordResetEmail(email);
+        .read(forgotPasswordControllerProvider.notifier)
+        .forgotPassword(email);
 
     if (success && mounted) {
       // Navigate to reset password screen, passing the email
@@ -160,7 +148,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      ref.read(authProvider.notifier).clearError();
                       context.pop();
                     },
                     child: const Text(
@@ -190,10 +177,10 @@ class _ForgotSubmitButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    final forgotState = ref.watch(forgotPasswordControllerProvider);
     return AuthButton(
       text: 'Send Verification Code',
-      isLoading: isLoading,
+      isLoading: forgotState.isLoading,
       onPressed: onPressed,
     );
   }
@@ -204,7 +191,8 @@ class _ForgotErrorBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final error = ref.watch(authProvider.select((s) => s.error));
+    final forgotState = ref.watch(forgotPasswordControllerProvider);
+    final error = forgotState.error;
     if (error == null) return const SizedBox.shrink();
 
     return Column(
@@ -221,7 +209,10 @@ class _ForgotErrorBanner extends ConsumerWidget {
               const Icon(Icons.error_outline, color: AppColors.accentRed, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(error, style: const TextStyle(color: AppColors.accentRed, fontSize: 13)),
+                child: Text(
+                  getErrorMessage(error),
+                  style: const TextStyle(color: AppColors.accentRed, fontSize: 13),
+                ),
               ),
             ],
           ),

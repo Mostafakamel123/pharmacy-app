@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:Elaaj/core/routing/app_routes.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/auth/controller/auth_controllers.dart';
 import 'package:Elaaj/features/auth/view/widgets/auth_button.dart';
 import 'package:Elaaj/features/auth/view/widgets/auth_text_field.dart';
 
@@ -23,18 +24,8 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   String? _otpError;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authProvider.notifier).clearError();
-    });
-  }
-
-  @override
   void dispose() {
     _otpController.dispose();
-    // Clear error on dispose to prevent leaks
-    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -50,7 +41,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   Future<void> _handleResendEmail() async {
     final email = widget.email;
     if (email != null) {
-      await ref.read(authProvider.notifier).sendVerificationEmail(email);
+      await ref.read(emailVerificationControllerProvider.notifier).resendVerification(email);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -76,7 +67,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
 
     if (!_validateOtp(_otpController.text.trim())) return;
 
-    final success = await ref.read(authProvider.notifier).verifyEmail(
+    final success = await ref.read(emailVerificationControllerProvider.notifier).verifyEmail(
       email,
       _otpController.text.trim(),
     );
@@ -269,7 +260,6 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                   text: 'Continue to Home',
                   isLoading: false,
                   onPressed: () {
-                    ref.read(authProvider.notifier).clearError();
                     context.go(AppRoutes.home);
                   },
                 ),
@@ -290,10 +280,10 @@ class _VerifyEmailButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    final verificationState = ref.watch(emailVerificationControllerProvider);
     return AuthButton(
       text: 'Verify Email',
-      isLoading: isLoading,
+      isLoading: verificationState.isLoading,
       onPressed: onPressed,
     );
   }
@@ -305,10 +295,10 @@ class _ResendCodeButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
+    final verificationState = ref.watch(emailVerificationControllerProvider);
     return AuthButton(
       text: 'Resend Code',
-      isLoading: isLoading,
+      isLoading: verificationState.isLoading,
       isOutlined: true,
       onPressed: onPressed,
     );
@@ -320,7 +310,8 @@ class _VerificationErrorBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final error = ref.watch(authProvider.select((s) => s.error));
+    final verificationState = ref.watch(emailVerificationControllerProvider);
+    final error = verificationState.error;
     if (error == null) return const SizedBox.shrink();
 
     return Column(
@@ -338,7 +329,7 @@ class _VerificationErrorBanner extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  error,
+                  getErrorMessage(error),
                   style: const TextStyle(color: AppColors.accentRed, fontSize: 13),
                 ),
               ),

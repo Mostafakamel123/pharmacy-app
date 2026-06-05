@@ -83,8 +83,15 @@ class ValidationFailure extends Failure {
     
     final errorStrings = <String>[];
     errors!.forEach((field, messages) {
-      errorStrings.add('$field: ${messages.join(', ')}');
+      if (messages.isNotEmpty) {
+        if (field.toLowerCase() == 'general') {
+          errorStrings.add(messages.join(', '));
+        } else {
+          errorStrings.add('$field: ${messages.join(', ')}');
+        }
+      }
     });
+    if (errorStrings.isEmpty) return message;
     return errorStrings.join('\n');
   }
 }
