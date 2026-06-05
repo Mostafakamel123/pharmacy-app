@@ -201,17 +201,43 @@ class _ProfileNameWidget extends ConsumerWidget {
 class _ProfileLocationWidget extends ConsumerWidget {
   const _ProfileLocationWidget();
 
+  Future<void> _refreshLocation(WidgetRef ref) async {
+    // Invalidate both location providers so they re-fetch fresh GPS coords.
+    ref.invalidate(locationProvider);
+    ref.invalidate(locationNameProvider);
+
+    // Wait for the fresh location to resolve, then refresh nearby pharmacies.
+    try {
+      final loc = await ref.read(locationProvider.future);
+      if (loc != null) {
+        ref.read(nearbyPharmaciesProvider.notifier).refresh();
+      }
+    } catch (_) {
+      // Location failed — nearby pharmacies keep their current state.
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider);
+    final locationAsync = ref.watch(locationProvider);
     final locationNameAsync = ref.watch(locationNameProvider);
+
+    // True while GPS is being acquired.
+    final isRefreshing = locationAsync.isLoading;
 
     final String displayLocation = locationNameAsync.maybeWhen(
       data: (name) => name ?? profileAsync.valueOrNull?.location ?? 'Assiut',
       orElse: () => profileAsync.valueOrNull?.location ?? 'Assiut',
     );
 
-    return _LocationPill(location: displayLocation);
+    return GestureDetector(
+      onTap: isRefreshing ? null : () => _refreshLocation(ref),
+      child: _LocationPill(
+        location: displayLocation,
+        isRefreshing: isRefreshing,
+      ),
+    );
   }
 }
 
@@ -274,7 +300,8 @@ class _HeaderIconButton extends StatelessWidget {
 
 class _LocationPill extends StatelessWidget {
   final String? location;
-  const _LocationPill({this.location});
+  final bool isRefreshing;
+  const _LocationPill({this.location, this.isRefreshing = false});
 
   @override
   Widget build(BuildContext context) {
@@ -284,7 +311,8 @@ class _LocationPill extends StatelessWidget {
     final color =
         isDark ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9);
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
@@ -292,39 +320,58 @@ class _LocationPill extends StatelessWidget {
             : const Color(0xD9FFFFFF),
         borderRadius: const BorderRadius.all(Radius.circular(20)),
         border: Border.all(
-          color: isDark
-              ? const Color(0x330EA5E9)
-              : const Color(0xFFE8F5E9),
-          width: 1,
+          color: isRefreshing
+              ? color.withOpacity(0.6)
+              : isDark
+                  ? const Color(0x330EA5E9)
+                  : const Color(0xFFE8F5E9),
+          width: isRefreshing ? 1.5 : 1,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x05000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            color: isRefreshing
+                ? color.withOpacity(0.15)
+                : const Color(0x05000000),
+            blurRadius: isRefreshing ? 12 : 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.location_on_rounded, size: 13.5, color: color),
+          // Icon or loading spinner
+          if (isRefreshing)
+            SizedBox(
+              width: 13.5,
+              height: 13.5,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.8,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            )
+          else
+            Icon(Icons.location_on_rounded, size: 13.5, color: color),
           const SizedBox(width: 5),
           Text(
-            display,
+            isRefreshing ? 'Updating...' : display,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
-              color: isDark
-                  ? const Color(0xFF38BDF8)
-                  : const Color(0xFF0F172A),
+              color: isRefreshing
+                  ? color
+                  : isDark
+                      ? const Color(0xFF38BDF8)
+                      : const Color(0xFF0F172A),
               letterSpacing: -0.1,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(width: 4),
-          Icon(Icons.keyboard_arrow_down_rounded, size: 13.5, color: color),
+          // Hide arrow while refreshing
+          if (!isRefreshing)
+            Icon(Icons.keyboard_arrow_down_rounded, size: 13.5, color: color),
         ],
       ),
     );

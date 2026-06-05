@@ -1,6 +1,7 @@
 // ignore_for_file: use_super_parameters
 
-import 'dart:async';
+
+
 import 'package:Elaaj/core/constants/app_constants.dart';
 import 'package:Elaaj/core/helpers/local_storage_helper.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
@@ -51,31 +52,27 @@ class NotFoundScreen extends StatelessWidget {
   }
 }
 
-/// A Listenable that notifies GoRouter when a Stream emits a new value.
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
-    _subscription = stream.asBroadcastStream().listen(
-          (dynamic_) => notifyListeners(),
-        );
-  }
-
-  late final StreamSubscription<dynamic> _subscription;
-
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
+/// A [ChangeNotifier] that watches a Riverpod provider and notifies
+/// GoRouter whenever the provider's value changes.
+///
+/// This is more robust than listening to a [StateNotifier]'s stream directly
+/// because it survives provider invalidation/recreation (e.g. after logout).
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier(ProviderListenable<AuthState> listenable, Ref ref) {
+    ref.listen<AuthState>(listenable, (_, __) => notifyListeners());
   }
 }
 
 // App Router Configuration Provider
 final Provider<GoRouter> routerProvider = Provider<GoRouter>((ref) {
-  final authNotifier = ref.watch(authProvider.notifier);
+  final refreshNotifier = _RouterRefreshNotifier(authProvider, ref);
+
+  // Keep refreshNotifier alive as long as routerProvider is alive.
+  ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
     initialLocation: AppRoutes.onboarding,
-    refreshListenable: GoRouterRefreshStream(authNotifier.stream),
+    refreshListenable: refreshNotifier,
     errorBuilder: (context, state) => const NotFoundScreen(),
     redirect: (context, state) {
       final authState = ref.read(authProvider);

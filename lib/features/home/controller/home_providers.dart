@@ -3,6 +3,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 import 'package:Elaaj/features/posts/model/post_model.dart';
 import 'package:Elaaj/core/models/pharmacy_model.dart';
 import 'package:geolocator/geolocator.dart';
@@ -96,7 +97,10 @@ final locationNameProvider = FutureProvider<String?>((ref) async {
 // NEARBY PHARMACIES PROVIDER - Connected to /api/Pharmacies/nearby
 // ============================================================================
 
+// USER-SCOPED: auto-resets when auth user changes.
 final nearbyPharmaciesProvider = StateNotifierProvider<NearbyPharmaciesNotifier, AsyncValue<List<PharmacyModel>>>((ref) {
+  // Re-create whenever login state or user identity changes.
+  ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
   return NearbyPharmaciesNotifier(ref);
 });
 
@@ -149,7 +153,10 @@ print('✅ Nearby API returned ${pharmacies.length} pharmacies');
 // RECENT POSTS PROVIDER - Connected to /api/Posts
 // ============================================================================
 
+// USER-SCOPED: auto-resets when auth user changes.
 final recentPostsProvider = StateNotifierProvider<RecentPostsNotifier, AsyncValue<List<PostModel>>>((ref) {
+  // Re-create whenever login state or user identity changes.
+  ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
   return RecentPostsNotifier();
 });
 

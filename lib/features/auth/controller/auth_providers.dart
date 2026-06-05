@@ -1,5 +1,6 @@
 import 'package:Elaaj/core/constants/app_constants.dart';
 import 'package:Elaaj/core/helpers/local_storage_helper.dart';
+import 'package:Elaaj/features/auth/controller/auth_invalidation.dart';
 import 'package:Elaaj/features/auth/model/auth_user.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/core/network/failure.dart';
@@ -48,8 +49,9 @@ class AuthState {
 /// Auth notifier using StateNotifier (following existing pattern)
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
+  final Ref _ref;
 
-  AuthNotifier(this._authService) : super(_getInitialState()) {
+  AuthNotifier(this._authService, this._ref) : super(_getInitialState()) {
     // Check if user is already logged in on initialization
     _checkAuthStatus();
   }
@@ -92,11 +94,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (!state.isAuthenticated) {
         state = state.copyWith(isLoading: true);
       }
-      
-      // Get profile info from API
-      final profileData = await _authService.getProfileInfo();
 
-      if (profileData != null) {
+      // Get FULL profile from /api/identity/profile (includes id, fullName, etc.)
+      // This is more reliable than /api/identity/manage/info which only returns email.
+      final profileData = await _authService.getProfile();
+
+      if (profileData != null && profileData.isNotEmpty) {
         final user = AuthUser.fromJson(profileData);
         state = AuthState(
           user: user,
@@ -107,16 +110,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Cache the fresh profile info
         await LocalStorageHelper.setObject(AppConstants.userDataKey, profileData);
       } else {
-        // No user from API or API failed.
-        // If we are already authenticated from local storage, keep it (offline scenario).
-        if (state.user == null) {
-          state = AuthState.initial;
+        // Profile API failed — fallback to manage/info for at least email verification status
+        final infoData = await _authService.getProfileInfo();
+        if (infoData != null) {
+          final isVerified = infoData['isEmailConfirmed'] as bool? ?? false;
+          // Keep existing cached user if available, just update email verification
+          if (state.user != null) {
+            state = state.copyWith(
+              isEmailVerified: isVerified,
+              isLoading: false,
+            );
+          } else {
+            // No cached user and profile API failed — log out
+            state = AuthState.initial;
+          }
         } else {
-          state = state.copyWith(isLoading: false);
+          // Both APIs failed — keep cached state if any (offline scenario)
+          if (state.user == null) {
+            state = AuthState.initial;
+          } else {
+            state = state.copyWith(isLoading: false);
+          }
         }
       }
     } catch (e) {
-      // On error (e.g. no internet), if we are already authenticated, keep it.
+      // On error (e.g. no internet), keep cached state if available
       if (state.user == null) {
         state = AuthState.initial;
       } else {
@@ -204,6 +222,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _authService.logout();
     } finally {
+      // Setting state to initial is enough:
+      // • All user-scoped providers watch authProvider via .select() and
+      //   will auto-reset when isAuthenticated flips to false.
+      // • The router's refreshListenable picks up the state change and
+      //   redirects to the login screen immediately.
       state = AuthState.initial;
     }
   }
@@ -390,7 +413,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 /// Auth provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final authService = ref.read(authServiceProvider);
-  return AuthNotifier(authService);
+  // Pass ref so AuthNotifier can invalidate all user-scoped providers on logout.
+  return AuthNotifier(authService, ref);
 });
 
 /// Auth service provider (for dependency injection)

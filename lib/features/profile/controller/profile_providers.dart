@@ -1,19 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 import 'package:Elaaj/features/auth/service/auth_service.dart';
 import 'package:Elaaj/features/profile/model/profile_model.dart';
 
-// Profile provider
+// USER-SCOPED: Must be invalidated on logout — see auth_invalidation.dart.
+// Also auto-resets when the authenticated user changes via ref.watch on isAuthenticated.
 final profileProvider =
     StateNotifierProvider<ProfileNotifier, AsyncValue<UserProfileModel>>((ref) {
-  return ProfileNotifier(ref);
+  // Watch isAuthenticated: when it flips true (login) or false (logout/switch),
+  // Riverpod disposes this notifier and creates a fresh one automatically.
+  // We also watch user?.id so switching accounts (same isAuthenticated=true) also triggers a reset.
+  final authKey = ref.watch(
+    authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'),
+  );
+  final isAuthenticated = authKey.startsWith('true');
+  return ProfileNotifier(ref, isAuthenticated: isAuthenticated);
 });
 
 class ProfileNotifier extends StateNotifier<AsyncValue<UserProfileModel>> {
   final Ref ref;
+  final bool isAuthenticated;
   final AuthService _authService = AuthServiceImpl();
 
-  ProfileNotifier(this.ref) : super(const AsyncValue.loading()) {
-    _loadProfile();
+  ProfileNotifier(this.ref, {required this.isAuthenticated})
+      : super(const AsyncValue.loading()) {
+    if (isAuthenticated) {
+      _loadProfile();
+    } else {
+      state = const AsyncValue.loading();
+    }
   }
 
   Future<void> _loadProfile() async {

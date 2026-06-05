@@ -3,6 +3,7 @@ import '../model/chat_model.dart';
 import '../model/chat_user_model.dart';
 import '../model/message_model.dart';
 import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:Elaaj/features/prescription/controller/patient_prescription_providers.dart';
 
@@ -206,7 +207,9 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
   }
 }
 
+// USER-SCOPED: auto-resets when auth user changes.
 final chatsProvider = StateNotifierProvider<ChatsNotifier, AsyncValue<List<ChatModel>>>((ref) {
+  ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
   return ChatsNotifier(ref);
 });
 

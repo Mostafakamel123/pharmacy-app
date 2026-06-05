@@ -5,8 +5,9 @@ import 'package:Elaaj/features/auth/service/auth_service.dart';
 import 'package:Elaaj/features/pharmacies/model/user_pharmacy_model.dart';
 import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 
-/// Provider for managing user's pharmacies
+/// USER-SCOPED: auto-resets when auth user changes.
 final myPharmaciesProvider = StateNotifierProvider<MyPharmaciesNotifier, AsyncValue<List<UserPharmacyModel>>>((ref) {
+  ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
   return MyPharmaciesNotifier(ref);
 });
 

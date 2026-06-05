@@ -2,9 +2,11 @@ import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/core/network/api_endpoints.dart';
 import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 
-// Nearby pharmacies provider
+// USER-SCOPED: auto-resets when auth user changes.
 final nearbyPharmaciesProvider = StateNotifierProvider<NearbyPharmaciesNotifier, AsyncValue<List<PharmacyModel>>>((ref) {
+  ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
   return NearbyPharmaciesNotifier();
 });
 
@@ -144,8 +146,9 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
 // Selected pharmacy provider
 final selectedPharmacyProvider = StateProvider<PharmacyModel?>((ref) => null);
 
-// Favorites provider
+// USER-SCOPED: auto-resets when auth user changes.
 final favoritePharmaciesProvider = StateNotifierProvider<FavoritePharmaciesNotifier, Set<String>>((ref) {
+  ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
   return FavoritePharmaciesNotifier();
 });
 

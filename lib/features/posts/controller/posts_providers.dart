@@ -2,15 +2,17 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:Elaaj/features/posts/model/post_model.dart';
 
 // Selected category filter provider (kept for legacy references, default to null)
 final selectedCategoryProvider = StateProvider<PostCategory?>((ref) => null);
 
-// Posts feed provider
+// USER-SCOPED: auto-resets when auth user changes.
 final postsFeedProvider =
     StateNotifierProvider<PostsFeedNotifier, AsyncValue<List<PostModel>>>((ref) {
+  ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
   return PostsFeedNotifier();
 });
 
@@ -55,9 +57,10 @@ class PostsFeedNotifier extends StateNotifier<AsyncValue<List<PostModel>>> {
   }
 }
 
-// My posts provider
+// USER-SCOPED: auto-resets when auth user changes.
 final myPostsProvider =
     StateNotifierProvider<MyPostsNotifier, AsyncValue<List<PostModel>>>((ref) {
+  ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
   return MyPostsNotifier(ref);
 });
 
