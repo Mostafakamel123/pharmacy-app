@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
 import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/core/config/env_config.dart';
 
 class PharmacyCard extends StatefulWidget {
   final PharmacyModel pharmacy;
@@ -52,6 +53,27 @@ class _PharmacyCardState extends State<PharmacyCard>
 
   void _onTapCancel() => _controller.reverse();
 
+  Widget _buildPlaceholder(PharmacyModel pharmacy) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: pharmacy.isOpen
+              ? [const Color(0xFFE0F2FE), const Color(0xFFDCFCE7)]
+              : [const Color(0xFFFEF3C7), const Color(0xFFFEE2E2)],
+        ),
+      ),
+      child: Icon(
+        pharmacy.isOpen
+            ? Icons.local_pharmacy_rounded
+            : Icons.local_pharmacy_outlined,
+        size: 32,
+        color: pharmacy.isOpen
+            ? AppColors.primaryGreen
+            : const Color(0xFFF59E0B),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -86,25 +108,36 @@ class _PharmacyCardState extends State<PharmacyCard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Pharmacy image/logo
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: pharmacy.isOpen
-                        ? [const Color(0xFFE0F2FE), const Color(0xFFDCFCE7)]
-                        : [const Color(0xFFFEF3C7), const Color(0xFFFEE2E2)],
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Icon(
-                  pharmacy.isOpen
-                      ? Icons.local_pharmacy_rounded
-                      : Icons.local_pharmacy_outlined,
-                  size: 32,
-                  color: pharmacy.isOpen
-                      ? AppColors.primaryGreen
-                      : const Color(0xFFF59E0B),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: pharmacy.imageUrl != null && pharmacy.imageUrl!.isNotEmpty
+                      ? Image.network(
+                          pharmacy.imageUrl!.startsWith('http')
+                              ? pharmacy.imageUrl!
+                              : '${EnvConfig.apiBaseUrl}${pharmacy.imageUrl}',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(pharmacy),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: isDark ? DarkColors.surface : LightColors.surface,
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : _buildPlaceholder(pharmacy),
                 ),
               ),
               const SizedBox(width: 12),

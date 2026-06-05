@@ -7,7 +7,6 @@ import 'package:Elaaj/features/pharmacies/controller/pharmacy_providers.dart';
 import 'package:Elaaj/features/pharmacies/view/pharmacy_details_screen.dart';
 import 'package:Elaaj/features/pharmacies/view/widgets/pharmacy_card.dart';
 import 'package:Elaaj/features/pharmacies/view/widgets/pharmacy_filter_bar.dart';
-import 'package:Elaaj/features/pharmacies/view/widgets/pharmacy_map_preview.dart';
 
 class NearbyPharmaciesScreen extends ConsumerWidget {
   const NearbyPharmaciesScreen({super.key});
@@ -111,21 +110,7 @@ class NearbyPharmaciesScreen extends ConsumerWidget {
           ),
           // Filter bar
           const SliverToBoxAdapter(child: PharmacyFilterBar()),
-          // Map preview
-          pharmaciesAsync.when(
-            data: (pharmacies) => pharmacies.isNotEmpty
-                ? SliverToBoxAdapter(
-                    child: PharmacyMapPreview(
-                      pharmacies: pharmacies,
-                      onTap: () {
-                        // Open full map
-                      },
-                    ),
-                  )
-                : const SliverToBoxAdapter(child: SizedBox.shrink()),
-            loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-          ),
+
           // Pharmacies count
           SliverToBoxAdapter(
             child: Padding(

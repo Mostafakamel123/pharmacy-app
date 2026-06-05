@@ -11,6 +11,15 @@ class PharmacyFilterBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Watch the provider state to trigger rebuilds when filters are applied/toggled
+    ref.watch(nearbyPharmaciesProvider);
+    final notifier = ref.read(nearbyPharmaciesProvider.notifier);
+
+    final isOpenNow = notifier.isOpenNow;
+    final hasDelivery = notifier.hasDelivery;
+    final onlyFavorites = notifier.onlyFavorites;
+    final maxDistance = notifier.maxDistance;
 
     return SizedBox(
       height: 40,
@@ -22,49 +31,40 @@ class PharmacyFilterBar extends ConsumerWidget {
             label: 'Open Now',
             icon: Icons.schedule_rounded,
             iconColor: AppColors.primaryGreen,
-            onTap: () {
-              final current = ref.read(nearbyPharmaciesProvider).asData?.value;
-              ref.read(nearbyPharmaciesProvider.notifier).toggleOpenNow(
-                    current?.isNotEmpty ?? false,
-                  );
-            },
+            isSelected: isOpenNow,
+            onTap: () => notifier.toggleOpenNow(!isOpenNow),
           ),
           const SizedBox(width: 8),
           _FilterChip(
             label: 'Delivery',
             icon: Icons.delivery_dining_rounded,
             iconColor: AppColors.primaryBlue,
-            onTap: () {
-              final current = ref.read(nearbyPharmaciesProvider).asData?.value;
-              ref.read(nearbyPharmaciesProvider.notifier).toggleDelivery(
-                    current?.isNotEmpty ?? false,
-                  );
-            },
+            isSelected: hasDelivery,
+            onTap: () => notifier.toggleDelivery(!hasDelivery),
           ),
           const SizedBox(width: 8),
           _FilterChip(
             label: '< 1 km',
             icon: Icons.near_me_rounded,
             iconColor: const Color(0xFFF59E0B),
-            onTap: () => ref
-                .read(nearbyPharmaciesProvider.notifier)
-                .setMaxDistance(1.0),
+            isSelected: maxDistance == 1.0,
+            onTap: () => notifier.setMaxDistance(maxDistance == 1.0 ? 50.0 : 1.0),
           ),
           const SizedBox(width: 8),
           _FilterChip(
             label: '< 3 km',
             icon: Icons.near_me_rounded,
             iconColor: const Color(0xFF8B5CF6),
-            onTap: () => ref
-                .read(nearbyPharmaciesProvider.notifier)
-                .setMaxDistance(3.0),
+            isSelected: maxDistance == 3.0,
+            onTap: () => notifier.setMaxDistance(maxDistance == 3.0 ? 50.0 : 3.0),
           ),
           const SizedBox(width: 8),
           _FilterChip(
             label: 'Favorites',
             icon: Icons.favorite_rounded,
             iconColor: AppColors.accentRed,
-            onTap: () {},
+            isSelected: onlyFavorites,
+            onTap: () => notifier.toggleOnlyFavorites(!onlyFavorites),
           ),
         ],
       ),
@@ -76,12 +76,14 @@ class _FilterChip extends StatefulWidget {
   final String label;
   final IconData icon;
   final Color iconColor;
+  final bool isSelected;
   final VoidCallback onTap;
 
   const _FilterChip({
     required this.label,
     required this.icon,
     required this.iconColor,
+    required this.isSelected,
     required this.onTap,
   });
 
@@ -93,7 +95,6 @@ class _FilterChipState extends State<_FilterChip>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isSelected = false;
 
   @override
   void initState() {
@@ -113,20 +114,16 @@ class _FilterChipState extends State<_FilterChip>
     super.dispose();
   }
 
-  void _toggle() {
-    setState(() => _isSelected = !_isSelected);
-    widget.onTap();
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSelected = widget.isSelected;
 
     return GestureDetector(
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) {
         _controller.reverse();
-        _toggle();
+        widget.onTap();
       },
       onTapCancel: () => _controller.reverse(),
       child: ScaleTransition(
@@ -135,21 +132,21 @@ class _FilterChipState extends State<_FilterChip>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: _isSelected
+            color: isSelected
                 ? widget.iconColor
                 : isDark
                     ? DarkColors.surface
                     : LightColors.surface,
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(
-              color: _isSelected
+              color: isSelected
                   ? widget.iconColor
                   : isDark
                       ? DarkColors.divider
                       : LightColors.divider,
               width: 1,
             ),
-            boxShadow: _isSelected
+            boxShadow: isSelected
                 ? [
                     BoxShadow(
                       color: widget.iconColor.withOpacity(0.3),
@@ -165,7 +162,7 @@ class _FilterChipState extends State<_FilterChip>
               Icon(
                 widget.icon,
                 size: 16,
-                color: _isSelected ? Colors.white : widget.iconColor,
+                color: isSelected ? Colors.white : widget.iconColor,
               ),
               const SizedBox(width: 6),
               Text(
@@ -173,7 +170,7 @@ class _FilterChipState extends State<_FilterChip>
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: _isSelected ? Colors.white : widget.iconColor,
+                  color: isSelected ? Colors.white : widget.iconColor,
                 ),
               ),
             ],

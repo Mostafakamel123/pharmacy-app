@@ -59,7 +59,7 @@ class RecentPostsSection extends ConsumerWidget {
               ),
               TextButton(
                 onPressed: () =>
-                    ref.read(navigationIndexProvider.notifier).state = 2,
+                    ref.read(navigationIndexProvider.notifier).state = 1,
                 child: Text(
                   'View All',
                   style: TextStyle(

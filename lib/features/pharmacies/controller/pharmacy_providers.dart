@@ -1,32 +1,51 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/core/network/api_endpoints.dart';
 import 'package:Elaaj/core/models/pharmacy_model.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 
+import 'package:Elaaj/features/home/controller/home_providers.dart' show locationProvider;
+
 // USER-SCOPED: auto-resets when auth user changes.
 final nearbyPharmaciesProvider = StateNotifierProvider<NearbyPharmaciesNotifier, AsyncValue<List<PharmacyModel>>>((ref) {
   ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
-  return NearbyPharmaciesNotifier();
+  ref.watch(favoritePharmaciesProvider);
+  return NearbyPharmaciesNotifier(ref);
 });
 
 class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyModel>>> {
+  final Ref ref;
   late final ApiEndpoints _apiEndpoints;
   
-  NearbyPharmaciesNotifier() : super(const AsyncValue.loading()) {
+  NearbyPharmaciesNotifier(this.ref) : super(const AsyncValue.loading()) {
     _apiEndpoints = ApiEndpoints();
     _loadPharmacies();
   }
 
   bool _openNow = false;
   bool _hasDelivery = false;
-  double _maxDistance = 5.0;
+  bool _onlyFavorites = false;
+  double _maxDistance = 50.0; // Set default to 50.0 km
   String _searchQuery = '';
   double _latitude = 30.0444; // Default Cairo latitude
   double _longitude = 31.2357; // Default Cairo longitude
+  Timer? _searchDebounce;
+
+  bool get isOpenNow => _openNow;
+  bool get hasDelivery => _hasDelivery;
+  bool get onlyFavorites => _onlyFavorites;
+  double get maxDistance => _maxDistance;
 
   Future<void> _loadPharmacies() async {
     try {
+      // Get location from locationProvider
+      final locationAsync = await ref.read(locationProvider.future);
+      if (locationAsync != null) {
+        _latitude = locationAsync.latitude;
+        _longitude = locationAsync.longitude;
+      }
+
       // Call API to get nearby pharmacies
       final response = await _apiEndpoints.getNearbyPharmacies(
         lat: _latitude,
@@ -45,6 +64,10 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
       }
       if (_hasDelivery) {
         pharmacies = pharmacies.where((p) => p.hasDelivery).toList();
+      }
+      if (_onlyFavorites) {
+        final favorites = ref.read(favoritePharmaciesProvider);
+        pharmacies = pharmacies.where((p) => favorites.contains(p.id)).toList();
       }
       pharmacies = pharmacies.where((p) => p.distance <= _maxDistance).toList();
 
@@ -76,6 +99,7 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
       (json['longitude'] as num).toDouble(),
     );
     
+    final favorites = ref.read(favoritePharmaciesProvider);
     return PharmacyModel(
       id: json['id'] as String,
       name: json['name'] as String? ?? 'Unknown',
@@ -93,6 +117,7 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
       closingHours: null,
       isVerified: json['isVerified'] as bool? ?? true,
       estimatedDeliveryMinutes: json['estimatedDeliveryMinutes'] as int?,
+      isFavorite: favorites.contains(json['id'] as String),
     );
   }
 
@@ -125,6 +150,11 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
     _loadPharmacies();
   }
 
+  void toggleOnlyFavorites(bool value) {
+    _onlyFavorites = value;
+    _loadPharmacies();
+  }
+
   void setMaxDistance(double value) {
     _maxDistance = value;
     _loadPharmacies();
@@ -132,7 +162,10 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
 
   void setSearchQuery(String value) {
     _searchQuery = value;
-    _loadPharmacies();
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      _loadPharmacies();
+    });
   }
 
   /// Set current location for nearby search
@@ -140,6 +173,12 @@ class NearbyPharmaciesNotifier extends StateNotifier<AsyncValue<List<PharmacyMod
     _latitude = latitude;
     _longitude = longitude;
     _loadPharmacies();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
   }
 }
 
