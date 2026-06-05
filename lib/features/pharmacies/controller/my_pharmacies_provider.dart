@@ -38,13 +38,16 @@ class MyPharmaciesNotifier extends StateNotifier<AsyncValue<List<UserPharmacyMod
 
           try {
             final fullDetails = await _apiEndpoints.getPharmacyById(id: id);
-            // Merge fallback owner ID and role into fullDetails if fullDetails doesn't have them
+            // Merge fallback owner ID and role into fullDetails.
+            // The role from the list endpoint (/my-pharmacies) is the authoritative
+            // source for the current user's role, so always override.
             final Map<String, dynamic> mergedDetails = {
               ...fullDetails,
               if ((fullDetails['ownerId'] == null || (fullDetails['ownerId'] as String).isEmpty) && fallbackOwnerId.isNotEmpty)
                 'ownerId': fallbackOwnerId,
-              if (fullDetails['role'] == null && role != null)
-                'role': role,
+              // Always use the role from the list response – it tells us
+              // whether the *current* user is Owner or Admin in this pharmacy.
+              if (role != null) 'role': role,
             };
             return UserPharmacyModel.fromJson(mergedDetails);
           } catch (e) {

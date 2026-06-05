@@ -4,7 +4,6 @@ import 'package:Elaaj/core/theme/app_colors.dart';
 import 'package:Elaaj/features/profile/controller/profile_providers.dart';
 import 'package:Elaaj/features/profile/view/edit_profile_screen.dart';
 import 'package:Elaaj/features/profile/view/my_posts_screen.dart';
-import 'package:Elaaj/features/profile/view/saved_posts_screen.dart';
 import 'package:Elaaj/features/profile/view/widgets/profile_actions.dart';
 import 'package:Elaaj/features/profile/view/widgets/profile_header.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';

@@ -408,6 +408,7 @@ class _PharmacyProfileScreenState extends ConsumerState<PharmacyProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final currentPharmacy = ref.watch(currentPharmacyProvider);
+    final isOwner = ref.watch(isCurrentPharmacyOwnerProvider);
 
     // If no pharmacy selected, show empty state
     if (currentPharmacy == null) {
@@ -517,50 +518,79 @@ class _PharmacyProfileScreenState extends ConsumerState<PharmacyProfileScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xxxl),
 
-                  // Elegantly designed Edit Profile Action Button
-                  GestureDetector(
-                    onTap: () {
-                      HapticFeedback.mediumImpact();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EditPharmacyScreen(pharmacy: currentPharmacy),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 56,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryBlue.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
+                  // Edit button — only for Owners
+                  if (isOwner)
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditPharmacyScreen(pharmacy: currentPharmacy),
                           ),
-                        ],
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 56,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryBlue.withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.edit_note_rounded, color: Colors.white, size: 24),
+                            SizedBox(width: 10),
+                            Text(
+                              'تعديل بيانات الصيدلية',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontFamily: 'Cairo',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Read-only notice for Admins
+                  if (!isOwner)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: Colors.orange.withOpacity(0.25)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.edit_note_rounded, color: Colors.white, size: 24),
+                          Icon(Icons.info_outline_rounded, color: Colors.orange[700], size: 20),
                           const SizedBox(width: 10),
-                          const Text(
-                            'تعديل بيانات الصيدلية',
+                          Text(
+                            'أنت مسؤول (Admin) — لا يمكنك تعديل بيانات الصيدلية',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange[700],
                               fontFamily: 'Cairo',
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
 
                   // Safe bottom spacer for navigation comfort
                   const SizedBox(height: 120),

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/core/network/failure.dart';
-import 'package:Elaaj/features/auth/service/auth_service.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 
 /// Helper to extract user-friendly messages from Failure objects

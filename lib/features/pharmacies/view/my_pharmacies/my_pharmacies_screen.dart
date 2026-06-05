@@ -166,8 +166,9 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
   }
 
   Widget _buildPharmacyCard(BuildContext context, UserPharmacyModel pharmacy) {
-    final isOwner = pharmacy.ownerUserId == ref.read(currentUserIdProvider);
-    final isAdmin = pharmacy.isAdmin(ref.read(currentUserIdProvider));
+    // Use the role stored from the /my-pharmacies API response
+    final isOwner = pharmacy.isOwnerRole;
+    final isAdminOnly = pharmacy.isAdminOnlyRole;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -177,12 +178,16 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EditPharmacyScreen(pharmacy: pharmacy),
-            ),
-          );
+          // Owners can edit; Admins get a read-only details view
+          if (isOwner) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EditPharmacyScreen(pharmacy: pharmacy),
+              ),
+            );
+          }
+          // Admin-only users: tapping the card does nothing (or could open read-only view)
         },
         borderRadius: BorderRadius.circular(12),
         child: Column(
@@ -261,7 +266,7 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                             ],
                           ),
                         ),
-                      if (!isOwner && isAdmin)
+                      if (isAdminOnly)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -361,49 +366,76 @@ class _MyPharmaciesScreenState extends ConsumerState<MyPharmaciesScreen> {
                           color: AppColors.primaryCyan,
                         ),
                       ),
-                      Row(
-                        children: [
-                          TextButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EditPharmacyScreen(
-                                    pharmacy: pharmacy,
+                      // Only Owners can Edit and manage Admins
+                      if (isOwner)
+                        Row(
+                          children: [
+                            TextButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditPharmacyScreen(
+                                      pharmacy: pharmacy,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.edit, size: 16),
-                            label: const Text('Edit'),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(0, 0),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                );
+                              },
+                              icon: const Icon(Icons.edit, size: 16),
+                              label: const Text('Edit'),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 0),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          TextButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PharmacyAdminsScreen(
-                                    pharmacy: pharmacy,
+                            const SizedBox(width: 12),
+                            TextButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PharmacyAdminsScreen(
+                                      pharmacy: pharmacy,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.people, size: 16),
-                            label: const Text('Admins'),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(0, 0),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                );
+                              },
+                              icon: const Icon(Icons.people, size: 16),
+                              label: const Text('Admins'),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 0),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                             ),
+                          ],
+                        ),
+                      // Admins see a read-only badge instead
+                      if (isAdminOnly)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.withOpacity(0.3)),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.visibility_outlined, size: 13, color: Colors.orange[700]),
+                              const SizedBox(width: 4),
+                              Text(
+                                'View Only',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ],

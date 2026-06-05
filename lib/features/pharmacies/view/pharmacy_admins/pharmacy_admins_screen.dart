@@ -260,9 +260,8 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final adminsAsync = ref.watch(pharmacyAdminsProvider(widget.pharmacy.id));
-    final currentUserId = ref.watch(currentUserIdProvider);
-    final isOwner = widget.pharmacy.ownerUserId == currentUserId ||
-        widget.pharmacy.ownerUserId.isEmpty;
+    // Use the stored API role - more reliable than comparing ownerUserId
+    final isOwner = widget.pharmacy.isOwnerRole;
 
     return Scaffold(
       backgroundColor:
@@ -478,8 +477,8 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
         ],
       ),
 
-      // ── FAB ─────────────────────────────────────────────────────────────
-      floatingActionButton: _AddAdminFab(onTap: _openAddAdminSheet),
+      // ── FAB: only owners can add new admins ──────────────────────────────
+      floatingActionButton: isOwner ? _AddAdminFab(onTap: _openAddAdminSheet) : null,
     );
   }
 }

@@ -1,7 +1,5 @@
 // ignore_for_file: deprecated_member_use
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,18 +35,19 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
   void initState() {
     super.initState();
 
+    // Kept short (180ms) for a snappy feel — BackdropFilter removed to avoid
+    // per-frame GPU blur cost which was the main source of jank.
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 180),
     );
 
-    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic);
+    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
-      begin: const Offset(-0.05, 0),
+      begin: const Offset(-0.03, 0),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
 
-    // Play entrance animation & load pharmacies lazily (once).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _animCtrl.forward();
       _maybeLoadPharmacies();
@@ -83,8 +82,8 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
   static PageRoute<void> _slideUpRoute(Widget page) {
     return PageRouteBuilder(
       pageBuilder: (_, __, ___) => page,
-      transitionDuration: const Duration(milliseconds: 320),
-      reverseTransitionDuration: const Duration(milliseconds: 280),
+      transitionDuration: const Duration(milliseconds: 280),
+      reverseTransitionDuration: const Duration(milliseconds: 240),
       transitionsBuilder: (_, animation, __, child) {
         return SlideTransition(
           position: Tween<Offset>(
@@ -172,6 +171,8 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
   Widget build(BuildContext context) {
     final pharmacyState = ref.watch(pharmacyModeProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? DarkColors.surface : LightColors.surface;
+    final dividerColor = isDark ? DarkColors.divider : LightColors.divider;
 
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.84,
@@ -182,85 +183,97 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
           topRight: Radius.circular(AppRadius.xxl),
           bottomRight: Radius.circular(AppRadius.xxl),
         ),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: (isDark ? DarkColors.surface : LightColors.surface)
-                  .withOpacity(0.97),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(AppRadius.xxl),
-                bottomRight: Radius.circular(AppRadius.xxl),
-              ),
-              border: Border(
-                right: BorderSide(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.06)
-                      : Colors.black.withOpacity(0.05),
-                ),
+        // BackdropFilter removed — it was running an expensive GPU blur on
+        // every animation frame, causing the drawer open/close jank.
+        // A solid slightly-transparent surface achieves the same look at
+        // zero extra GPU cost.
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: surfaceColor.withOpacity(0.98),
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(AppRadius.xxl),
+              bottomRight: Radius.circular(AppRadius.xxl),
+            ),
+            border: Border(
+              right: BorderSide(
+                color: isDark
+                    ? Colors.white.withOpacity(0.06)
+                    : Colors.black.withOpacity(0.05),
               ),
             ),
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: SlideTransition(
-                position: _slideAnim,
-                child: SafeArea(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Header
-                      _DrawerHeader(state: pharmacyState),
+          ),
+          child: FadeTransition(
+            opacity: _fadeAnim,
+            child: SlideTransition(
+              position: _slideAnim,
+              child: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── Fixed top: Header + Mode Toggle ──────────────────
+                    _DrawerHeader(state: pharmacyState),
 
-                      // Mode toggle
-                      _ModeToggleSection(
-                        state: pharmacyState,
-                        onPersonalTap: () {
-                          HapticFeedback.selectionClick();
-                          Navigator.pop(context);
-                          ref
-                              .read(pharmacyModeProvider.notifier)
-                              .switchToPersonalMode();
-                        },
-                        onPharmacyTap: () {
-                          _showPharmacySelector();
-                        },
+                    _ModeToggleSection(
+                      state: pharmacyState,
+                      onPersonalTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.pop(context);
+                        ref
+                            .read(pharmacyModeProvider.notifier)
+                            .switchToPersonalMode();
+                      },
+                      onPharmacyTap: () {
+                        _showPharmacySelector();
+                      },
+                    ),
+
+                    Divider(height: 1, color: dividerColor, indent: 20, endIndent: 20),
+
+                    // ── Scrollable middle section ─────────────────────────
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.zero,
+                        physics: const BouncingScrollPhysics(),
+                        children: [
+                          // Quick pharmacies list with Owner/Admin badges
+                          if (pharmacyState.userPharmacies.isNotEmpty)
+                            _PharmaciesQuickList(
+                              pharmacies: pharmacyState.userPharmacies,
+                              currentPharmacyId: pharmacyState.currentPharmacy?.id,
+                              isDark: isDark,
+                              onSwitchTap: () => _showPharmacySelector(),
+                            ),
+
+                          if (pharmacyState.userPharmacies.isNotEmpty)
+                            Divider(height: 1, color: dividerColor, indent: 20, endIndent: 20),
+
+                          // Menu items
+                          _MenuSection(
+                            state: pharmacyState,
+                            onMyPharmacies: () =>
+                                _navigate(const MyPharmaciesScreen()),
+                            onCreatePharmacy: () =>
+                                _navigate(const CreatePharmacyScreen()),
+                            onAdmins: pharmacyState.isPharmacyMode &&
+                                    pharmacyState.currentPharmacy != null &&
+                                    (pharmacyState.currentPharmacy!.isOwnerRole)
+                                ? () => _navigate(PharmacyAdminsScreen(
+                                    pharmacy: pharmacyState.currentPharmacy!))
+                                : null,
+                            onEdit: pharmacyState.isPharmacyMode &&
+                                    pharmacyState.currentPharmacy != null &&
+                                    (pharmacyState.currentPharmacy!.isOwnerRole)
+                                ? () => _navigate(EditPharmacyScreen(
+                                    pharmacy: pharmacyState.currentPharmacy!))
+                                : null,
+                          ),
+                        ],
                       ),
+                    ),
 
-                      // Divider
-                      Divider(
-                        height: 1,
-                        color: isDark
-                            ? DarkColors.divider
-                            : LightColors.divider,
-                        indent: 20,
-                        endIndent: 20,
-                      ),
-
-                      // Menu items
-                      Expanded(
-                        child: _MenuSection(
-                          state: pharmacyState,
-                          onMyPharmacies: () =>
-                              _navigate(const MyPharmaciesScreen()),
-                          onCreatePharmacy: () =>
-                              _navigate(const CreatePharmacyScreen()),
-                          onAdmins: pharmacyState.isPharmacyMode &&
-                                  pharmacyState.currentPharmacy != null
-                              ? () => _navigate(PharmacyAdminsScreen(
-                                  pharmacy: pharmacyState.currentPharmacy!))
-                              : null,
-                          onEdit: pharmacyState.isPharmacyMode &&
-                                  pharmacyState.currentPharmacy != null
-                              ? () => _navigate(EditPharmacyScreen(
-                                  pharmacy: pharmacyState.currentPharmacy!))
-                              : null,
-                        ),
-                      ),
-
-                      // Footer
-                      _DrawerFooter(isDark: isDark),
-                    ],
-                  ),
+                    // ── Fixed bottom: Footer ──────────────────────────────
+                    _DrawerFooter(isDark: isDark),
+                  ],
                 ),
               ),
             ),
@@ -274,6 +287,7 @@ class _PharmacyDrawerState extends ConsumerState<PharmacyDrawer>
 // ════════════════════════════════════════════════════════════════════════════
 // HEADER
 // ════════════════════════════════════════════════════════════════════════════
+
 
 class _DrawerHeader extends StatelessWidget {
   const _DrawerHeader({required this.state});
@@ -365,6 +379,11 @@ class _PharmacyBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOwner = pharmacy.isOwnerRole;
+    final roleColor = isOwner ? const Color(0xFF60A5FA) : const Color(0xFF34D399);
+    final roleLabel = isOwner ? 'Owner' : 'Admin';
+    final roleIcon = isOwner ? Icons.verified_rounded : Icons.admin_panel_settings_rounded;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -391,6 +410,32 @@ class _PharmacyBadge extends StatelessWidget {
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Role badge inline
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color: roleColor.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(color: roleColor.withOpacity(0.5), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(roleIcon, color: roleColor, size: 10),
+                const SizedBox(width: 3),
+                Text(
+                  roleLabel,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: roleColor,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -608,74 +653,77 @@ class _MenuSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return ListView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
-        // ── MANAGE ────────────────────────────────────────────────────────
-        _SectionLabel(label: 'MANAGE', isDark: isDark),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── MANAGE ────────────────────────────────────────────────────────
+          _SectionLabel(label: 'MANAGE', isDark: isDark),
 
-        _DrawerMenuItem(
-          icon: Icons.storefront_rounded,
-          title: 'My Pharmacies',
-          subtitle: 'View & manage your pharmacies',
-          accentColor: AppColors.primaryBlue,
-          isDark: isDark,
-          onTap: onMyPharmacies,
-        ),
+          _DrawerMenuItem(
+            icon: Icons.storefront_rounded,
+            title: 'My Pharmacies',
+            subtitle: 'View & manage your pharmacies',
+            accentColor: AppColors.primaryBlue,
+            isDark: isDark,
+            onTap: onMyPharmacies,
+          ),
 
-        _DrawerMenuItem(
-          icon: Icons.add_business_rounded,
-          title: 'Create Pharmacy',
-          subtitle: 'Register a new pharmacy',
-          accentColor: AppColors.primaryGreen,
-          isDark: isDark,
-          onTap: onCreatePharmacy,
-        ),
+          _DrawerMenuItem(
+            icon: Icons.add_business_rounded,
+            title: 'Create Pharmacy',
+            subtitle: 'Register a new pharmacy',
+            accentColor: AppColors.primaryGreen,
+            isDark: isDark,
+            onTap: onCreatePharmacy,
+          ),
 
-        const SizedBox(height: 4),
+          const SizedBox(height: 4),
 
-        // ── ADMINISTRATION ─────────────────────────────────────────────
-        _SectionLabel(label: 'ADMINISTRATION', isDark: isDark),
+          // ── ADMINISTRATION ─────────────────────────────────────────────
+          _SectionLabel(label: 'ADMINISTRATION', isDark: isDark),
 
-        _DrawerMenuItem(
-          icon: Icons.admin_panel_settings_rounded,
-          title: 'Pharmacy Admins',
-          subtitle: !state.isPharmacyMode
-              ? 'Switch to Pharmacy Mode first'
-              : state.currentPharmacy == null
-                  ? 'Select a pharmacy to continue'
-                  : 'Manage admins for ${state.currentPharmacy!.name}',
-          accentColor: AppColors.accentPurple,
-          isDark: isDark,
-          isEnabled: onAdmins != null,
-          onTap: onAdmins,
-          lockedReason: !state.isPharmacyMode
-              ? _LockReason.notPharmacyMode
-              : state.currentPharmacy == null
-                  ? _LockReason.noPharmacySelected
-                  : null,
-        ),
+          _DrawerMenuItem(
+            icon: Icons.admin_panel_settings_rounded,
+            title: 'Pharmacy Admins',
+            subtitle: !state.isPharmacyMode
+                ? 'Switch to Pharmacy Mode first'
+                : state.currentPharmacy == null
+                    ? 'Select a pharmacy to continue'
+                    : 'Manage admins for ${state.currentPharmacy!.name}',
+            accentColor: AppColors.accentPurple,
+            isDark: isDark,
+            isEnabled: onAdmins != null,
+            onTap: onAdmins,
+            lockedReason: !state.isPharmacyMode
+                ? _LockReason.notPharmacyMode
+                : state.currentPharmacy == null
+                    ? _LockReason.noPharmacySelected
+                    : null,
+          ),
 
-        _DrawerMenuItem(
-          icon: Icons.edit_rounded,
-          title: 'Edit Pharmacy',
-          subtitle: !state.isPharmacyMode
-              ? 'Switch to Pharmacy Mode first'
-              : state.currentPharmacy == null
-                  ? 'Select a pharmacy to continue'
-                  : 'Update details for ${state.currentPharmacy!.name}',
-          accentColor: AppColors.accentYellow,
-          isDark: isDark,
-          isEnabled: onEdit != null,
-          onTap: onEdit,
-          lockedReason: !state.isPharmacyMode
-              ? _LockReason.notPharmacyMode
-              : state.currentPharmacy == null
-                  ? _LockReason.noPharmacySelected
-                  : null,
-        ),
-      ],
+          _DrawerMenuItem(
+            icon: Icons.edit_rounded,
+            title: 'Edit Pharmacy',
+            subtitle: !state.isPharmacyMode
+                ? 'Switch to Pharmacy Mode first'
+                : state.currentPharmacy == null
+                    ? 'Select a pharmacy to continue'
+                    : 'Update details for ${state.currentPharmacy!.name}',
+            accentColor: AppColors.accentYellow,
+            isDark: isDark,
+            isEnabled: onEdit != null,
+            onTap: onEdit,
+            lockedReason: !state.isPharmacyMode
+                ? _LockReason.notPharmacyMode
+                : state.currentPharmacy == null
+                    ? _LockReason.noPharmacySelected
+                    : null,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -914,6 +962,227 @@ class _DrawerMenuItemState extends State<_DrawerMenuItem>
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// PHARMACIES QUICK LIST  (visible directly in drawer — shows Owner / Admin roles)
+// ════════════════════════════════════════════════════════════════════════════
+
+class _PharmaciesQuickList extends StatelessWidget {
+  const _PharmaciesQuickList({
+    required this.pharmacies,
+    required this.currentPharmacyId,
+    required this.isDark,
+    required this.onSwitchTap,
+  });
+
+  final List<UserPharmacyModel> pharmacies;
+  final String? currentPharmacyId;
+  final bool isDark;
+  final VoidCallback onSwitchTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = [
+      ...pharmacies.where((p) => p.isOwnerRole),
+      ...pharmacies.where((p) => p.isAdminOnlyRole),
+    ];
+    final ownedCount = pharmacies.where((p) => p.isOwnerRole).length;
+    final adminCount = pharmacies.where((p) => p.isAdminOnlyRole).length;
+    final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
+    final textHint = isDark ? DarkColors.textHint : LightColors.textHint;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header row
+          Row(
+            children: [
+              Text(
+                'MY PHARMACIES',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
+                  color: textHint,
+                ),
+              ),
+              const Spacer(),
+              if (ownedCount > 0)
+                _SmallCountBadge(count: ownedCount, label: 'Owner', color: AppColors.primaryBlue),
+              if (ownedCount > 0 && adminCount > 0) const SizedBox(width: 4),
+              if (adminCount > 0)
+                _SmallCountBadge(count: adminCount, label: 'Admin', color: AppColors.primaryGreen),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onSwitchTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(color: AppColors.primaryBlue.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.swap_horiz_rounded, size: 12, color: AppColors.primaryBlue),
+                      const SizedBox(width: 3),
+                      Text('Switch',
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryBlue)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Pharmacy rows
+          ...sorted.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final pharmacy = entry.value;
+            final isActive = pharmacy.id == currentPharmacyId;
+            final isOwner = pharmacy.isOwnerRole;
+            final roleColor = isOwner ? AppColors.primaryBlue : AppColors.primaryGreen;
+            final roleLabel = isOwner ? 'Owner' : 'Admin';
+            final roleIcon = isOwner ? Icons.verified_rounded : Icons.admin_panel_settings_rounded;
+            final showAdminDivider = ownedCount > 0 && adminCount > 0 && idx == ownedCount;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (showAdminDivider)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(
+                      children: [
+                        Container(height: 1, width: 12, color: AppColors.primaryGreen.withOpacity(0.2)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Text(
+                            'ADMIN ACCESS',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                              color: AppColors.primaryGreen.withOpacity(0.7),
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Container(height: 1, color: AppColors.primaryGreen.withOpacity(0.15))),
+                      ],
+                    ),
+                  ),
+                GestureDetector(
+                  onTap: onSwitchTap,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    margin: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isActive ? roleColor.withOpacity(isDark ? 0.15 : 0.07) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(
+                        color: isActive ? roleColor.withOpacity(0.3) : Colors.transparent,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // Glowing dot
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: isActive ? roleColor : roleColor.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                            boxShadow: isActive
+                                ? [BoxShadow(color: roleColor.withOpacity(0.5), blurRadius: 6, spreadRadius: 1)]
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Name
+                        Expanded(
+                          child: Text(
+                            pharmacy.name,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                              color: isActive
+                                  ? (isDark ? DarkColors.textPrimary : LightColors.textPrimary)
+                                  : textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        // Role chip
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: roleColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(color: roleColor.withOpacity(0.3), width: 0.8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(roleIcon, color: roleColor, size: 9),
+                              const SizedBox(width: 3),
+                              Text(
+                                roleLabel,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: roleColor,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallCountBadge extends StatelessWidget {
+  const _SmallCountBadge({required this.count, required this.label, required this.color});
+
+  final int count;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color.withOpacity(0.25), width: 0.8),
+      ),
+      child: Text(
+        '$count $label',
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // PHARMACY SELECTOR BOTTOM SHEET  (standalone, no context leaks)
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -986,17 +1255,29 @@ class _PharmacySelectorSheet extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            child: Text(
-              pharmacies.isEmpty
-                  ? 'You have no pharmacies yet.'
-                  : 'Choose a pharmacy to switch into pharmacy mode.',
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark
-                    ? DarkColors.textSecondary
-                    : LightColors.textSecondary,
-              ),
-            ),
+            child: Builder(builder: (context) {
+              final ownerCount = pharmacies.where((p) => p.isOwnerRole).length;
+              final adminCount = pharmacies.where((p) => p.isAdminOnlyRole).length;
+              String subtitle;
+              if (pharmacies.isEmpty) {
+                subtitle = 'You have no pharmacies yet.';
+              } else if (ownerCount > 0 && adminCount > 0) {
+                subtitle = '$ownerCount owned · $adminCount admin — tap to switch';
+              } else if (ownerCount > 0) {
+                subtitle = '$ownerCount pharmacy${ownerCount > 1 ? "s" : ""} owned by you';
+              } else {
+                subtitle = '$adminCount pharmacy${adminCount > 1 ? "s" : ""} where you are admin';
+              }
+              return Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark
+                      ? DarkColors.textSecondary
+                      : LightColors.textSecondary,
+                ),
+              );
+            }),
           ),
 
           Divider(
@@ -1057,17 +1338,47 @@ class _PharmacySelectorSheet extends StatelessWidget {
                 physics: const ClampingScrollPhysics(),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                // Sort: owned pharmacies first, then admin pharmacies
                 itemCount: pharmacies.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 2),
                 itemBuilder: (context, index) {
-                  final pharmacy = pharmacies[index];
+                  // Build sorted list: owners first
+                  final sorted = [
+                    ...pharmacies.where((p) => p.isOwnerRole),
+                    ...pharmacies.where((p) => p.isAdminOnlyRole),
+                  ];
+                  final pharmacy = sorted[index];
                   final isCurrent = pharmacy.id == currentPharmacyId;
 
-                  return _PharmacyTile(
-                    pharmacy: pharmacy,
-                    isCurrent: isCurrent,
-                    isDark: isDark,
-                    onTap: () => onSelect(pharmacy),
+                  // Add a section divider between owned and admin pharmacies
+                  final ownedCount = pharmacies.where((p) => p.isOwnerRole).length;
+                  final adminCount = pharmacies.where((p) => p.isAdminOnlyRole).length;
+                  final showAdminHeader = ownedCount > 0 && adminCount > 0 && index == ownedCount;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (index == 0 && ownedCount > 0)
+                        _RoleSectionHeader(
+                          label: 'YOUR PHARMACIES',
+                          icon: Icons.verified_rounded,
+                          color: AppColors.primaryBlue,
+                          isDark: isDark,
+                        ),
+                      if (showAdminHeader)
+                        _RoleSectionHeader(
+                          label: 'ADMIN ACCESS',
+                          icon: Icons.admin_panel_settings_rounded,
+                          color: AppColors.primaryGreen,
+                          isDark: isDark,
+                        ),
+                      _PharmacyTile(
+                        pharmacy: pharmacy,
+                        isCurrent: isCurrent,
+                        isDark: isDark,
+                        onTap: () => onSelect(pharmacy),
+                      ),
+                    ],
                   );
                 },
               ),
@@ -1132,6 +1443,10 @@ class _PharmacyTileState extends State<_PharmacyTile> {
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
     final isCurrent = widget.isCurrent;
+    final isOwner = widget.pharmacy.isOwnerRole;
+    final roleColor = isOwner ? AppColors.primaryBlue : AppColors.primaryGreen;
+    final roleLabel = isOwner ? 'Owner' : 'Admin';
+    final roleIcon = isOwner ? Icons.verified_rounded : Icons.admin_panel_settings_rounded;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -1145,26 +1460,26 @@ class _PharmacyTileState extends State<_PharmacyTile> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: _pressed
-              ? AppColors.primaryBlue.withOpacity(0.07)
+              ? roleColor.withOpacity(0.07)
               : isCurrent
-                  ? AppColors.primaryBlue.withOpacity(isDark ? 0.12 : 0.06)
+                  ? roleColor.withOpacity(isDark ? 0.12 : 0.06)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: isCurrent
-                ? AppColors.primaryBlue.withOpacity(0.25)
+                ? roleColor.withOpacity(0.25)
                 : Colors.transparent,
           ),
         ),
         child: Row(
           children: [
-            // Avatar
+            // Avatar — color reflects ownership
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
                 color: isCurrent
-                    ? AppColors.primaryBlue.withOpacity(isDark ? 0.2 : 0.12)
+                    ? roleColor.withOpacity(isDark ? 0.2 : 0.12)
                     : (isDark
                         ? DarkColors.surfaceVariant
                         : LightColors.surfaceVariant),
@@ -1173,7 +1488,7 @@ class _PharmacyTileState extends State<_PharmacyTile> {
               child: Icon(
                 Icons.business_rounded,
                 color: isCurrent
-                    ? AppColors.primaryBlue
+                    ? roleColor
                     : (isDark
                         ? DarkColors.textSecondary
                         : LightColors.textSecondary),
@@ -1198,29 +1513,63 @@ class _PharmacyTileState extends State<_PharmacyTile> {
                           : LightColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.pharmacy.address,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark
-                          ? DarkColors.textSecondary
-                          : LightColors.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      // Role badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: roleColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          border: Border.all(
+                            color: roleColor.withOpacity(0.25),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(roleIcon, color: roleColor, size: 10),
+                            const SizedBox(width: 3),
+                            Text(
+                              roleLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: roleColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          widget.pharmacy.address,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark
+                                ? DarkColors.textSecondary
+                                : LightColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
 
-            // Active check
+            // Active check or role indicator
             if (isCurrent)
               Container(
                 width: 26,
                 height: 26,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryGreen,
+                decoration: BoxDecoration(
+                  color: roleColor,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1228,9 +1577,69 @@ class _PharmacyTileState extends State<_PharmacyTile> {
                   color: Colors.white,
                   size: 16,
                 ),
+              )
+            else
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: isDark ? DarkColors.textHint : LightColors.textHint,
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ROLE SECTION HEADER  (divider between owned and admin pharmacies)
+// ════════════════════════════════════════════════════════════════════════════
+
+class _RoleSectionHeader extends StatelessWidget {
+  const _RoleSectionHeader({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.isDark,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 12, 4, 6),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, color: color, size: 12),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0,
+              color: color.withOpacity(0.8),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: color.withOpacity(0.15),
+            ),
+          ),
+        ],
       ),
     );
   }

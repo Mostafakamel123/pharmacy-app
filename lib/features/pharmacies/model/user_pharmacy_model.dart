@@ -23,6 +23,10 @@ class UserPharmacyModel {
   final DateTime createdAt;
   final DateTime? updatedAt;
 
+  /// The current user's role in this pharmacy: 'Owner' or 'Admin'.
+  /// Populated from the /my-pharmacies API response.
+  final String userRole;
+
   const UserPharmacyModel({
     required this.id,
     required this.name,
@@ -43,7 +47,14 @@ class UserPharmacyModel {
     this.hasDelivery = false,
     required this.createdAt,
     this.updatedAt,
+    this.userRole = 'Owner',
   });
+
+  /// Returns true if the current user is an Owner of this pharmacy.
+  bool get isOwnerRole => userRole == 'Owner' || userRole == 'PharmacyOwner';
+
+  /// Returns true if the current user is Admin-only (not the owner).
+  bool get isAdminOnlyRole => !isOwnerRole;
 
   /// Check if a user is an admin of this pharmacy
   bool isAdmin(String userId) {
@@ -76,6 +87,7 @@ class UserPharmacyModel {
     bool? hasDelivery,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? userRole,
   }) {
     return UserPharmacyModel(
       id: id ?? this.id,
@@ -97,6 +109,7 @@ class UserPharmacyModel {
       hasDelivery: hasDelivery ?? this.hasDelivery,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      userRole: userRole ?? this.userRole,
     );
   }
 
@@ -154,6 +167,11 @@ class UserPharmacyModel {
       updatedTime = DateTime.tryParse(rawUpdated);
     }
 
+    // Parse the user's role in this pharmacy
+    final rawRole = json['role'] as String? ?? 'Owner';
+    // Normalize role: 'Owner'/'PharmacyOwner' -> 'Owner', everything else -> 'Admin'
+    final normalizedRole = (rawRole == 'Owner' || rawRole == 'PharmacyOwner') ? 'Owner' : 'Admin';
+
     return UserPharmacyModel(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'Unknown',
@@ -174,6 +192,7 @@ class UserPharmacyModel {
       hasDelivery: json['hasDelivery'] as bool? ?? json['has_delivery'] as bool? ?? false,
       createdAt: createdTime,
       updatedAt: updatedTime,
+      userRole: normalizedRole,
     );
   }
 

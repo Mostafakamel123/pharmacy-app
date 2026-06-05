@@ -201,3 +201,11 @@ final userPharmaciesProvider = Provider<List<UserPharmacyModel>>((ref) {
 final isPharmacyModeProvider = Provider<bool>((ref) {
   return ref.watch(pharmacyModeProvider).isPharmacyMode;
 });
+
+/// Selector: true when the current user is an Owner of the selected pharmacy.
+/// Returns true by default (safe for owner-only operations) when no pharmacy is selected.
+final isCurrentPharmacyOwnerProvider = Provider<bool>((ref) {
+  final pharmacy = ref.watch(pharmacyModeProvider).currentPharmacy;
+  if (pharmacy == null) return true; // default to owner-level access when no pharmacy
+  return pharmacy.isOwnerRole;
+});
