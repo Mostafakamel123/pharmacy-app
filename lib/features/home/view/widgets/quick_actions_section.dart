@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/routing/app_routes.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/home/model/quick_action_model.dart';
-import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
+import 'package:Elaaj/core/routing/app_routes.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/home/model/quick_action_model.dart';
+import 'package:Elaaj/features/posts/view/create_post_screen.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // QUICK ACTIONS SECTION

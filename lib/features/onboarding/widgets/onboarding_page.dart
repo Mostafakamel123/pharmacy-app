@@ -1,9 +1,9 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/routing/app_routes.dart';
-import 'package:pharmacy_app/core/constants/app_constants.dart';
-import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
+import 'package:Elaaj/core/routing/app_routes.dart';
+import 'package:Elaaj/core/constants/app_constants.dart';
+import 'package:Elaaj/core/helpers/local_storage_helper.dart';
 
 // Pharmacy-inspired color palette
 class _OnboardingColors {

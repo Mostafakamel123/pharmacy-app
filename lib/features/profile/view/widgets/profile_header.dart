@@ -1,9 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/profile/model/profile_model.dart';
-import 'package:pharmacy_app/core/config/env_config.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/profile/model/profile_model.dart';
+import 'package:Elaaj/core/config/env_config.dart';
 
 class ProfileHeader extends StatelessWidget {
   final UserProfileModel profile;

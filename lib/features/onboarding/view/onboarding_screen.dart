@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:pharmacy_app/features/onboarding/widgets/onboarding_page.dart';
+import 'package:Elaaj/features/onboarding/widgets/onboarding_page.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});

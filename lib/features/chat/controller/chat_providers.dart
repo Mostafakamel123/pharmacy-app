@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../model/chat_model.dart';
 import '../model/chat_user_model.dart';
 import '../model/message_model.dart';
-import 'package:pharmacy_app/core/network/api_endpoints.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
-import 'package:pharmacy_app/features/prescription/controller/patient_prescription_providers.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:Elaaj/features/prescription/controller/patient_prescription_providers.dart';
 
 // Mock data - Replace with real API calls
 class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {

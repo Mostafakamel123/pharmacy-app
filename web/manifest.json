@@ -1,6 +1,6 @@
 {
-    "name": "pharmacy_app",
-    "short_name": "pharmacy_app",
+    "name": "Elaaj",
+    "short_name": "Elaaj",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

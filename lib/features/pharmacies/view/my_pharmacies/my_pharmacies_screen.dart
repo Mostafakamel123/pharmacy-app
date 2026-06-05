@@ -2,12 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
-import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
-import 'package:pharmacy_app/features/pharmacies/view/create_pharmacy/create_pharmacy_screen.dart';
-import 'package:pharmacy_app/features/pharmacies/view/edit_pharmacy/edit_pharmacy_screen.dart';
-import 'package:pharmacy_app/features/pharmacies/view/pharmacy_admins/pharmacy_admins_screen.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/pharmacies/controller/my_pharmacies_provider.dart';
+import 'package:Elaaj/features/pharmacies/model/user_pharmacy_model.dart';
+import 'package:Elaaj/features/pharmacies/view/create_pharmacy/create_pharmacy_screen.dart';
+import 'package:Elaaj/features/pharmacies/view/edit_pharmacy/edit_pharmacy_screen.dart';
+import 'package:Elaaj/features/pharmacies/view/pharmacy_admins/pharmacy_admins_screen.dart';
 
 /// Screen displaying all pharmacies owned/managed by the user
 class MyPharmaciesScreen extends ConsumerStatefulWidget {

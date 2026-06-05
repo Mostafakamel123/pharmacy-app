@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/home/controller/home_providers.dart';
-import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/home/controller/home_providers.dart';
+import 'package:Elaaj/features/profile/controller/profile_providers.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // HOME HEADER

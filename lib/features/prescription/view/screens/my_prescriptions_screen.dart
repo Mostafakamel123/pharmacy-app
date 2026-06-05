@@ -3,14 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/routing/app_routes.dart';
-import 'package:pharmacy_app/core/config/env_config.dart';
-import 'package:pharmacy_app/features/prescription/controller/patient_prescription_providers.dart';
-import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
-import 'package:pharmacy_app/features/prescription/model/prescription_model.dart';
-import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';
-import 'package:pharmacy_app/features/chat/controller/chat_providers.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/routing/app_routes.dart';
+import 'package:Elaaj/core/config/env_config.dart';
+import 'package:Elaaj/features/prescription/controller/patient_prescription_providers.dart';
+import 'package:Elaaj/features/prescription/controller/prescription_providers.dart';
+import 'package:Elaaj/features/prescription/model/prescription_model.dart';
+import 'package:Elaaj/features/prescription/model/routing_state_model.dart';
+import 'package:Elaaj/features/chat/controller/chat_providers.dart';
 
 class MyPrescriptionsScreen extends ConsumerWidget {
   const MyPrescriptionsScreen({super.key});

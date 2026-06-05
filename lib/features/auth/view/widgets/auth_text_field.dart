@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
 
 /// Auth text field widget with consistent styling
 class AuthTextField extends StatefulWidget {

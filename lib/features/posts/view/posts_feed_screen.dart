@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
-import 'package:pharmacy_app/features/posts/view/post_details_screen.dart';
-import 'package:pharmacy_app/features/posts/view/widgets/post_card.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/posts/controller/posts_providers.dart';
+import 'package:Elaaj/features/posts/view/post_details_screen.dart';
+import 'package:Elaaj/features/posts/view/widgets/post_card.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:Elaaj/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
 
 class PostsFeedScreen extends ConsumerWidget {
   const PostsFeedScreen({super.key});

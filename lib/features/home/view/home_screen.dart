@@ -3,18 +3,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/routing/app_routes.dart';
-import 'package:pharmacy_app/features/home/controller/home_providers.dart';
-import 'package:pharmacy_app/features/home/view/widgets/home_header.dart';
-import 'package:pharmacy_app/features/home/view/widgets/nearby_pharmacies_section.dart';
-import 'package:pharmacy_app/features/home/view/widgets/quick_actions_section.dart';
-import 'package:pharmacy_app/features/home/view/widgets/recent_posts_section.dart';
-import 'package:pharmacy_app/features/home/view/widgets/smart_search_bar.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
-import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
-import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart'
+import 'package:Elaaj/core/routing/app_routes.dart';
+import 'package:Elaaj/features/home/controller/home_providers.dart';
+import 'package:Elaaj/features/home/view/widgets/home_header.dart';
+import 'package:Elaaj/features/home/view/widgets/nearby_pharmacies_section.dart';
+import 'package:Elaaj/features/home/view/widgets/quick_actions_section.dart';
+import 'package:Elaaj/features/home/view/widgets/recent_posts_section.dart';
+import 'package:Elaaj/features/home/view/widgets/smart_search_bar.dart';
+import 'package:Elaaj/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
+import 'package:Elaaj/features/posts/controller/posts_providers.dart';
+import 'package:Elaaj/features/prescription/controller/prescription_providers.dart'
     hide nearbyPharmaciesProvider;
-import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
+import 'package:Elaaj/features/profile/controller/profile_providers.dart';
 
 class PatientHomeScreen extends ConsumerStatefulWidget {
   const PatientHomeScreen({super.key});

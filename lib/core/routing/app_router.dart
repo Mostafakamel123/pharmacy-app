@@ -1,24 +1,25 @@
 // ignore_for_file: use_super_parameters
 
 import 'dart:async';
+import 'package:Elaaj/core/constants/app_constants.dart';
+import 'package:Elaaj/core/helpers/local_storage_helper.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/auth/view/screens/email_verification_screen.dart';
+import 'package:Elaaj/features/auth/view/screens/forgot_password_screen.dart';
+import 'package:Elaaj/features/auth/view/screens/login_screen.dart';
+import 'package:Elaaj/features/auth/view/screens/register_screen.dart';
+import 'package:Elaaj/features/auth/view/screens/reset_password_screen.dart';
+import 'package:Elaaj/features/chat/view/screens/chat_conversation_screen.dart';
+import 'package:Elaaj/features/chat/view/screens/chats_list_screen.dart';
+import 'package:Elaaj/features/navigation/widgets/premium_nav_shell.dart';
+import 'package:Elaaj/features/onboarding/view/onboarding_screen.dart';
+import 'package:Elaaj/features/prescription/view/screens/my_prescriptions_screen.dart';
+import 'package:Elaaj/features/prescription/view/screens/searching_pharmacies_screen.dart';
+import 'package:Elaaj/features/prescription/view/screens/upload_prescription_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
-import 'package:pharmacy_app/core/constants/app_constants.dart';
-import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
-import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
-import 'package:pharmacy_app/features/onboarding/view/onboarding_screen.dart';
-import 'package:pharmacy_app/features/auth/view/screens/login_screen.dart';
-import 'package:pharmacy_app/features/auth/view/screens/register_screen.dart';
-import 'package:pharmacy_app/features/auth/view/screens/forgot_password_screen.dart';
-import 'package:pharmacy_app/features/auth/view/screens/reset_password_screen.dart';
-import 'package:pharmacy_app/features/auth/view/screens/email_verification_screen.dart';
-import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
-import 'package:pharmacy_app/features/chat/view/screens/chat_conversation_screen.dart';
-import 'package:pharmacy_app/features/prescription/view/screens/upload_prescription_screen.dart';
-import 'package:pharmacy_app/features/prescription/view/screens/searching_pharmacies_screen.dart';
-import 'package:pharmacy_app/features/prescription/view/screens/my_prescriptions_screen.dart';
+
 import 'app_routes.dart';
 
 // Simple 404 error page

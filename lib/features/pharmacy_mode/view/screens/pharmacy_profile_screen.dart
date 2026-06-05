@@ -3,12 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/config/env_config.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
-import 'package:pharmacy_app/features/pharmacies/view/edit_pharmacy/edit_pharmacy_screen.dart';
-import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/config/env_config.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:Elaaj/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
+import 'package:Elaaj/features/pharmacies/view/edit_pharmacy/edit_pharmacy_screen.dart';
+import 'package:Elaaj/features/pharmacies/controller/my_pharmacies_provider.dart';
 
 /// State-of-the-art Pharmacy Profile Screen
 /// Displays only the actual API data in a premium, elegant, and interactive way.

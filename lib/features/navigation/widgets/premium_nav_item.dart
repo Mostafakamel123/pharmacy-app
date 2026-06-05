@@ -1,10 +1,10 @@
 // ignore_for_file: unused_field
 
 import 'package:flutter/material.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/theme/nav_colors.dart';
-import 'package:pharmacy_app/core/theme/nav_theme.dart';
-import 'package:pharmacy_app/core/utils/navigation_config.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/theme/nav_colors.dart';
+import 'package:Elaaj/core/theme/nav_theme.dart';
+import 'package:Elaaj/core/utils/navigation_config.dart';
 
 /// Premium Navigation Item Widget
 class PremiumNavItem extends StatefulWidget {

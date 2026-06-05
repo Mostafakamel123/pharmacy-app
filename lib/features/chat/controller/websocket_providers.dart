@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/services/websocket_chat_service.dart';
+import 'package:Elaaj/core/services/websocket_chat_service.dart';
 
 /// Singleton WebSocket service provider
 final webSocketChatServiceProvider = Provider<WebSocketChatService>((ref) {

@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/routing/app_routes.dart';
-import 'package:pharmacy_app/features/home/controller/home_providers.dart' show locationProvider;
-import 'package:pharmacy_app/features/prescription/model/prescription_model.dart';
-import 'package:pharmacy_app/core/models/pharmacy_model.dart';
-import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/routing/app_routes.dart';
+import 'package:Elaaj/features/home/controller/home_providers.dart' show locationProvider;
+import 'package:Elaaj/features/prescription/model/prescription_model.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/features/prescription/controller/prescription_providers.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// Upload Prescription Screen

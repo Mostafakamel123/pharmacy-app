@@ -1,5 +1,5 @@
-import 'package:pharmacy_app/core/models/pharmacy_model.dart';
-import 'package:pharmacy_app/features/prescription/model/prescription_model.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/features/prescription/model/prescription_model.dart';
 
 /// Enum for prescription request status
 enum RoutingStatus {

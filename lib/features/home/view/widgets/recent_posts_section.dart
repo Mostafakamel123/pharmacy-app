@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/navigation/widgets/premium_nav_shell.dart';
-import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
-import 'package:pharmacy_app/features/posts/model/post_model.dart';
-import 'package:pharmacy_app/features/posts/view/post_details_screen.dart';
-import 'package:pharmacy_app/features/posts/view/widgets/post_card.dart'
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/navigation/widgets/premium_nav_shell.dart';
+import 'package:Elaaj/features/posts/controller/posts_providers.dart';
+import 'package:Elaaj/features/posts/model/post_model.dart';
+import 'package:Elaaj/features/posts/view/post_details_screen.dart';
+import 'package:Elaaj/features/posts/view/widgets/post_card.dart'
     show FullScreenImageViewer;
 
 // ════════════════════════════════════════════════════════════════════════════

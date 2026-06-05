@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_request_providers.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_prescription_detail_screen.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_request_providers.dart';
+import 'package:Elaaj/features/pharmacy_mode/view/screens/pharmacy_prescription_detail_screen.dart';
+import 'package:Elaaj/features/pharmacy_mode/widgets/pharmacy_drawer.dart';
 
 /// Pharmacy Orders Screen
 /// 

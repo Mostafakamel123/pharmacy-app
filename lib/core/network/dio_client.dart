@@ -1,10 +1,11 @@
 // ignore_for_file: avoid_print
 
+import 'package:Elaaj/core/config/env_config.dart';
+import 'package:Elaaj/core/constants/app_constants.dart';
+import 'package:Elaaj/core/helpers/local_storage_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/config/env_config.dart';
-import 'package:pharmacy_app/core/constants/app_constants.dart';
-import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
+
 
 final dioClientProvider = Provider<Dio>((ref) {
   return DioClient.instance.dio;

@@ -6,16 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/utils/navigation_config.dart';
-import 'package:pharmacy_app/features/navigation/widgets/floating_nav_button.dart';
-import 'package:pharmacy_app/features/navigation/widgets/premium_nav_item.dart';
-import 'package:pharmacy_app/core/theme/nav_colors.dart';
-import 'package:pharmacy_app/core/theme/nav_theme.dart';
-import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/utils/navigation_config.dart';
+import 'package:Elaaj/features/navigation/widgets/floating_nav_button.dart';
+import 'package:Elaaj/features/navigation/widgets/premium_nav_item.dart';
+import 'package:Elaaj/core/theme/nav_colors.dart';
+import 'package:Elaaj/core/theme/nav_theme.dart';
+import 'package:Elaaj/features/posts/view/create_post_screen.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:pharmacy_app/features/home/controller/home_providers.dart';
+import 'package:Elaaj/features/home/controller/home_providers.dart';
 
 /// Global provider for unified bottom navigation active index
 final navigationIndexProvider = StateProvider<int>((ref) => 0);

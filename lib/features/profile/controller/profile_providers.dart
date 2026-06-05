@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/features/auth/service/auth_service.dart';
-import 'package:pharmacy_app/features/profile/model/profile_model.dart';
+import 'package:Elaaj/features/auth/service/auth_service.dart';
+import 'package:Elaaj/features/profile/model/profile_model.dart';
 
 // Profile provider
 final profileProvider =
@@ -56,18 +56,24 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfileModel>> {
         latitude: latitude,
         longitude: longitude,
       );
-      
+
       if (profileData != null) {
+        // Optimistically update state from the PUT response
         final userProfile = UserProfileModel.fromApi(profileData);
         state = AsyncValue.data(userProfile);
-      } else {
-        await refresh();
       }
+      // Always re-fetch from server to guarantee UI shows latest data
+      await _loadProfile();
       return true;
     } catch (e) {
+      // Even on failure, try to re-fetch so the UI stays consistent
+      try {
+        await _loadProfile();
+      } catch (_) {}
       return false;
     }
   }
+
 }
 
 // Dark mode provider (synced with platform)

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
-import 'package:pharmacy_app/core/network/api_endpoints.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_dashboard_controller.dart';
+import 'package:Elaaj/core/helpers/local_storage_helper.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_dashboard_controller.dart';
 
 /// Local State class for Pharmacy Prescriptions
 class PharmacyPrescriptionsLocalState {

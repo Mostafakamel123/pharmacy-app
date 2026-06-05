@@ -1,11 +1,11 @@
 // ignore_for_file: unused_catch_clause
 
 import 'package:dio/dio.dart';
-import 'package:pharmacy_app/core/network/dio_client.dart';
-import 'package:pharmacy_app/core/network/failure.dart';
-import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
-import 'package:pharmacy_app/core/constants/app_constants.dart';
-import 'package:pharmacy_app/features/auth/model/auth_user.dart';
+import 'package:Elaaj/core/network/dio_client.dart';
+import 'package:Elaaj/core/network/failure.dart';
+import 'package:Elaaj/core/helpers/local_storage_helper.dart';
+import 'package:Elaaj/core/constants/app_constants.dart';
+import 'package:Elaaj/features/auth/model/auth_user.dart';
 
 /// Authentication service interface
 abstract class AuthService {

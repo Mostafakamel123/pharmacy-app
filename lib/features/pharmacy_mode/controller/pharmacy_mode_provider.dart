@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/network/api_endpoints.dart';
-import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/pharmacies/model/user_pharmacy_model.dart';
 /// Application mode enum
 enum AppMode {
   /// User is browsing in personal mode

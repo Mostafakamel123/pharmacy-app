@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:pharmacy_app/core/theme/nav_colors.dart';
-import 'package:pharmacy_app/core/theme/nav_theme.dart';
+import 'package:Elaaj/core/theme/nav_colors.dart';
+import 'package:Elaaj/core/theme/nav_theme.dart';
 
 /// Floating Action Button for center navigation
 class FloatingNavButton extends StatefulWidget {

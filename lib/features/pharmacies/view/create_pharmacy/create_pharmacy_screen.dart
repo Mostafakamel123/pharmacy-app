@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
-import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
-import 'package:pharmacy_app/core/services/geocoding_service.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/pharmacies/controller/my_pharmacies_provider.dart';
+import 'package:Elaaj/features/pharmacies/model/user_pharmacy_model.dart';
+import 'package:Elaaj/core/services/geocoding_service.dart';
 
 /// Screen for creating a new pharmacy
 class CreatePharmacyScreen extends ConsumerStatefulWidget {

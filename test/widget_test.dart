@@ -1,6 +1,6 @@
+import 'package:Elaaj/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/main.dart';
 
 void main() {
   testWidgets('App onboarding smoke test', (WidgetTester tester) async {

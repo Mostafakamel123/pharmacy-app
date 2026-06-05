@@ -3,8 +3,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/config/env_config.dart';
-import 'package:pharmacy_app/features/chat/model/chat_model.dart';
+import 'package:Elaaj/core/config/env_config.dart';
+import 'package:Elaaj/features/chat/model/chat_model.dart';
 import '../../controller/chat_providers.dart';
 import '../widgets/chat_widgets.dart';
 import '../widgets/message_bubble.dart';

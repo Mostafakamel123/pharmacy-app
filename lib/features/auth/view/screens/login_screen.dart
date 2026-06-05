@@ -3,11 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/routing/app_routes.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
-import 'package:pharmacy_app/features/auth/view/widgets/auth_text_field.dart';
-import 'package:pharmacy_app/features/auth/view/widgets/auth_button.dart';
+import 'package:Elaaj/core/routing/app_routes.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/auth/view/widgets/auth_text_field.dart';
+import 'package:Elaaj/features/auth/view/widgets/auth_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});

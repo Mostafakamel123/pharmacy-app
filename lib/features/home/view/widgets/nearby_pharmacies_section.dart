@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/models/pharmacy_model.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/home/controller/home_providers.dart';
-import 'package:pharmacy_app/features/pharmacies/view/nearby_pharmacies_screen.dart';
-import 'package:pharmacy_app/features/pharmacies/view/pharmacy_details_screen.dart';
+import 'package:Elaaj/core/config/env_config.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/home/controller/home_providers.dart';
+import 'package:Elaaj/features/pharmacies/view/nearby_pharmacies_screen.dart';
+import 'package:Elaaj/features/pharmacies/view/pharmacy_details_screen.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // NEARBY PHARMACIES SECTION
@@ -120,7 +121,6 @@ class _NearbyPharmaciesBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pharmaciesAsync = ref.watch(filteredNearbyPharmaciesProvider);
-    print('📦 filteredNearbyPharmaciesProvider = $pharmaciesAsync');
 
     return pharmaciesAsync.when(
       data: (pharmacies) => pharmacies.isEmpty
@@ -208,31 +208,8 @@ class _PharmacyCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Map placeholder ──────────────────────────────────────
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? const [Color(0xFF1E3A4A), Color(0xFF2C5364)]
-                          : const [Color(0xFFE0F7FA), Color(0xFFE8F5E9)],
-                    ),
-                    borderRadius:
-                        const BorderRadius.all(Radius.circular(10)),
-                  ),
-                  child: SizedBox(
-                    height: 42,
-                    width: double.infinity,
-                    child: Center(
-                      child: Icon(
-                        Icons.location_on_rounded,
-                        color: isDark
-                            ? const Color(0xFF90CAF9)
-                            : AppColors.primaryBlue,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ),
+                // ── Pharmacy image ───────────────────────────────────────
+                _PharmacyImage(imageUrl: pharmacy.imageUrl, isDark: isDark),
                 const SizedBox(height: 6),
                 // ── Name ─────────────────────────────────────────────────
                 Text(
@@ -284,6 +261,79 @@ class _PharmacyCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
+/// Top image area of a pharmacy card.
+/// Shows [imageUrl] as a network image when available, otherwise falls back
+/// to the branded gradient + location icon placeholder.
+class _PharmacyImage extends StatelessWidget {
+  final String? imageUrl;
+  final bool isDark;
+
+  const _PharmacyImage({required this.imageUrl, required this.isDark});
+
+  String? _resolvedUrl() {
+    if (imageUrl == null || imageUrl!.isEmpty) return null;
+    if (imageUrl!.startsWith('http')) return imageUrl;
+    // Relative path from the API — prepend the base URL
+    return '${EnvConfig.apiBaseUrl}$imageUrl';
+  }
+
+  Widget _fallback() => DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? const [Color(0xFF1E3A4A), Color(0xFF2C5364)]
+                : const [Color(0xFFE0F7FA), Color(0xFFE8F5E9)],
+          ),
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
+        ),
+        child: SizedBox(
+          height: 42,
+          width: double.infinity,
+          child: Center(
+            child: Icon(
+              Icons.local_pharmacy_rounded,
+              color: isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue,
+              size: 22,
+            ),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final url = _resolvedUrl();
+    if (url == null) return _fallback();
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(10)),
+      child: SizedBox(
+        height: 42,
+        width: double.infinity,
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          // Show a shimmer-like placeholder while loading
+          loadingBuilder: (_, child, progress) {
+            if (progress == null) return child;
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E3A4A)
+                    : const Color(0xFFE0F7FA),
+              ),
+              child: const SizedBox.expand(),
+            );
+          },
+          // Fall back to the branded placeholder on error
+          errorBuilder: (_, __, ___) => _fallback(),
         ),
       ),
     );

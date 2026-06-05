@@ -6,16 +6,17 @@
 
 library;
 
+import 'package:Elaaj/features/chat/view/screens/chats_list_screen.dart';
+import 'package:Elaaj/features/home/view/home_screen.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:Elaaj/features/pharmacy_mode/view/screens/pharmacy_orders_screen.dart';
+import 'package:Elaaj/features/pharmacy_mode/view/screens/pharmacy_profile_screen.dart';
+import 'package:Elaaj/features/posts/view/create_post_screen.dart';
+import 'package:Elaaj/features/posts/view/posts_feed_screen.dart';
+import 'package:Elaaj/features/profile/view/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/features/home/view/home_screen.dart';
-import 'package:pharmacy_app/features/posts/view/create_post_screen.dart';
-import 'package:pharmacy_app/features/posts/view/posts_feed_screen.dart';
-import 'package:pharmacy_app/features/profile/view/profile_screen.dart';
-import 'package:pharmacy_app/features/chat/view/screens/chats_list_screen.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_profile_screen.dart';
-import 'package:pharmacy_app/features/pharmacy_mode/view/screens/pharmacy_orders_screen.dart';
+
 
 /// Navigation item configuration
 class NavItem {

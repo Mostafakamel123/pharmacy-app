@@ -2,11 +2,11 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/network/api_endpoints.dart';
-import 'package:pharmacy_app/features/posts/model/post_model.dart';
-import 'package:pharmacy_app/core/models/pharmacy_model.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/posts/model/post_model.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:pharmacy_app/core/services/geocoding_service.dart';
+import 'package:Elaaj/core/services/geocoding_service.dart';
 
 // ============================================================================
 // LOCATION PROVIDER - Get user's current location

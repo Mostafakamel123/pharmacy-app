@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:Elaaj/core/network/dio_client.dart';
 import 'package:dio/dio.dart';
-import 'package:pharmacy_app/core/network/dio_client.dart';
 
 /// Repository for all Elaaj API endpoints
 /// 
@@ -353,6 +353,20 @@ class ApiEndpoints {
         'pharmacyId': pharmacyId,
       },
     );
+    return _safeParseMap(response.data);
+  }
+
+  /// GET /api/PharmacyAdmins/{pharmacyId}
+  /// Get list of admins for a pharmacy (requires auth token)
+  Future<List<dynamic>> getPharmacyAdmins(String pharmacyId) async {
+    final response = await _dio.get('/api/PharmacyAdmins/$pharmacyId');
+    return _safeParseList(response.data);
+  }
+
+  /// DELETE /api/PharmacyAdmins/{pharmacyId}/{userId}
+  /// Remove an admin from a pharmacy (requires auth token)
+  Future<Map<String, dynamic>> deletePharmacyAdmin(String pharmacyId, String userId) async {
+    final response = await _dio.delete('/api/PharmacyAdmins/$pharmacyId/$userId');
     return _safeParseMap(response.data);
   }
 

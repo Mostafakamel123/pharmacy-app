@@ -4,12 +4,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/prescription/model/routing_state_model.dart';
-import 'package:pharmacy_app/core/models/pharmacy_model.dart';
-import 'package:pharmacy_app/features/prescription/controller/prescription_providers.dart';
-import 'package:pharmacy_app/features/prescription/controller/patient_prescription_providers.dart';
-import 'package:pharmacy_app/features/chat/controller/chat_providers.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/prescription/model/routing_state_model.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/features/prescription/controller/prescription_providers.dart';
+import 'package:Elaaj/features/prescription/controller/patient_prescription_providers.dart';
+import 'package:Elaaj/features/chat/controller/chat_providers.dart';
 
 /// Searching Pharmacies Screen
 /// Shows animated search with countdown timer and current pharmacy being contacted

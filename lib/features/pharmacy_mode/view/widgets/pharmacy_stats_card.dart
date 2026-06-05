@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
 
 /// Pharmacy Stats Card Widget
 /// 

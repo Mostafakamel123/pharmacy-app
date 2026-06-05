@@ -1,10 +1,10 @@
+import 'package:Elaaj/core/helpers/local_storage_helper.dart';
+import 'package:Elaaj/core/routing/app_router.dart';
+import 'package:Elaaj/core/theme/app_theme.dart';
+import 'package:Elaaj/features/profile/controller/profile_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/routing/app_router.dart';
-import 'package:pharmacy_app/core/theme/app_theme.dart';
-import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
-import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();

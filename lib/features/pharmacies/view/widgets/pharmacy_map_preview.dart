@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/models/pharmacy_model.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
 
 class PharmacyMapPreview extends StatelessWidget {
   final List<PharmacyModel> pharmacies;

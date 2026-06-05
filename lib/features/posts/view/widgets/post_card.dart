@@ -3,11 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/posts/model/post_model.dart';
-import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
-import 'package:pharmacy_app/features/posts/controller/posts_providers.dart';
-import 'package:pharmacy_app/features/posts/view/edit_post_screen.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/posts/model/post_model.dart';
+import 'package:Elaaj/features/profile/controller/profile_providers.dart';
+import 'package:Elaaj/features/posts/controller/posts_providers.dart';
+import 'package:Elaaj/features/posts/view/edit_post_screen.dart';
 
 class PostCard extends ConsumerWidget {
   final PostModel post;

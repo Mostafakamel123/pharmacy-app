@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
-import 'package:pharmacy_app/core/config/env_config.dart';
-import 'package:pharmacy_app/core/services/geocoding_service.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/profile/controller/profile_providers.dart';
+import 'package:Elaaj/core/config/env_config.dart';
+import 'package:Elaaj/core/services/geocoding_service.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -77,7 +77,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       final latitude = formState.latitude;
                       final longitude = formState.longitude;
                       final imagePath = formState.imagePath;
-                      await ref
+                      final updated = await ref
                           .read(profileProvider.notifier)
                           .updateProfile(
                             name: name,
@@ -87,7 +87,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             latitude: latitude,
                             longitude: longitude,
                           );
-                      if (context.mounted) Navigator.pop(context);
+                      // Always refresh provider to guarantee the profile
+                      // screen sees the latest data, even if the PUT
+                      // response couldn't be parsed locally.
+                      await ref.read(profileProvider.notifier).refresh();
+                      if (context.mounted) {
+                        if (updated) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Profile updated successfully'),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to update profile'),
+                              backgroundColor: Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                        Navigator.pop(context);
+                      }
                     }
                   },
             child: formState.isSaving

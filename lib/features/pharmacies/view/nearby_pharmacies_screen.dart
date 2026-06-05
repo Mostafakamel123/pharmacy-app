@@ -2,12 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/pharmacies/controller/pharmacy_providers.dart';
-import 'package:pharmacy_app/features/pharmacies/view/pharmacy_details_screen.dart';
-import 'package:pharmacy_app/features/pharmacies/view/widgets/pharmacy_card.dart';
-import 'package:pharmacy_app/features/pharmacies/view/widgets/pharmacy_filter_bar.dart';
-import 'package:pharmacy_app/features/pharmacies/view/widgets/pharmacy_map_preview.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/pharmacies/controller/pharmacy_providers.dart';
+import 'package:Elaaj/features/pharmacies/view/pharmacy_details_screen.dart';
+import 'package:Elaaj/features/pharmacies/view/widgets/pharmacy_card.dart';
+import 'package:Elaaj/features/pharmacies/view/widgets/pharmacy_filter_bar.dart';
+import 'package:Elaaj/features/pharmacies/view/widgets/pharmacy_map_preview.dart';
 
 class NearbyPharmaciesScreen extends ConsumerWidget {
   const NearbyPharmaciesScreen({super.key});

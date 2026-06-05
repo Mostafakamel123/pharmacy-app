@@ -1,9 +1,10 @@
+import 'package:Elaaj/core/constants/app_constants.dart';
+import 'package:Elaaj/core/helpers/local_storage_helper.dart';
+import 'package:Elaaj/features/auth/model/auth_user.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/network/failure.dart';
-import 'package:pharmacy_app/features/auth/model/auth_user.dart';
-import 'package:pharmacy_app/features/auth/service/auth_service.dart';
-import 'package:pharmacy_app/core/helpers/local_storage_helper.dart';
-import 'package:pharmacy_app/core/constants/app_constants.dart';
+import 'package:Elaaj/core/network/failure.dart';
+import 'package:Elaaj/features/auth/service/auth_service.dart';
+
 
 /// Authentication state
 class AuthState {

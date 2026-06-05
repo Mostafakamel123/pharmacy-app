@@ -3,11 +3,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/auth/service/auth_service.dart';
-import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
-import 'package:pharmacy_app/features/pharmacies/controller/my_pharmacies_provider.dart';
-import 'package:pharmacy_app/features/pharmacies/model/user_pharmacy_model.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/auth/service/auth_service.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/pharmacies/controller/my_pharmacies_provider.dart';
+import 'package:Elaaj/features/pharmacies/model/user_pharmacy_model.dart';
 
 // ─── Model ───────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,56 @@ class UserSearchResult {
     return name[0].toUpperCase();
   }
 }
+
+// ─── Pharmacy Admin Model & Provider ──────────────────────────────────────────
+
+class PharmacyAdminModel {
+  final String userId;
+  final String userName;
+  final String email;
+  final String pharmacyId;
+  final String role;
+  final String assignedAt;
+
+  const PharmacyAdminModel({
+    required this.userId,
+    required this.userName,
+    required this.email,
+    required this.pharmacyId,
+    required this.role,
+    required this.assignedAt,
+  });
+
+  factory PharmacyAdminModel.fromJson(Map<String, dynamic> json) {
+    return PharmacyAdminModel(
+      userId: (json['userId'] ?? '').toString(),
+      userName: (json['userName'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      pharmacyId: (json['pharmacyId'] ?? '').toString(),
+      role: (json['role'] ?? '').toString(),
+      assignedAt: (json['assignedAt'] ?? '').toString(),
+    );
+  }
+
+  String get displayName => userName.isNotEmpty ? userName : email;
+
+  String get initials {
+    final name = displayName.trim();
+    if (name.isEmpty) return '?';
+    final String partToUse = name.contains('@') ? name.split('@').first : name;
+    final parts = partToUse.split('.').where((p) => p.isNotEmpty).toList();
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return partToUse[0].toUpperCase();
+  }
+}
+
+final pharmacyAdminsProvider = FutureProvider.family<List<PharmacyAdminModel>, String>((ref, pharmacyId) async {
+  final api = ApiEndpoints();
+  final list = await api.getPharmacyAdmins(pharmacyId);
+  return list.map((e) => PharmacyAdminModel.fromJson(Map<String, dynamic>.from(e))).toList();
+});
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
@@ -109,8 +160,9 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
     super.dispose();
   }
 
-  Future<void> _removeAdmin(String userId) async {
-    if (userId == widget.pharmacy.ownerUserId) {
+  Future<void> _removeAdmin(PharmacyAdminModel admin) async {
+    final isOwnerRole = admin.role == 'PharmacyOwner' || admin.role == 'Owner';
+    if (isOwnerRole) {
       _showSnack('لا يمكن إزالة المالك', isError: true);
       return;
     }
@@ -125,12 +177,15 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
 
     setState(() => _isRemoving = true);
     try {
-      final ok = await ref
-          .read(myPharmaciesProvider.notifier)
-          .removeAdmin(widget.pharmacy.id, userId);
+      final api = ApiEndpoints();
+      final response = await api.deletePharmacyAdmin(widget.pharmacy.id, admin.userId);
+      final String? msg = response['message'] as String?;
+
+      ref.invalidate(pharmacyAdminsProvider(widget.pharmacy.id));
+      ref.invalidate(myPharmaciesProvider);
+
       if (mounted) {
-        _showSnack(ok ? 'تمت إزالة المسؤول بنجاح' : 'فشل في إزالة المسؤول',
-            isError: !ok);
+        _showSnack(msg ?? 'تمت إزالة المسؤول بنجاح');
       }
     } catch (e) {
       if (mounted) _showSnack('خطأ: $e', isError: true);
@@ -151,6 +206,7 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
         pharmacyId: widget.pharmacy.id,
         onAdminAdded: () {
           ref.invalidate(myPharmaciesProvider);
+          ref.invalidate(pharmacyAdminsProvider(widget.pharmacy.id));
         },
       ),
     );
@@ -203,11 +259,10 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final allAdminIds = widget.pharmacy.allAdminIds;
+    final adminsAsync = ref.watch(pharmacyAdminsProvider(widget.pharmacy.id));
     final currentUserId = ref.watch(currentUserIdProvider);
     final isOwner = widget.pharmacy.ownerUserId == currentUserId ||
         widget.pharmacy.ownerUserId.isEmpty;
-    final isAdmin = widget.pharmacy.isAdmin(currentUserId);
 
     return Scaffold(
       backgroundColor:
@@ -304,10 +359,17 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
 
           // ── Stats strip ──────────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: _StatsStrip(
-              adminCount: allAdminIds.length,
-              pharmacyName: widget.pharmacy.name,
-              isDark: isDark,
+            child: adminsAsync.maybeWhen(
+              data: (admins) => _StatsStrip(
+                adminCount: admins.length,
+                pharmacyName: widget.pharmacy.name,
+                isDark: isDark,
+              ),
+              orElse: () => _StatsStrip(
+                adminCount: widget.pharmacy.allAdminIds.length,
+                pharmacyName: widget.pharmacy.name,
+                isDark: isDark,
+              ),
             ),
           ),
 
@@ -317,14 +379,26 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
               child: Row(
                 children: [
-                  Text(
-                    'المسؤولون (${allAdminIds.length})',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? DarkColors.textPrimary
-                          : LightColors.textPrimary,
+                  adminsAsync.maybeWhen(
+                    data: (admins) => Text(
+                      'المسؤولون (${admins.length})',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? DarkColors.textPrimary
+                            : LightColors.textPrimary,
+                      ),
+                    ),
+                    orElse: () => Text(
+                      'المسؤولون',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? DarkColors.textPrimary
+                            : LightColors.textPrimary,
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -340,24 +414,62 @@ class _PharmacyAdminsScreenState extends ConsumerState<PharmacyAdminsScreen>
           ),
 
           // ── Admin cards list ─────────────────────────────────────────────
-          SliverPadding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final userId = allAdminIds[index];
-                  final isOwnerUser =
-                      userId == widget.pharmacy.ownerUserId;
-                  return _AdminCard(
-                    userId: userId,
-                    isOwner: isOwnerUser,
-                    canRemove: isOwner && !isOwnerUser,
-                    onRemove: () => _removeAdmin(userId),
-                    isDark: isDark,
-                  );
-                },
-                childCount: allAdminIds.length,
+          adminsAsync.when(
+            data: (admins) {
+              if (admins.isEmpty) {
+                return const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: Text(
+                        'لا يوجد مسؤولين حالياً',
+                        style: TextStyle(fontSize: 15, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final admin = admins[index];
+                      final isOwnerUser = admin.role == 'PharmacyOwner' || admin.role == 'Owner';
+                      return _AdminCard(
+                        admin: admin,
+                        canRemove: isOwner && !isOwnerUser,
+                        onRemove: () => _removeAdmin(admin),
+                        isDark: isDark,
+                      );
+                    },
+                    childCount: admins.length,
+                  ),
+                ),
+              );
+            },
+            loading: () => const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+            error: (err, _) => SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Text('فشل تحميل المسؤولين: $err', style: const TextStyle(color: AppColors.accentRed)),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () => ref.invalidate(pharmacyAdminsProvider(widget.pharmacy.id)),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('إعادة المحاولة'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -480,19 +592,19 @@ class _StatItem extends StatelessWidget {
 // ─── Admin Card ───────────────────────────────────────────────────────────────
 
 class _AdminCard extends StatelessWidget {
-  final String userId;
-  final bool isOwner;
+  final PharmacyAdminModel admin;
   final bool canRemove;
   final VoidCallback onRemove;
   final bool isDark;
 
   const _AdminCard({
-    required this.userId,
-    required this.isOwner,
+    required this.admin,
     required this.canRemove,
     required this.onRemove,
     required this.isDark,
   });
+
+  bool get isOwner => admin.role == 'PharmacyOwner' || admin.role == 'Owner';
 
   Color get _roleColor =>
       isOwner ? AppColors.primaryBlue : AppColors.accentPurple;
@@ -502,8 +614,6 @@ class _AdminCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final short = userId.length > 8 ? userId.substring(0, 8) : userId;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -539,34 +649,56 @@ class _AdminCard extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          child: Icon(_roleIcon, color: Colors.white, size: 22),
+          child: Center(
+            child: Text(
+              admin.initials,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
         ),
         title: Text(
-          '$short...',
+          admin.displayName,
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 14,
             color:
                 isDark ? DarkColors.textPrimary : LightColors.textPrimary,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: _roleColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Text(
-              _roleLabel,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: _roleColor,
+          child: Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _roleColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_roleIcon, color: _roleColor, size: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      _roleLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: _roleColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
         isThreeLine: false,

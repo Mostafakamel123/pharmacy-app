@@ -1,8 +1,8 @@
 
 // ignore_for_file: use_super_parameters
 
+import 'package:Elaaj/core/network/network_exception.dart';
 import 'package:dio/dio.dart';
-import 'package:pharmacy_app/core/network/network_exception.dart';
 
 /// Helper function to safely execute API calls and handle exceptions
 /// 

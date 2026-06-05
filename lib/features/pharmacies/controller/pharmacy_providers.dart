@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/network/api_endpoints.dart';
-import 'package:pharmacy_app/core/models/pharmacy_model.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
 
 // Nearby pharmacies provider
 final nearbyPharmaciesProvider = StateNotifierProvider<NearbyPharmaciesNotifier, AsyncValue<List<PharmacyModel>>>((ref) {

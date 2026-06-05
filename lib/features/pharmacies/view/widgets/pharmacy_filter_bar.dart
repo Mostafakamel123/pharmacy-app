@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/pharmacies/controller/pharmacy_providers.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/pharmacies/controller/pharmacy_providers.dart';
 
 class PharmacyFilterBar extends ConsumerWidget {
   const PharmacyFilterBar({super.key});

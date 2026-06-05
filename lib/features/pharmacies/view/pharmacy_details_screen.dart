@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/core/models/pharmacy_model.dart';
-import 'package:pharmacy_app/core/services/geocoding_service.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/core/services/geocoding_service.dart';
 
 class PharmacyDetailsScreen extends StatefulWidget {
   final PharmacyModel pharmacy;

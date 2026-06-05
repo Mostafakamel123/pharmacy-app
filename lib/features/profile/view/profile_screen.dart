@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pharmacy_app/core/theme/app_colors.dart';
-import 'package:pharmacy_app/features/profile/controller/profile_providers.dart';
-import 'package:pharmacy_app/features/profile/view/edit_profile_screen.dart';
-import 'package:pharmacy_app/features/profile/view/my_posts_screen.dart';
-import 'package:pharmacy_app/features/profile/view/saved_posts_screen.dart';
-import 'package:pharmacy_app/features/profile/view/widgets/profile_actions.dart';
-import 'package:pharmacy_app/features/profile/view/widgets/profile_header.dart';
-import 'package:pharmacy_app/features/auth/controller/auth_providers.dart';
-import 'package:pharmacy_app/features/prescription/view/screens/my_prescriptions_screen.dart';
+import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/profile/controller/profile_providers.dart';
+import 'package:Elaaj/features/profile/view/edit_profile_screen.dart';
+import 'package:Elaaj/features/profile/view/my_posts_screen.dart';
+import 'package:Elaaj/features/profile/view/saved_posts_screen.dart';
+import 'package:Elaaj/features/profile/view/widgets/profile_actions.dart';
+import 'package:Elaaj/features/profile/view/widgets/profile_header.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/prescription/view/screens/my_prescriptions_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
