@@ -24,8 +24,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   String? _emailError;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).clearError();
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
+    // Clear error on dispose to prevent leaks
+    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -149,7 +159,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      ref.read(authProvider.notifier).clearError();
+                      context.pop();
+                    },
                     child: const Text(
                       'Sign In',
                       style: TextStyle(

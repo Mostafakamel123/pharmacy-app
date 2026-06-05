@@ -30,10 +30,20 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   bool _isSuccess = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).clearError();
+    });
+  }
+
+  @override
   void dispose() {
     _otpController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    // Clear error on dispose to prevent leaks
+    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -300,7 +310,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 AuthButton(
                   text: 'Go to Login',
                   isLoading: false,
-                  onPressed: () => context.go(AppRoutes.login),
+                  onPressed: () {
+                    ref.read(authProvider.notifier).clearError();
+                    context.go(AppRoutes.login);
+                  },
                 ),
               ],
             ],

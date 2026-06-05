@@ -25,9 +25,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _passwordError;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).clearError();
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    // Clear error on dispose to prevent leaks
+    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -171,11 +181,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Forgot password
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () => context.push(AppRoutes.forgotPassword),
+                    onPressed: () {
+                      ref.read(authProvider.notifier).clearError();
+                      context.push(AppRoutes.forgotPassword);
+                    },
                     child: const Text(
                       'Forgot Password?',
                       style: TextStyle(
@@ -209,7 +221,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => context.push(AppRoutes.register),
+                      onPressed: () {
+                        ref.read(authProvider.notifier).clearError();
+                        context.push(AppRoutes.register);
+                      },
                       child: const Text(
                         'Sign Up',
                         style: TextStyle(

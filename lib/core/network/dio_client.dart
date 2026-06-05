@@ -139,7 +139,7 @@ class _AuthInterceptor extends Interceptor {
     // Handle 401 Unauthorized - refresh token
     // (since validateStatus: status < 500 allows 401 to be processed as successful)
     if (response.statusCode == 401 &&
-        !response.requestOptions.path.contains('/api/Auth/refresh-token')) {
+        !response.requestOptions.path.contains('/api/Auth/')) {
       final newToken = await _performTokenRefresh(response.requestOptions.baseUrl);
 
       if (newToken != null) {
@@ -186,7 +186,7 @@ class _AuthInterceptor extends Interceptor {
   ) async {
     // Handle 401 Unauthorized - refresh token
     if (err.response?.statusCode == 401 &&
-        !err.requestOptions.path.contains('/api/Auth/refresh-token')) {
+        !err.requestOptions.path.contains('/api/Auth/')) {
       final newToken = await _performTokenRefresh(err.requestOptions.baseUrl);
 
       if (newToken != null) {

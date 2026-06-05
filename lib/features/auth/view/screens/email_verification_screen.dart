@@ -25,11 +25,16 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).clearError();
+    });
   }
 
   @override
   void dispose() {
     _otpController.dispose();
+    // Clear error on dispose to prevent leaks
+    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -263,7 +268,10 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                 AuthButton(
                   text: 'Continue to Home',
                   isLoading: false,
-                  onPressed: () => context.go(AppRoutes.home),
+                  onPressed: () {
+                    ref.read(authProvider.notifier).clearError();
+                    context.go(AppRoutes.home);
+                  },
                 ),
               ],
             ],

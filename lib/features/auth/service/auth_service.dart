@@ -574,32 +574,63 @@ Failure _failureFromResponse(Response response) {
   String message = 'An error occurred';
   String code = 'ERROR_$statusCode';
 
-  // Try to extract error message from response
-  if (data is Map<String, dynamic>) {
-    message = data['message'] as String? ??
-              data['error'] as String? ??
-              data['title'] as String? ??
+  if (data is Map) {
+    message = data['message']?.toString() ??
+              data['error']?.toString() ??
+              data['title']?.toString() ??
               message;
-    code = data['code'] as String? ?? code;
+    code = data['code']?.toString() ?? code;
     
     // Handle validation errors from Elaaj API
     if (statusCode == 400 && data.containsKey('errors')) {
-      final errors = data['errors'] as Map<String, dynamic>?;
-      if (errors != null) {
+      final errors = data['errors'];
+      if (errors is Map) {
         final validationErrors = <String, List<String>>{};
         errors.forEach((key, value) {
           if (value is List) {
-            validationErrors[key] = value.cast<String>();
-          } else if (value is String) {
-            validationErrors[key] = [value];
+            validationErrors[key.toString()] = value.map((e) => e.toString()).toList();
+          } else {
+            validationErrors[key.toString()] = [value.toString()];
           }
         });
         return ValidationFailure(
           message: message,
           errors: validationErrors,
         );
+      } else if (errors is List) {
+        final validationErrors = <String, List<String>>{
+          'general': errors.map((e) => e.toString()).toList(),
+        };
+        // If message is generic, use the errors list as combined message
+        if (message == 'An error occurred') {
+          message = errors.map((e) => e.toString()).join('\n');
+        }
+        return ValidationFailure(
+          message: message,
+          errors: validationErrors,
+        );
       }
     }
+  } else if (data is List) {
+    final messages = <String>[];
+    for (final item in data) {
+      if (item is Map) {
+        messages.add(item['description']?.toString() ?? item['message']?.toString() ?? item.toString());
+      } else {
+        messages.add(item.toString());
+      }
+    }
+    if (messages.isNotEmpty) {
+      message = messages.join('\n');
+    }
+    return ValidationFailure(
+      message: message,
+      errors: {
+        'general': messages,
+      },
+    );
+  } else if (data is String && data.isNotEmpty) {
+    message = data;
   }
 
   if (statusCode == 401) {

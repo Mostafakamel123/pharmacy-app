@@ -32,11 +32,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _acceptTerms = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).clearError();
+    });
+  }
+
+  @override
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    // Clear error on dispose to prevent leaks
+    ref.read(authProvider.notifier).clearError();
     super.dispose();
   }
 
@@ -275,7 +285,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => context.push(AppRoutes.login),
+                      onPressed: () {
+                        ref.read(authProvider.notifier).clearError();
+                        context.push(AppRoutes.login);
+                      },
                       child: const Text(
                         'Sign In',
                         style: TextStyle(
