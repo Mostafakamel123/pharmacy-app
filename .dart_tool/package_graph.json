@@ -17,6 +17,7 @@
         "geolocator",
         "go_router",
         "image_picker",
+        "intl",
         "riverpod_annotation",
         "shared_preferences",
         "url_launcher"
@@ -175,6 +176,15 @@
         "test_api",
         "vector_math",
         "vm_service"
+      ]
+    },
+    {
+      "name": "intl",
+      "version": "0.20.2",
+      "dependencies": [
+        "clock",
+        "meta",
+        "path"
       ]
     },
     {

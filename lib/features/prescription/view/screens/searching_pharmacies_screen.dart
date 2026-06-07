@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/routing/app_routes.dart';
 import 'package:Elaaj/features/prescription/model/routing_state_model.dart';
 import 'package:Elaaj/core/models/pharmacy_model.dart';
 import 'package:Elaaj/features/prescription/controller/prescription_providers.dart';
 import 'package:Elaaj/features/prescription/controller/patient_prescription_providers.dart';
 import 'package:Elaaj/features/chat/controller/chat_providers.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 
 /// Searching Pharmacies Screen
 /// Shows animated search with countdown timer and current pharmacy being contacted
@@ -183,7 +186,21 @@ class _SearchingPharmaciesScreenState
           }
           // Reset routing state so patient doesn't get stuck if they press back
           ref.read(routingStateNotifierProvider.notifier).resetRouting();
-          context.replace('/chat/$chatId', extra: displayName);
+          
+          final currentUserId = ref.read(authProvider).user?.id ?? '';
+          final pharmacyId = routingState.lockPharmacyId ?? '';
+          
+          context.replace(
+            AppRoutes.prescriptionChat,
+            extra: {
+              'prescriptionId': routingState.id,
+              'otherUserId': pharmacyId,
+              'currentUserId': currentUserId,
+              'isPharmacy': false,
+              'pharmacyId': null,
+              'otherUserName': displayName,
+            },
+          );
         }
       });
     }
@@ -207,7 +224,7 @@ class _SearchingPharmaciesScreenState
 
     // Check if pharmacy responded
     if (routingState.status == RoutingStatus.pharmacyResponded) {
-      return _buildPharmacyRespondedScreen(routingState, isDark, replies);
+      return _buildPharmacyRespondedScreen(routingState, isDark, replies, serverStatus);
     }
 
     return Scaffold(
@@ -1065,15 +1082,25 @@ class _SearchingPharmaciesScreenState
     );
   }
 
-  Widget _buildPharmacyRespondedScreen(RoutingStateModel state, bool isDark, List<dynamic> replies) {
+  Widget _buildPharmacyRespondedScreen(RoutingStateModel state, bool isDark, List<dynamic> replies, int status) {
     final textSecondary = isDark
         ? DarkColors.textSecondary
         : LightColors.textSecondary;
 
     String displayName = 'Pharmacy';
-    if (state.lockPharmacyId != null) {
+    String pharmacyId = state.lockPharmacyId ?? '';
+
+    // If lockPharmacyId is null, resolve it dynamically from the loaded replies!
+    if (pharmacyId.isEmpty && replies.isNotEmpty) {
+      final acceptedReply = replies.firstWhere((r) => r is Map, orElse: () => null);
+      if (acceptedReply != null) {
+        pharmacyId = _getVal(acceptedReply, 'pharmacyId')?.toString() ?? '';
+      }
+    }
+
+    if (pharmacyId.isNotEmpty) {
       final matchingReply = replies.firstWhere(
-        (r) => _getVal(r, 'pharmacyId')?.toString() == state.lockPharmacyId,
+        (r) => _getVal(r, 'pharmacyId')?.toString() == pharmacyId,
         orElse: () => null,
       );
       if (matchingReply != null) {
@@ -1103,14 +1130,126 @@ class _SearchingPharmaciesScreenState
               ),
               const SizedBox(height: 12),
               Text(
-                'Connecting you with the pharmacy...',
+                'Your offer has been accepted. Open chat to coordinate with the pharmacy.',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: textSecondary),
               ),
               const SizedBox(height: 32),
-              const CircularProgressIndicator(),
+
+              // ── Open Chat CTA ──────────────────────────────────────────
+              Builder(
+                builder: (ctx) {
+                  final authState = ref.read(authProvider);
+                  final isPharmacy = ref.read(isPharmacyModeProvider);
+                  final pharmacyMode = ref.read(pharmacyModeProvider);
+                  final currentUserId = authState.user?.id ?? '';
+
+                  final String otherUserId;
+                  final String? pharmacyIdParam;
+
+                  if (isPharmacy) {
+                    otherUserId = state.patientId;
+                    pharmacyIdParam = pharmacyMode.currentPharmacy?.id ?? pharmacyId;
+                  } else {
+                    otherUserId = pharmacyId;
+                    pharmacyIdParam = null;
+                  }
+
+                  if (status == 2 && !isPharmacy) {
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (otherUserId.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Cannot open chat: Other user ID is empty. / لا يمكن فتح المحادثة: معرف الطرف الآخر فارغ.'),
+                              ),
+                            );
+                            return;
+                          }
+                          context.push(
+                            AppRoutes.prescriptionChat,
+                            extra: {
+                              'prescriptionId': state.id,
+                              'otherUserId': otherUserId,
+                              'currentUserId': currentUserId,
+                              'isPharmacy': false,
+                              'pharmacyId': null,
+                              'otherUserName': displayName,
+                            },
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '💬 Chat with Pharmacy',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        if (otherUserId.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Cannot open chat: Other user ID is empty. / لا يمكن فتح المحادثة: معرف الطرف الآخر فارغ.'),
+                            ),
+                          );
+                          return;
+                        }
+                        context.push(
+                          AppRoutes.prescriptionChat,
+                          extra: {
+                            'prescriptionId': state.id,
+                            'otherUserId': otherUserId,
+                            'currentUserId': currentUserId,
+                            'isPharmacy': isPharmacy,
+                            'pharmacyId': pharmacyIdParam,
+                            'otherUserName': displayName,
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.chat_rounded, size: 18),
+                      label: const Text(
+                        'Open Chat / فتح المحادثة',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    ref.read(routingStateNotifierProvider.notifier).resetRouting();
+                    context.pop();
+                  },
+                  child: const Text('Back to Prescriptions'),
+                ),
+              ),
             ],
           ),
         ),

@@ -8,9 +8,13 @@ import 'package:Elaaj/core/routing/app_routes.dart';
 import 'package:Elaaj/core/config/env_config.dart';
 import 'package:Elaaj/features/prescription/controller/patient_prescription_providers.dart';
 import 'package:Elaaj/features/prescription/controller/prescription_providers.dart';
+import 'package:Elaaj/features/prescription/model/prescription.dart';
 import 'package:Elaaj/features/prescription/model/prescription_model.dart';
 import 'package:Elaaj/features/prescription/model/routing_state_model.dart';
 import 'package:Elaaj/features/chat/controller/chat_providers.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
 
 class MyPrescriptionsScreen extends ConsumerWidget {
   const MyPrescriptionsScreen({super.key});
@@ -26,10 +30,9 @@ class MyPrescriptionsScreen extends ConsumerWidget {
     return null;
   }
 
-  String _formatDate(String? isoString) {
-    if (isoString == null || isoString.isEmpty) return 'Recent / حديث';
+  String _formatDate(DateTime date) {
     try {
-      final parsed = DateTime.parse(isoString).toLocal();
+      final parsed = date.toLocal();
       final day = parsed.day.toString().padLeft(2, '0');
       final month = parsed.month.toString().padLeft(2, '0');
       final year = parsed.year;
@@ -37,7 +40,7 @@ class MyPrescriptionsScreen extends ConsumerWidget {
       final minute = parsed.minute.toString().padLeft(2, '0');
       return '$day-$month-$year $hour:$minute';
     } catch (_) {
-      return isoString.split('T').first;
+      return date.toIso8601String().split('T').first;
     }
   }
 
@@ -50,19 +53,19 @@ class MyPrescriptionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final prescriptionsAsync = ref.watch(patientPrescriptionsProvider);
+    final prescriptionsAsync = ref.watch(myPrescriptionsProvider);
 
     return Scaffold(
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
       appBar: AppBar(
-        title: const Text('My Prescriptions / طلبات الروشتة'),
+        title: const Text('My Prescriptions / روشتاتي'),
         centerTitle: true,
         elevation: 0,
       ),
       body: RefreshIndicator(
         color: AppColors.primaryBlue,
         onRefresh: () async {
-          ref.invalidate(patientPrescriptionsProvider);
+          ref.invalidate(myPrescriptionsProvider);
         },
         child: prescriptionsAsync.when(
           loading: () => const Center(
@@ -84,7 +87,7 @@ class MyPrescriptionsScreen extends ConsumerWidget {
                   Text('$err', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => ref.invalidate(patientPrescriptionsProvider),
+                    onPressed: () => ref.invalidate(myPrescriptionsProvider),
                     child: const Text('Retry / إعادة المحاولة'),
                   ),
                 ],
@@ -101,31 +104,10 @@ class MyPrescriptionsScreen extends ConsumerWidget {
               itemCount: list.length,
               itemBuilder: (context, index) {
                 final item = list[index];
-                if (item is! Map) return const SizedBox.shrink();
-
-                final id = _getVal(item, 'id')?.toString() ?? '';
-                final displayId = id.length >= 4 ? id.substring(0, 4).toUpperCase() : id.toUpperCase();
-                final notes = _getVal(item, 'notes')?.toString() ?? 'No notes / لا توجد ملاحظات';
-                final imageUrl = _getVal(item, 'imageUrl')?.toString();
-                final createdAtStr = _getVal(item, 'createdAt')?.toString();
-                
-                final rawStatus = _getVal(item, 'status');
-                final statusVal = (rawStatus is num) ? rawStatus.toInt() : 0;
-                
-                final repliesRaw = _getVal(item, 'replies');
-                final List<dynamic> replies = repliesRaw is List ? repliesRaw : [];
-
                 return _buildPrescriptionCard(
                   context: context,
                   ref: ref,
                   item: item,
-                  id: id,
-                  displayId: displayId,
-                  notes: notes,
-                  imageUrl: imageUrl,
-                  createdAtStr: createdAtStr,
-                  statusVal: statusVal,
-                  replies: replies,
                   isDark: isDark,
                 );
               },
@@ -194,14 +176,7 @@ class MyPrescriptionsScreen extends ConsumerWidget {
   Widget _buildPrescriptionCard({
     required BuildContext context,
     required WidgetRef ref,
-    required Map<dynamic, dynamic> item,
-    required String id,
-    required String displayId,
-    required String notes,
-    required String? imageUrl,
-    required String? createdAtStr,
-    required int statusVal,
-    required List<dynamic> replies,
+    required Prescription item,
     required bool isDark,
   }) {
     final surfaceColor = isDark ? DarkColors.surface : LightColors.surface;
@@ -209,41 +184,47 @@ class MyPrescriptionsScreen extends ConsumerWidget {
     final textSecondary = isDark ? DarkColors.textSecondary : LightColors.textSecondary;
     final dividerColor = isDark ? DarkColors.divider : LightColors.divider;
 
+    final id = item.id;
+    final displayId = id.length >= 4 ? id.substring(0, 4).toUpperCase() : id.toUpperCase();
+    final notes = item.notes ?? 'No notes / لا توجد ملاحظات';
+    final imageUrl = item.imageUrl;
+    final replies = item.replies;
+
     // Resolve Status Badge styling
-    String statusTextEn = 'Active / Searching';
+    String statusTextEn = 'Searching';
     String statusTextAr = 'جاري البحث';
     Color badgeColor = AppColors.primaryBlue;
 
-    switch (statusVal) {
+    switch (item.status) {
       case 0:
         statusTextEn = 'Searching';
-        statusTextAr = 'جاري البحث عن صيدليات';
+        statusTextAr = 'جاري البحث';
         badgeColor = AppColors.primaryBlue;
         break;
       case 1:
-        statusTextEn = 'Offers Received';
-        statusTextAr = 'تم استلام عروض سعر';
-        badgeColor = AppColors.primaryGreen;
+        statusTextEn = 'Offers Available';
+        statusTextAr = 'عروض متاحة';
+        badgeColor = Colors.orange;
         break;
       case 2:
         statusTextEn = 'Preparing';
-        statusTextAr = 'تم القبول وجاري التجهيز';
-        badgeColor = AppColors.accentYellow;
+        statusTextAr = 'جاري التجهيز';
+        badgeColor = AppColors.primaryGreen;
         break;
       case 3:
         statusTextEn = 'Completed';
-        statusTextAr = 'تم التجهيز والتسليم';
-        badgeColor = AppColors.primaryGreen;
+        statusTextAr = 'مكتمل';
+        badgeColor = Colors.grey;
         break;
       case 4:
         statusTextEn = 'Declined';
-        statusTextAr = 'تم رفض الطلب';
+        statusTextAr = 'مرفوض';
         badgeColor = AppColors.accentRed;
         break;
       case 5:
         statusTextEn = 'Cancelled';
-        statusTextAr = 'تم إلغاء الطلب';
-        badgeColor = AppColors.accentRed;
+        statusTextAr = 'ملغي';
+        badgeColor = Colors.grey;
         break;
     }
 
@@ -261,8 +242,7 @@ class MyPrescriptionsScreen extends ConsumerWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          // Open details on search screen by setting routing state
-          _openSearchingScreen(ref, context, item, id, statusVal, replies);
+          _openSearchingScreen(ref, context, item);
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -369,7 +349,7 @@ class MyPrescriptionsScreen extends ConsumerWidget {
                             Icon(Icons.calendar_today_rounded, size: 12, color: textSecondary),
                             const SizedBox(width: 4),
                             Text(
-                              _formatDate(createdAtStr),
+                              _formatDate(item.createdAt),
                               style: TextStyle(fontSize: 11, color: textSecondary),
                             ),
                           ],
@@ -381,27 +361,173 @@ class MyPrescriptionsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // Action Block: Offers Summary
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Action Block: Offers Summary + Open Chat
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.local_offer_rounded, size: 14, color: AppColors.primaryGreen),
-                      const SizedBox(width: 4),
-                      Text(
-                        replies.isNotEmpty
-                            ? '${replies.length} Offer(s) Received / ${replies.length} عرض مستلم'
-                            : 'No offers yet / لا توجد عروض حالياً',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: replies.isNotEmpty ? AppColors.primaryGreen : textSecondary,
-                        ),
+                      Row(
+                        children: [
+                          const Icon(Icons.local_offer_rounded, size: 14, color: AppColors.primaryGreen),
+                          const SizedBox(width: 4),
+                          Text(
+                            replies.isNotEmpty
+                                ? '${replies.length} Offer(s) Received / ${replies.length} عرض مستلم'
+                                : 'No offers yet / لا توجد عروض حالياً',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: replies.isNotEmpty ? AppColors.primaryGreen : textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
+                      Icon(Icons.arrow_forward_ios_rounded, size: 14, color: textSecondary),
                     ],
                   ),
-                  Icon(Icons.arrow_forward_ios_rounded, size: 14, color: textSecondary),
+
+                  // ── Open Chat Button (only when status == 2) ──────────────
+                  if (item.status == 2) ...[  
+                    const SizedBox(height: 10),
+                    Builder(
+                      builder: (ctx) {
+                        final authState = ref.read(authProvider);
+                        final isPharmacy = ref.read(isPharmacyModeProvider);
+                        final pharmacyMode = ref.read(pharmacyModeProvider);
+                        final currentUserId = authState.user?.id ?? '';
+
+                        return SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              // Show progress indicator dialog
+                              showDialog(
+                                context: ctx,
+                                barrierDismissible: false,
+                                builder: (context) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+
+                              try {
+                                final api = ApiEndpoints();
+                                final presData = await api.getPrescriptionById(id: id);
+                                
+                                // Close the progress dialog
+                                if (ctx.mounted) {
+                                  Navigator.of(ctx).pop();
+                                }
+
+                                final repliesRaw = presData['replies'] ?? presData['offers'] ?? presData['prescriptionReplies'] ?? [];
+                                final List<dynamic> fetchedReplies = repliesRaw is List ? repliesRaw : [];
+                                final firstReply = fetchedReplies.firstWhere(
+                                  (r) => r is Map && _getVal(r, 'pharmacyId') != null,
+                                  orElse: () => null,
+                                );
+
+                                if (firstReply == null) {
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('No pharmacy reply found for this prescription. / لم يتم العثور على رد من الصيدلية لهذه الروشتة.'),
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                final resolvedPharmacyId = _getVal(firstReply, 'pharmacyId')?.toString() ?? '';
+                                final resolvedPharmacyName = _getVal(firstReply, 'pharmacyName')?.toString() ?? 'Pharmacy';
+                                final resolvedPrice = (_getVal(firstReply, 'totalPrice') as num?)?.toDouble() ?? 0.0;
+                                final resolvedMsg = _getVal(firstReply, 'message')?.toString() ?? '';
+
+                                final String targetOtherUserId;
+                                final String targetOtherUserName;
+                                final String? targetPharmacyIdParam;
+
+                                if (isPharmacy) {
+                                  targetOtherUserId = _getVal(firstReply, 'patientId')?.toString() ?? 'patient_123';
+                                  targetOtherUserName = 'Patient';
+                                  targetPharmacyIdParam = pharmacyMode.currentPharmacy?.id ?? resolvedPharmacyId;
+                                } else {
+                                  targetOtherUserId = resolvedPharmacyId;
+                                  targetOtherUserName = resolvedPharmacyName;
+                                  targetPharmacyIdParam = null;
+                                }
+
+                                if (targetOtherUserId.isEmpty) {
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Cannot open chat: Other user ID is empty. / لا يمكن فتح المحادثة: معرف الطرف الآخر فارغ.'),
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                // Seed the chat room dynamically!
+                                final String resolvedChatId = 'chat_historical_$id';
+                                ref.read(chatsProvider.notifier).createPrescriptionChat(
+                                  chatId: resolvedChatId,
+                                  pharmacyId: resolvedPharmacyId,
+                                  pharmacyName: resolvedPharmacyName,
+                                  price: resolvedPrice,
+                                  message: resolvedMsg,
+                                  prescriptionId: id,
+                                  prescriptionImage: item.imageUrl,
+                                  prescriptionNotes: item.notes,
+                                );
+
+                                if (ctx.mounted) {
+                                  context.push(
+                                    AppRoutes.prescriptionChat,
+                                    extra: {
+                                      'prescriptionId': id,
+                                      'otherUserId': targetOtherUserId,
+                                      'currentUserId': currentUserId,
+                                      'isPharmacy': isPharmacy,
+                                      'pharmacyId': targetPharmacyIdParam,
+                                      'otherUserName': targetOtherUserName,
+                                    },
+                                  );
+                                }
+                              } catch (e) {
+                                // Close the progress dialog if open
+                                if (ctx.mounted) {
+                                  Navigator.of(ctx).pop();
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Failed to load chat details: $e / فشل تحميل تفاصيل المحادثة: $e'),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.chat_rounded, size: 16),
+                            label: const Text(
+                              'Open Chat / فتح المحادثة',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -418,40 +544,40 @@ class MyPrescriptionsScreen extends ConsumerWidget {
   void _openSearchingScreen(
     WidgetRef ref,
     BuildContext context,
-    Map<dynamic, dynamic> item,
-    String id,
-    int statusVal,
-    List<dynamic> replies,
+    Prescription item,
   ) {
+    final authState = ref.read(authProvider);
+    final patientId = authState.user?.id ?? 'patient_123';
+
     // 1. Reconstruct the PrescriptionModel
     final prescription = PrescriptionModel(
-      id: id,
-      patientId: _getVal(item, 'patientId')?.toString() ?? 'patient_123',
-      imageUrl: _getVal(item, 'imageUrl')?.toString(),
-      textContent: _getVal(item, 'notes')?.toString(),
-      description: _getVal(item, 'notes')?.toString(),
-      createdAt: DateTime.tryParse(_getVal(item, 'createdAt')?.toString() ?? '') ?? DateTime.now(),
-      isImage: _getVal(item, 'imageUrl') != null,
+      id: item.id,
+      patientId: patientId,
+      imageUrl: item.imageUrl,
+      textContent: item.notes,
+      description: item.notes,
+      createdAt: item.createdAt,
+      isImage: item.imageUrl != null,
     );
 
     // 2. Map status value to RoutingStatus
     RoutingStatus rStatus = RoutingStatus.searching;
-    if (replies.isNotEmpty && statusVal == 1) {
+    if (item.replies.isNotEmpty && item.status == 1) {
       rStatus = RoutingStatus.searching; // Searching will automatically view offers dashboard
-    } else if (statusVal == 2 || statusVal == 3) {
+    } else if (item.status == 2 || item.status == 3) {
       rStatus = RoutingStatus.pharmacyResponded;
-    } else if (statusVal == 4 || statusVal == 5) {
+    } else if (item.status == 4 || item.status == 5) {
       rStatus = RoutingStatus.allPharmaciesFailed;
     }
 
     // Lookup lock pharmacy details if accepted
     String? lockPharmId;
     String? chatId;
-    if (statusVal == 2 || statusVal == 3) {
-      final matchingReply = replies.firstWhere((r) => true, orElse: () => null);
+    if (item.status == 2 || item.status == 3) {
+      final matchingReply = item.replies.firstWhere((r) => true, orElse: () => null);
       if (matchingReply != null) {
         lockPharmId = _getVal(matchingReply, 'pharmacyId')?.toString();
-        chatId = 'chat_historical_$id';
+        chatId = 'chat_historical_${item.id}';
         
         final pharmName = _getVal(matchingReply, 'pharmacyName')?.toString() ?? 'Nearby Pharmacy / صيدلية قريبة';
         final price = (_getVal(matchingReply, 'totalPrice') as num?)?.toDouble() ?? 0.0;
@@ -464,16 +590,16 @@ class MyPrescriptionsScreen extends ConsumerWidget {
               pharmacyName: pharmName,
               price: price,
               message: msg,
-              prescriptionId: id,
-              prescriptionImage: _getVal(item, 'imageUrl')?.toString(),
-              prescriptionNotes: _getVal(item, 'notes')?.toString(),
+              prescriptionId: item.id,
+              prescriptionImage: item.imageUrl,
+              prescriptionNotes: item.notes,
             );
       }
     }
 
     // 3. Initialize the routing notifier state
     ref.read(routingStateNotifierProvider.notifier).updateState(RoutingStateModel(
-      id: id,
+      id: item.id,
       patientId: prescription.patientId,
       prescription: prescription,
       status: rStatus,
@@ -485,8 +611,8 @@ class MyPrescriptionsScreen extends ConsumerWidget {
     ));
 
     // 4. Force refresh single prescription to load live replies from backend
-    ref.invalidate(singlePrescriptionProvider(id));
-    ref.invalidate(patientPrescriptionsProvider);
+    ref.invalidate(singlePrescriptionProvider(item.id));
+    ref.invalidate(myPrescriptionsProvider);
 
     // 5. Navigate to searching screen
     context.push(AppRoutes.searchingPharmacies);

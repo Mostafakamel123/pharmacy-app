@@ -1,11 +1,26 @@
+// ignore_for_file: avoid_print, unused_element
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../model/chat_model.dart';
 import '../model/chat_user_model.dart';
 import '../model/message_model.dart';
+import '../model/chat_message.dart';
+import 'chat_notifier.dart';
+import 'chat_repository.dart';
 import 'package:Elaaj/core/network/api_endpoints.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:Elaaj/features/prescription/controller/patient_prescription_providers.dart';
+
+/// Provider for chat history (typed using ChatMessage and ChatParams)
+final chatHistoryProvider = FutureProvider.family<List<ChatMessage>, ChatParams>((ref, params) async {
+  final repository = ChatRepository();
+  return repository.getChatHistory(
+    prescriptionId: params.prescriptionId,
+    otherUserId: params.otherUserId,
+    pharmacyId: params.isPharmacy ? params.pharmacyId : null,
+  );
+});
 
 // Mock data - Replace with real API calls
 class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
@@ -65,11 +80,13 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
                 }
               }
 
+              final String resolvedPatientId = (p['patientId'] ?? p['userId'] ?? acceptedReply['patientId'] ?? 'patient_123').toString();
+
               activePrescriptionChats.add(
                 ChatModel(
                   id: 'chat_historical_$id',
                   otherUser: ChatUserModel(
-                    id: isPharmacy ? 'patient' : rPharmacyId,
+                    id: isPharmacy ? resolvedPatientId : rPharmacyId,
                     name: isPharmacy ? 'Customer / زبون' : rPharmacyName,
                     avatar: isPharmacy ? '👤' : '🏥',
                     type: isPharmacy ? 'patient' : 'pharmacy',

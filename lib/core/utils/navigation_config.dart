@@ -14,8 +14,10 @@ import 'package:Elaaj/features/pharmacy_mode/view/screens/pharmacy_profile_scree
 import 'package:Elaaj/features/posts/view/create_post_screen.dart';
 import 'package:Elaaj/features/posts/view/posts_feed_screen.dart';
 import 'package:Elaaj/features/profile/view/profile_screen.dart';
+import 'package:Elaaj/features/prescription/view/screens/my_prescriptions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 
 
 /// Navigation item configuration
@@ -92,11 +94,11 @@ class UserNavItems {
         route: '/posts',
       ),
       NavItem(
-        label: 'Chat',
-        icon: Icons.chat_bubble_outline,
-        activeIcon: Icons.chat_bubble,
-        builder: (ref) => const ChatsListScreen(),
-        route: '/chat',
+        label: 'روشتاتي',
+        icon: Icons.receipt_long_outlined,
+        activeIcon: Icons.receipt_long,
+        builder: (ref) => const MyPrescriptionsScreen(),
+        route: '/my-prescriptions',
       ),
       NavItem(
         label: 'Profile',

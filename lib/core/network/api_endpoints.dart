@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'package:Elaaj/core/network/dio_client.dart';
 import 'package:dio/dio.dart';

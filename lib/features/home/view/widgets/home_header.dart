@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element_parameter
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
@@ -480,6 +482,7 @@ class _FlatShimmer extends StatefulWidget {
     required this.width,
     required this.height,
     this.borderRadius = 8,
+
     required this.isDark,
   });
 

@@ -17,12 +17,15 @@ class AppRoutes {
   // Chat
   static const String chats = '/chats';
   static const String chat = '/chat/:chatId';
+
+  // Prescription Chat (new polling-based chat screen)
+  static const String prescriptionChat = '/prescription-chat';
   
   // Prescription Routing Feature
   static const String prescription = '/prescription';
   static const String uploadPrescription = '/prescription/upload';
   static const String searchingPharmacies = '/prescription/searching';
-  static const String myPrescriptions = '/prescription/my-prescriptions';
+  static const String myPrescriptions = '/my-prescriptions';
   
   // Error
   static const String notFound = '/404';

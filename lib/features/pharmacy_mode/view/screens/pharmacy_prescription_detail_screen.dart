@@ -5,6 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:Elaaj/core/config/env_config.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/core/routing/app_routes.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/chat/controller/chat_providers.dart';
 import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_request_providers.dart';
 
 /// Pharmacy Prescription Detail Screen
@@ -855,9 +859,74 @@ class _PharmacyPrescriptionDetailScreenState
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  final String chatId = 'chat_historical_$prescriptionId';
-                  context.push('/chat/$chatId', extra: 'Customer / زبون');
+                onPressed: () async {
+                  // Show loading dialog
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+
+                  try {
+                    final api = ApiEndpoints();
+                    final presData = await api.getPrescriptionById(id: prescriptionId);
+                    
+                    // Close loading dialog
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+
+                    // Extract replies
+                    final repliesRaw = presData['replies'] ?? presData['offers'] ?? presData['prescriptionReplies'] ?? [];
+                    final List<dynamic> fetchedReplies = repliesRaw is List ? repliesRaw : [];
+                    
+                    // Resolve patientId case-insensitively
+                    final String resolvedPatientId = presData['patientId']?.toString() ?? 
+                                                      presData['userId']?.toString() ?? 
+                                                      (fetchedReplies.isNotEmpty ? fetchedReplies.first['patientId']?.toString() : null) ?? 
+                                                      'patient_123';
+
+                    final String resolvedPharmacyId = widget.pharmacy.id;
+                    final String resolvedPharmacyName = widget.pharmacy.name;
+
+                    // Seed the chat room dynamically!
+                    final String resolvedChatId = 'chat_historical_$prescriptionId';
+                    ref.read(chatsProvider.notifier).createPrescriptionChat(
+                      chatId: resolvedChatId,
+                      pharmacyId: resolvedPharmacyId,
+                      pharmacyName: resolvedPharmacyName,
+                      price: price,
+                      message: message,
+                      prescriptionId: prescriptionId,
+                      prescriptionImage: widget.prescription['imageUrl']?.toString(),
+                      prescriptionNotes: widget.prescription['notes']?.toString(),
+                    );
+
+                    if (context.mounted) {
+                      context.push(
+                        AppRoutes.prescriptionChat,
+                        extra: {
+                          'prescriptionId': prescriptionId,
+                          'otherUserId': resolvedPatientId,
+                          'currentUserId': ref.read(authProvider).user?.id ?? '',
+                          'isPharmacy': true,
+                          'pharmacyId': resolvedPharmacyId,
+                          'otherUserName': 'Customer / زبون',
+                        },
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to load chat details: $e / فشل تحميل تفاصيل المحادثة: $e'),
+                        ),
+                      );
+                    }
+                  }
                 },
                 icon: const Icon(Icons.chat_rounded, size: 20),
                 label: const Text('Chat with Patient / المحادثة مع المريض', style: TextStyle(fontWeight: FontWeight.bold)),

@@ -1,5 +1,4 @@
-// ignore_for_file: use_super_parameters
-
+// ignore_for_file: use_super_parameters,
 
 
 import 'package:Elaaj/core/constants/app_constants.dart';
@@ -10,7 +9,7 @@ import 'package:Elaaj/features/auth/view/screens/forgot_password_screen.dart';
 import 'package:Elaaj/features/auth/view/screens/login_screen.dart';
 import 'package:Elaaj/features/auth/view/screens/register_screen.dart';
 import 'package:Elaaj/features/auth/view/screens/reset_password_screen.dart';
-import 'package:Elaaj/features/chat/view/screens/chat_conversation_screen.dart';
+import 'package:Elaaj/features/chat/view/screens/chat_screen.dart';
 import 'package:Elaaj/features/chat/view/screens/chats_list_screen.dart';
 import 'package:Elaaj/features/navigation/widgets/premium_nav_shell.dart';
 import 'package:Elaaj/features/onboarding/view/onboarding_screen.dart';
@@ -184,19 +183,25 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((ref) {
       name: 'chats',
       builder: (context, state) => const ChatsListScreen(),
     ),
+
+
+    // Prescription Chat Screen (polling-based, /api/Chat endpoints)
     GoRoute(
-      path: AppRoutes.chat,
-      name: 'chat',
+      path: AppRoutes.prescriptionChat,
+      name: 'prescriptionChat',
       builder: (context, state) {
-        final chatId = state.pathParameters['chatId']!;
-        final pharmacyName = state.extra as String?;
-        return ChatConversationScreen(
-          chatId: chatId,
-          pharmacyName: pharmacyName,
+        final args = state.extra as Map<String, dynamic>? ?? {};
+        return ChatScreen(
+          prescriptionId: args['prescriptionId'] as String? ?? '',
+          otherUserId: args['otherUserId'] as String? ?? '',
+          currentUserId: args['currentUserId'] as String? ?? '',
+          isPharmacy: args['isPharmacy'] as bool? ?? false,
+          pharmacyId: args['pharmacyId'] as String?,
+          otherUserName: args['otherUserName'] as String? ?? 'Chat',
         );
       },
     ),
-    
+
     // Prescription Routing Routes
     GoRoute(
       path: AppRoutes.uploadPrescription,

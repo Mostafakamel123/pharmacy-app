@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:Elaaj/core/routing/app_routes.dart';
+import 'package:Elaaj/features/auth/controller/auth_providers.dart';
+import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import '../../controller/chat_providers.dart';
 import '../../model/chat_model.dart';
 import '../widgets/chat_widgets.dart';
@@ -144,9 +147,18 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
                       return ChatListTile(
                         chat: chat,
                         onTap: () {
+                          final isPharmacy = ref.read(isPharmacyModeProvider);
+                          final pharmacyMode = ref.read(pharmacyModeProvider);
                           context.push(
-                            '/chat/${chat.id}',
-                            extra: chat.otherUser.name,
+                            AppRoutes.prescriptionChat,
+                            extra: {
+                              'prescriptionId': chat.prescriptionId ?? '',
+                              'otherUserId': chat.otherUser.id,
+                              'currentUserId': ref.read(authProvider).user?.id ?? '',
+                              'isPharmacy': isPharmacy,
+                              'pharmacyId': isPharmacy ? (pharmacyMode.currentPharmacy?.id ?? chat.otherUser.id) : null,
+                              'otherUserName': chat.otherUser.name,
+                            },
                           );
                         },
                         onDelete: () {

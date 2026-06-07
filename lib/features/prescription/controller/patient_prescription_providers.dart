@@ -3,6 +3,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/core/network/api_endpoints.dart';
 import 'package:Elaaj/features/prescription/controller/prescription_providers.dart';
+import 'package:Elaaj/features/prescription/model/prescription.dart';
+
+/// Provider to list all patient's prescriptions (typed using Prescription model)
+final myPrescriptionsProvider = FutureProvider<List<Prescription>>((ref) async {
+  final apiEndpoints = ApiEndpoints();
+  try {
+    final list = await apiEndpoints.getMyPrescriptions(pageNumber: 1, pageSize: 100);
+    return list.map((item) => Prescription.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  } catch (e) {
+    print('DEBUG: Error getting myPrescriptions: $e');
+    return [];
+  }
+});
 
 /// Provider to list all patient's prescriptions
 final patientPrescriptionsProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
