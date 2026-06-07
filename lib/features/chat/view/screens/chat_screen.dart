@@ -5,9 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
 import 'package:Elaaj/features/chat/controller/chat_notifier.dart';
 import 'package:Elaaj/features/chat/model/chat_message.dart';
+import 'package:Elaaj/features/pharmacies/view/pharmacy_details_screen.dart';
 
 /// Full-featured polling-based chat screen.
 ///
@@ -158,6 +161,107 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  Future<void> _navigateToPharmacyDetails(BuildContext context, String pharmacyId, String pharmacyName) async {
+    if (pharmacyId.isEmpty && pharmacyName.isEmpty) return;
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: BoxDecoration(
+            color: isDark ? DarkColors.card : LightColors.card,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border: Border.all(
+              color: isDark ? DarkColors.divider : LightColors.divider,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Material(
+                color: Colors.transparent,
+                child: Text(
+                  'جاري تحميل تفاصيل الصيدلية...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    fontFamily: 'Cairo',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final api = ApiEndpoints();
+      PharmacyModel? pharmacy;
+      
+      if (pharmacyId.isNotEmpty) {
+        final response = await api.getPharmacyById(id: pharmacyId);
+        pharmacy = PharmacyModel.fromJson(response);
+      } else {
+        // Fallback: Search for pharmacy by name
+        final results = await api.searchPharmacies(keyword: pharmacyName);
+        if (results.isNotEmpty) {
+          pharmacy = PharmacyModel.fromJson(results.first as Map<String, dynamic>);
+        }
+      }
+      
+      if (context.mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+        if (pharmacy != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PharmacyDetailsScreen(pharmacy: pharmacy!),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'تعذر العثور على تفاصيل هذه الصيدلية',
+                style: TextStyle(fontFamily: 'Cairo'),
+              ),
+              backgroundColor: AppColors.accentRed,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'فشل تحميل تفاصيل الصيدلية: $e',
+              style: const TextStyle(fontFamily: 'Cairo'),
+            ),
+            backgroundColor: AppColors.accentRed,
+          ),
+        );
+      }
+    }
+  }
+
   // ── AppBar ─────────────────────────────────────────────────────────────────
 
   AppBar _buildAppBar(BuildContext context, bool isDark, ThemeData theme) {
@@ -170,64 +274,69 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         color: AppColors.primaryBlue,
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primaryBlue, AppColors.primaryCyan],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      title: GestureDetector(
+        onTap: widget.isPharmacy
+            ? null
+            : () => _navigateToPharmacyDetails(context, widget.otherUserId, widget.otherUserName),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primaryBlue, AppColors.primaryCyan],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
               ),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                widget.isPharmacy ? '👤' : '🏥',
-                style: const TextStyle(fontSize: 18),
+              child: Center(
+                child: Text(
+                  widget.isPharmacy ? '👤' : '🏥',
+                  style: const TextStyle(fontSize: 18),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.otherUserName,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? DarkColors.textPrimary
-                        : LightColors.textPrimary,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.otherUserName,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? DarkColors.textPrimary
+                          : LightColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primaryGreen,
-                        shape: BoxShape.circle,
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryGreen,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Online',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.primaryGreen,
+                      const SizedBox(width: 4),
+                      Text(
+                        'Online',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.primaryGreen,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       actions: [
         IconButton(
@@ -521,14 +630,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     if (!isMe &&
                         isLastInGroup &&
                         message.senderName.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          message.senderName,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryCyan,
+                      GestureDetector(
+                        onTap: widget.isPharmacy
+                            ? null
+                            : () => _navigateToPharmacyDetails(context, widget.otherUserId, message.senderName),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            message.senderName,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryCyan,
+                            ),
                           ),
                         ),
                       ),
