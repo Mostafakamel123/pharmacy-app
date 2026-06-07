@@ -1,3 +1,5 @@
+import 'package:Elaaj/features/posts/model/post_model.dart';
+
 class HomePostModel {
   final String id;
   final String question;
@@ -55,56 +57,7 @@ class HomePostModel {
   }
 
   static String _calculateTimeAgo(DateTime dateTime) {
-    final diff = DateTime.now().difference(dateTime);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}d';
-    return '${(diff.inDays / 7).floor()}w';
+    return formatTimeAgoArabic(dateTime, includePublishedPrefix: true);
   }
 
-  static List<HomePostModel> sample() {
-    return [
-      HomePostModel(
-        id: '1',
-        question: 'What is the alternative for Panadol?',
-        preview: 'I need a substitute for Panadol that is safe for...',
-        pharmacyName: 'صيدلية الدولييي',
-        replyCount: 3,
-        timeAgo: '2h',
-        hasResponse: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      HomePostModel(
-        id: '2',
-        question: 'Best vitamin D supplement?',
-        preview: 'Can you recommend a good vitamin D supplement with...',
-        pharmacyName: 'صيدلية الدولييي',
-        replyCount: 5,
-        timeAgo: '5h',
-        hasResponse: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-       HomePostModel(
-        id: '3',
-        question: 'Is Amoxicillin available nearby?',
-        preview: 'Looking for Amoxicillin 500mg, any pharmacy have it...',
-        pharmacyName: 'صيدلية الدولييي',
-        replyCount: 1,
-        timeAgo: '1d',
-        hasResponse: false,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-       HomePostModel(
-        id: '4',
-        question: 'Baby skincare recommendations',
-        preview: 'Need recommendations for baby skincare products...',
-        pharmacyName: 'صيدلية الدولييي',
-        replyCount: 7,
-        timeAgo: '2d',
-        hasResponse: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-    ];
-  }
 }

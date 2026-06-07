@@ -18,6 +18,93 @@ String? buildImageUrl(String? path) {
   return "http://elaaj.runasp.net$cleanPath";
 }
 
+/// Helper to format a DateTime into a friendly Arabic "time ago" string
+String formatTimeAgoArabic(DateTime createdAt, {bool includePublishedPrefix = false}) {
+  final localCreated = createdAt.isUtc ? createdAt.toLocal() : createdAt;
+  final diff = DateTime.now().difference(localCreated);
+  if (diff.isNegative || diff.inSeconds < 60) {
+    return includePublishedPrefix ? 'تم النشر الآن' : 'الآن';
+  }
+  
+  String ago;
+  final minutes = diff.inMinutes;
+  if (minutes < 60) {
+    if (minutes == 1) {
+      ago = 'منذ دقيقة';
+    } else if (minutes == 2) {
+      ago = 'منذ دقيقتين';
+    } else if (minutes >= 3 && minutes <= 10) {
+      ago = 'منذ $minutes دقائق';
+    } else {
+      ago = 'منذ $minutes دقيقة';
+    }
+  } else {
+    final hours = diff.inHours;
+    if (hours < 24) {
+      if (hours == 1) {
+        ago = 'منذ ساعة';
+      } else if (hours == 2) {
+        ago = 'منذ ساعتين';
+      } else if (hours >= 3 && hours <= 10) {
+        ago = 'منذ $hours ساعات';
+      } else {
+        ago = 'منذ $hours ساعة';
+      }
+    } else {
+      final days = diff.inDays;
+      if (days < 7) {
+        if (days == 1) {
+          ago = 'منذ يوم';
+        } else if (days == 2) {
+          ago = 'منذ يومين';
+        } else if (days >= 3 && days <= 10) {
+          ago = 'منذ $days أيام';
+        } else {
+          ago = 'منذ $days يوم';
+        }
+      } else {
+        final weeks = (days / 7).floor();
+        if (weeks < 4) {
+          if (weeks == 1) {
+            ago = 'منذ أسبوع';
+          } else if (weeks == 2) {
+            ago = 'منذ أسبوعين';
+          } else {
+            ago = 'منذ $weeks أسابيع';
+          }
+        } else {
+          final months = (days / 30).floor();
+          if (months < 12) {
+            if (months == 1) {
+              ago = 'منذ شهر';
+            } else if (months == 2) {
+              ago = 'منذ شهرين';
+            } else if (months >= 3 && months <= 10) {
+              ago = 'منذ $months أشهر';
+            } else {
+              ago = 'منذ $months شهر';
+            }
+          } else {
+            final years = (days / 365).floor();
+            if (years == 1) {
+              ago = 'منذ عام';
+            } else if (years == 2) {
+              ago = 'منذ عامين';
+            } else {
+              ago = 'منذ $years أعوام';
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  if (includePublishedPrefix) {
+    return 'تم النشر $ago';
+  }
+  return ago;
+}
+
 class PostModel {
   final String id;
   final String userId;
@@ -45,14 +132,7 @@ class PostModel {
     this.replies = const [],
   });
 
-  String get timeAgo {
-    final diff = DateTime.now().difference(createdAt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${(diff.inDays / 7).floor()}w ago';
-  }
+  String get timeAgo => formatTimeAgoArabic(createdAt, includePublishedPrefix: true);
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
     final repliesJson = json['replies'] as List? ?? [];
@@ -154,13 +234,7 @@ class ReplyModel {
     required this.createdAt,
   });
 
-  String get timeAgo {
-    final diff = DateTime.now().difference(createdAt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
+  String get timeAgo => formatTimeAgoArabic(createdAt, includePublishedPrefix: false);
 
   factory ReplyModel.fromJson(Map<String, dynamic> json) {
     final createdAtRaw = json['createdAt'] ?? json['created_at'];
