@@ -3,9 +3,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Elaaj/core/config/env_config.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
 import 'package:Elaaj/core/models/pharmacy_model.dart';
 import 'package:Elaaj/core/services/geocoding_service.dart';
+
+/// Resolves a pharmacy image URL — handles both full URLs (http/https)
+/// and relative paths returned by the API (e.g. "/uploads/image.jpg").
+String? _resolveImageUrl(String? imageUrl) {
+  if (imageUrl == null || imageUrl.isEmpty) return null;
+  if (imageUrl.startsWith('http')) return imageUrl;
+  return '${EnvConfig.apiBaseUrl}$imageUrl';
+}
 
 class PharmacyDetailsScreen extends StatefulWidget {
   final PharmacyModel pharmacy;
@@ -280,13 +289,17 @@ class _HeroHeader extends StatelessWidget {
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
                 ),
-                child: (pharmacy.imageUrl != null && pharmacy.imageUrl!.isNotEmpty)
-                    ? Image.network(
-                        pharmacy.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => _buildDefaultGradient(),
-                      )
-                    : _buildDefaultGradient(),
+                child: () {
+                  final resolvedUrl = _resolveImageUrl(pharmacy.imageUrl);
+                  return resolvedUrl != null
+                      ? Image.network(
+                          resolvedUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildDefaultGradient(),
+                        )
+                      : _buildDefaultGradient();
+                }(),
               ),
             ),
             // Back button positioned safely on top of the banner image
@@ -350,21 +363,24 @@ class _HeroHeader extends StatelessWidget {
                     ),
                   ),
                   child: ClipOval(
-                    child: (pharmacy.imageUrl != null && pharmacy.imageUrl!.isNotEmpty)
-                        ? Image.network(
-                            pharmacy.imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Icon(
+                    child: () {
+                      final resolvedUrl = _resolveImageUrl(pharmacy.imageUrl);
+                      return resolvedUrl != null
+                          ? Image.network(
+                              resolvedUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.local_pharmacy_rounded,
+                                size: 32,
+                                color: isDark ? Colors.white : AppColors.primaryBlue,
+                              ),
+                            )
+                          : Icon(
                               Icons.local_pharmacy_rounded,
                               size: 32,
                               color: isDark ? Colors.white : AppColors.primaryBlue,
-                            ),
-                          )
-                        : Icon(
-                            Icons.local_pharmacy_rounded,
-                            size: 32,
-                            color: isDark ? Colors.white : AppColors.primaryBlue,
-                          ),
+                            );
+                    }(),
                   ),
                 ),
                 const SizedBox(width: 14),
