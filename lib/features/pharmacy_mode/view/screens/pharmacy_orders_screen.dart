@@ -237,47 +237,71 @@ class _OrdersList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final prescriptionsAsync = ref.watch(
+    final nearbyAsync = ref.watch(
       nearbyPrescriptionsProvider((pharmacyId: pharmacy.id, radius: 5.0)),
+    );
+    final acceptedAsync = ref.watch(
+      pharmacyAcceptedPrescriptionsProvider(pharmacy.id),
     );
     final localState = ref.watch(pharmacyPrescriptionsLocalProvider(pharmacy.id));
     final rejectedIds = localState.rejectedIds;
     final offeredDetails = localState.offeredDetails;
     final offeredIds = offeredDetails.keys.toSet();
 
-    return prescriptionsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
-      data: (presList) {
-        final List<dynamic> filteredList;
-        if (status == OrderStatus.pending) {
-          filteredList = presList.where((p) {
-            final id = p['id'] as String? ?? '';
-            final isRejected = rejectedIds.contains(id);
-            final isOffered = offeredIds.contains(id);
-            final isPendingStatus = p['status'] == null || p['status'] == 0 || p['status'] == 1;
-            return !isRejected && !isOffered && isPendingStatus;
-          }).toList();
-        } else if (status == OrderStatus.accepted) {
-          filteredList = presList.where((p) {
-            final id = p['id'] as String? ?? '';
-            final isRejected = rejectedIds.contains(id);
-            final isOffered = offeredIds.contains(id);
-            final isAcceptedStatus = p['status'] == 2 || p['status'] == 3;
-            return !isRejected && (isAcceptedStatus || isOffered);
-          }).toList();
-        } else {
-          filteredList = presList.where((p) {
-            final id = p['id'] as String? ?? '';
-            final isRejected = rejectedIds.contains(id);
-            final isCancelledStatus = p['status'] == 5 || p['status'] == 4;
-            return isRejected || isCancelledStatus;
-          }).toList();
-        }
+    if (nearbyAsync.isLoading || acceptedAsync.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (nearbyAsync.hasError) {
+      return Center(child: Text('Error: ${nearbyAsync.error}'));
+    }
+    if (acceptedAsync.hasError) {
+      return Center(child: Text('Error: ${acceptedAsync.error}'));
+    }
 
-        if (filteredList.isEmpty) {
-          return _buildEmptyList(context);
-        }
+    final presList = nearbyAsync.value ?? [];
+    final acceptedList = acceptedAsync.value ?? [];
+
+    final List<dynamic> filteredList;
+    if (status == OrderStatus.pending) {
+      filteredList = presList.where((p) {
+        final id = p['id'] as String? ?? '';
+        final isRejected = rejectedIds.contains(id);
+        final isOffered = offeredIds.contains(id);
+        final isPendingStatus = p['status'] == null || p['status'] == 0 || p['status'] == 1;
+        return !isRejected && !isOffered && isPendingStatus;
+      }).toList();
+    } else if (status == OrderStatus.accepted) {
+      final offeredPendingList = presList.where((p) {
+        final id = p['id'] as String? ?? '';
+        final isRejected = rejectedIds.contains(id);
+        final isOffered = offeredIds.contains(id);
+        final isPendingStatus = p['status'] == null || p['status'] == 0 || p['status'] == 1;
+        return !isRejected && isOffered && isPendingStatus;
+      }).toList();
+
+      final activeAcceptedList = acceptedList.where((p) {
+        final statusVal = p['status'] as int? ?? 2;
+        return statusVal == 2;
+      }).toList();
+
+      filteredList = [...activeAcceptedList, ...offeredPendingList];
+    } else {
+      final completedList = acceptedList.where((p) {
+        final statusVal = p['status'] as int? ?? 0;
+        return statusVal == 3;
+      }).toList();
+
+      final localRejected = presList.where((p) {
+        final id = p['id'] as String? ?? '';
+        return rejectedIds.contains(id);
+      }).toList();
+
+      filteredList = [...completedList, ...localRejected];
+    }
+
+    if (filteredList.isEmpty) {
+      return _buildEmptyList(context);
+    }
 
         return ListView.builder(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -352,8 +376,6 @@ class _OrdersList extends ConsumerWidget {
             );
           },
         );
-      },
-    );
   }
 
   Widget _buildEmptyList(BuildContext context) {

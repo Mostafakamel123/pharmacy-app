@@ -36,16 +36,39 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
       await Future.delayed(const Duration(milliseconds: 200));
 
       final isPharmacy = ref.read(isPharmacyModeProvider);
+      final pharmacyId = ref.read(pharmacyModeProvider).currentPharmacy?.id;
       final List<ChatModel> activePrescriptionChats = [];
 
       // 1. Scan and dynamically load accepted/completed chats from real backend API!
       try {
         final api = ApiEndpoints();
-        final List<dynamic> allPrescriptions = await api.getMyPrescriptions(pageSize: 100);
+        final List<dynamic> rawPrescriptions;
+        
+        if (isPharmacy && pharmacyId != null) {
+          rawPrescriptions = await api.getPharmacyAcceptedPrescriptions(pharmacyId);
+        } else {
+          rawPrescriptions = await api.getMyPrescriptions(pageSize: 100);
+        }
+
+        final List<Map<String, dynamic>> allPrescriptions = [];
+        for (var item in rawPrescriptions) {
+          if (item is! Map) continue;
+          final id = item['id']?.toString() ?? '';
+          
+          if (isPharmacy) {
+            try {
+              final details = await api.getPrescriptionById(id: id);
+              allPrescriptions.add(details);
+            } catch (e) {
+              print('DEBUG: Error loading details for accepted prescription $id: $e');
+              allPrescriptions.add(Map<String, dynamic>.from(item));
+            }
+          } else {
+            allPrescriptions.add(Map<String, dynamic>.from(item));
+          }
+        }
         
         for (var p in allPrescriptions) {
-          if (p is! Map) continue;
-
           final id = p['id']?.toString() ?? '';
           final statusVal = (p['status'] as num?)?.toInt() ?? 0;
           final repliesRaw = p['replies'] ?? p['offers'] ?? p['prescriptionReplies'] ?? [];
@@ -82,12 +105,38 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
 
               final String resolvedPatientId = (p['patientId'] ?? p['userId'] ?? acceptedReply['patientId'] ?? 'patient_123').toString();
 
+              // Resolve patient name dynamically from replies or properties
+              String patientName = 'Patient / مريض';
+              if (p.containsKey('patientName') && p['patientName'] != null) {
+                patientName = p['patientName'].toString();
+              } else if (p.containsKey('userName') && p['userName'] != null) {
+                patientName = p['userName'].toString();
+              } else if (p.containsKey('fullName') && p['fullName'] != null) {
+                patientName = p['fullName'].toString();
+              } else {
+                final patientReply = replies.firstWhere(
+                  (r) => r is Map && r['senderId']?.toString() == resolvedPatientId && r['senderName'] != null,
+                  orElse: () => null,
+                );
+                if (patientReply != null) {
+                  patientName = patientReply['senderName'].toString();
+                } else {
+                  final nonPharmacyReply = replies.firstWhere(
+                    (r) => r is Map && r['senderId']?.toString() != rPharmacyId && r['senderName'] != null,
+                    orElse: () => null,
+                  );
+                  if (nonPharmacyReply != null) {
+                    patientName = nonPharmacyReply['senderName'].toString();
+                  }
+                }
+              }
+
               activePrescriptionChats.add(
                 ChatModel(
                   id: 'chat_historical_$id',
                   otherUser: ChatUserModel(
                     id: isPharmacy ? resolvedPatientId : rPharmacyId,
-                    name: isPharmacy ? 'Customer / زبون' : rPharmacyName,
+                    name: isPharmacy ? patientName : rPharmacyName,
                     avatar: isPharmacy ? '👤' : '🏥',
                     type: isPharmacy ? 'patient' : 'pharmacy',
                     isOnline: true,
@@ -224,9 +273,11 @@ class ChatsNotifier extends StateNotifier<AsyncValue<List<ChatModel>>> {
   }
 }
 
-// USER-SCOPED: auto-resets when auth user changes.
+// USER-SCOPED: auto-resets when auth user changes, mode changes, or pharmacy changes.
 final chatsProvider = StateNotifierProvider<ChatsNotifier, AsyncValue<List<ChatModel>>>((ref) {
   ref.watch(authProvider.select((s) => '${s.isAuthenticated}_${s.user?.id ?? 'none'}'));
+  ref.watch(isPharmacyModeProvider);
+  ref.watch(pharmacyModeProvider.select((s) => s.currentPharmacy?.id));
   return ChatsNotifier(ref);
 });
 

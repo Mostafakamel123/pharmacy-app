@@ -11,6 +11,7 @@ import 'package:Elaaj/features/home/view/home_screen.dart';
 import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:Elaaj/features/pharmacy_mode/view/screens/pharmacy_orders_screen.dart';
 import 'package:Elaaj/features/pharmacy_mode/view/screens/pharmacy_profile_screen.dart';
+import 'package:Elaaj/features/pharmacy_mode/view/screens/pharmacy_accepted_prescriptions_screen.dart';
 import 'package:Elaaj/features/posts/view/create_post_screen.dart';
 import 'package:Elaaj/features/posts/view/posts_feed_screen.dart';
 import 'package:Elaaj/features/profile/view/profile_screen.dart';
@@ -55,11 +56,11 @@ class UserNavItems {
           route: '/pharmacy/profile',
         ),
         NavItem(
-          label: 'Chats',
-          icon: Icons.chat_bubble_outline,
-          activeIcon: Icons.chat_bubble,
-          builder: (ref) => const ChatsListScreen(),
-          route: '/chats',
+          label: 'الروشتات المقبولة',
+          icon: Icons.receipt_long_outlined,
+          activeIcon: Icons.receipt_long,
+          builder: (ref) => const PharmacyAcceptedPrescriptionsScreen(),
+          route: '/pharmacy/accepted-prescriptions',
         ),
         NavItem(
           label: 'Posts',

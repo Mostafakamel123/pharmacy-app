@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +43,42 @@ class _PharmacyPrescriptionDetailScreenState
     'متوفر جميع الأصناف ما عدا صنف واحد (تواصل لمزيد من التفاصيل)',
     'متوفر بديل للأنواع غير المتوفرة بنفس الفعالية',
   ];
+
+  Map<String, dynamic>? _latestDetails;
+  bool _isLoadingLatest = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLatestDetails();
+  }
+
+  Future<void> _loadLatestDetails() async {
+    final id = widget.prescription['id'] as String? ?? '';
+    if (id.isEmpty) return;
+
+    setState(() {
+      _isLoadingLatest = true;
+    });
+
+    try {
+      final api = ApiEndpoints();
+      final details = await api.getPrescriptionById(id: id);
+      if (mounted) {
+        setState(() {
+          _latestDetails = details;
+          _isLoadingLatest = false;
+        });
+      }
+    } catch (e) {
+      print('DEBUG: Error loading latest details in detail screen: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLatest = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -124,18 +160,37 @@ class _PharmacyPrescriptionDetailScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Prescription information
-    final String id = widget.prescription['id'] as String? ?? '';
+    // Use latest details if loaded, otherwise fallback to widget prescription
+    final details = _latestDetails ?? widget.prescription;
+    final String id = details['id'] as String? ?? '';
     final String displayId = id.length >= 4 ? id.substring(0, 4).toUpperCase() : id.toUpperCase();
-    final String notes = widget.prescription['notes'] as String? ?? 'No notes provided / لا توجد ملاحظات';
-    final String imageUrl = widget.prescription['imageUrl'] as String? ?? '';
-    final double distance = (widget.prescription['distance'] as num?)?.toDouble() ?? 0.0;
-    final int statusVal = widget.prescription['status'] as int? ?? 0;
+    final String notes = details['notes'] as String? ?? 'No notes provided / لا توجد ملاحظات';
+    final String imageUrl = details['imageUrl'] as String? ?? '';
+    final double distance = (details['distance'] as num?)?.toDouble() ?? 0.0;
+    final int statusVal = details['status'] as int? ?? 0;
 
     // Listen to local pharmacy state to see if they already submitted an offer/reply
     final localState = ref.watch(pharmacyPrescriptionsLocalProvider(widget.pharmacy.id));
-    final localOffer = localState.offeredDetails[id];
     final isRejected = localState.rejectedIds.contains(id);
+
+    // Search details['replies'] for our pharmacy's offer if localOffer is null
+    Map<String, dynamic>? ourOffer;
+    final repliesRaw = details['replies'] ?? details['offers'] ?? details['prescriptionReplies'] ?? [];
+    if (repliesRaw is List && repliesRaw.isNotEmpty) {
+      final matched = repliesRaw.firstWhere(
+        (r) => r is Map && r['pharmacyId']?.toString().toLowerCase() == widget.pharmacy.id.toString().toLowerCase(),
+        orElse: () => null,
+      );
+      if (matched is Map) {
+        ourOffer = {
+          'price': (matched['totalPrice'] as num?)?.toDouble() ?? 0.0,
+          'message': matched['message']?.toString() ?? '',
+          'isAvailable': matched['isAvailable'] as bool? ?? true,
+        };
+      }
+    }
+    
+    final localOffer = ourOffer ?? localState.offeredDetails[id];
 
     return Scaffold(
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
@@ -166,8 +221,13 @@ class _PharmacyPrescriptionDetailScreenState
                   // 4. Offer Form or Details Section
                   if (isRejected)
                     _buildRejectedIndicator(isDark)
-                  else if (localOffer != null)
-                    _buildSubmittedOfferCard(isDark, localOffer, statusVal, id)
+                  else if (localOffer != null || statusVal == 2 || statusVal == 3)
+                    _buildSubmittedOfferCard(
+                      isDark, 
+                      localOffer ?? {'price': 0.0, 'message': 'تم قبول العرض والاتفاق', 'isAvailable': true}, 
+                      statusVal, 
+                      id
+                    )
                   else
                     _buildOfferForm(isDark, id),
                   

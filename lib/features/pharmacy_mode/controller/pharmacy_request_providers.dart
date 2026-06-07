@@ -108,6 +108,17 @@ final nearbyPrescriptionsProvider = FutureProvider.family<List<dynamic>, ({Strin
   }
 });
 
+/// Family provider to fetch accepted prescriptions for a specific pharmacy
+final pharmacyAcceptedPrescriptionsProvider = FutureProvider.family<List<dynamic>, String>((ref, pharmacyId) async {
+  final apiEndpoints = ApiEndpoints();
+  try {
+    return await apiEndpoints.getPharmacyAcceptedPrescriptions(pharmacyId);
+  } catch (e) {
+    print('DEBUG: Error getting accepted prescriptions for pharmacy $pharmacyId: $e');
+    return [];
+  }
+});
+
 /// Provider for pharmacy-side API actions
 final pharmacyActionsProvider = Provider((ref) => PharmacyActions(ref));
 

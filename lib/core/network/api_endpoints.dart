@@ -913,4 +913,13 @@ class ApiEndpoints {
       '/api/Prescriptions/$id',
     );
   }
+
+  /// GET /api/Pharmacies/pharmacy/{pharmacyId}/accepted
+  /// Get accepted prescriptions for a specific pharmacy
+  Future<List<dynamic>> getPharmacyAcceptedPrescriptions(String pharmacyId) async {
+    final response = await _dio.get(
+      '/api/Pharmacies/pharmacy/$pharmacyId/accepted',
+    );
+    return _safeParseList(response.data);
+  }
 }
