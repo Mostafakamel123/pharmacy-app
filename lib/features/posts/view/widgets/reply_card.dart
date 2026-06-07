@@ -3,7 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:Elaaj/core/models/pharmacy_model.dart';
+import 'package:Elaaj/core/network/api_endpoints.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
+import 'package:Elaaj/features/pharmacies/view/pharmacy_details_screen.dart';
 import 'package:Elaaj/features/pharmacy_mode/controller/pharmacy_mode_provider.dart';
 import 'package:Elaaj/features/posts/model/post_model.dart';
 
@@ -45,7 +48,7 @@ class ReplyCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(showBestReplyHighlight, isDark),
+          _buildHeader(context, showBestReplyHighlight, isDark),
           const SizedBox(height: 10),
           _buildContent(isDark),
           if (reply.medicineName != null) ...[
@@ -58,28 +61,139 @@ class ReplyCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(bool isBest, bool isDark) {
-    return Row(
-      children: [
-        _buildAvatar(isBest),
-        const SizedBox(width: 10),
-        Expanded(
+  Future<void> _navigateToPharmacyDetails(BuildContext context, String pharmacyId, String pharmacyName) async {
+    if (pharmacyId.isEmpty && pharmacyName.isEmpty) return;
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: BoxDecoration(
+            color: isDark ? DarkColors.card : LightColors.card,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border: Border.all(
+              color: isDark ? DarkColors.divider : LightColors.divider,
+              width: 1,
+            ),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildNameRow(isBest, isDark),
-              const SizedBox(height: 2),
-              Text(
-                reply.timeAgo,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? DarkColors.textHint : LightColors.textHint,
+              const SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Material(
+                color: Colors.transparent,
+                child: Text(
+                  'جاري تحميل تفاصيل الصيدلية...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    fontFamily: 'Cairo',
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      ],
+      ),
+    );
+
+    try {
+      final api = ApiEndpoints();
+      PharmacyModel? pharmacy;
+      
+      if (pharmacyId.isNotEmpty) {
+        final response = await api.getPharmacyById(id: pharmacyId);
+        pharmacy = PharmacyModel.fromJson(response);
+      } else {
+        // Fallback: Search for pharmacy by name
+        final results = await api.searchPharmacies(keyword: pharmacyName);
+        if (results.isNotEmpty) {
+          pharmacy = PharmacyModel.fromJson(results.first as Map<String, dynamic>);
+        }
+      }
+      
+      if (context.mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+        if (pharmacy != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PharmacyDetailsScreen(pharmacy: pharmacy!),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'تعذر العثور على تفاصيل هذه الصيدلية',
+                style: TextStyle(fontFamily: 'Cairo'),
+              ),
+              backgroundColor: AppColors.accentRed,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'فشل تحميل تفاصيل الصيدلية: $e',
+              style: const TextStyle(fontFamily: 'Cairo'),
+            ),
+            backgroundColor: AppColors.accentRed,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildHeader(BuildContext context, bool isBest, bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _navigateToPharmacyDetails(context, reply.pharmacyId, reply.pharmacyName),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
+          child: Row(
+            children: [
+              _buildAvatar(isBest),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildNameRow(isBest, isDark),
+                    const SizedBox(height: 2),
+                    Text(
+                      reply.timeAgo,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? DarkColors.textHint : LightColors.textHint,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

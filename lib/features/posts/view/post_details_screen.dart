@@ -337,7 +337,9 @@ class _PostDetailsScreenState extends ConsumerState<PostDetailsScreen> {
                           .addReply(text);
 
                       if (success) {
-                        _replyController.clear();
+                        if (mounted) {
+                          _replyController.clear();
+                        }
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
