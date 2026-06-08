@@ -447,8 +447,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
-        // 3. Compare senderId with currentUserId to determine bubble side.
-        final isMe = message.senderId == widget.currentUserId;
+        final isMe = widget.isPharmacy
+            ? (message.senderId.toLowerCase() == widget.pharmacyId?.toLowerCase() ||
+               message.senderId.toLowerCase() == widget.currentUserId.toLowerCase())
+            : (message.senderId.toLowerCase() == widget.currentUserId.toLowerCase());
         final showDateHeader = _shouldShowDateHeader(messages, index);
 
         return Column(
