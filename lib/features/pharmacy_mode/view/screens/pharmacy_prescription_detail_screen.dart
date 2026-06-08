@@ -943,7 +943,9 @@ class _PharmacyPrescriptionDetailScreenState
                     final List<dynamic> fetchedReplies = repliesRaw is List ? repliesRaw : [];
                     
                     // Resolve patientId case-insensitively
-                    final String resolvedPatientId = presData['patientId']?.toString() ?? 
+                    final String resolvedPatientId = widget.prescription['userId']?.toString() ?? 
+                                                      widget.prescription['patientId']?.toString() ?? 
+                                                      presData['patientId']?.toString() ?? 
                                                       presData['userId']?.toString() ?? 
                                                       (fetchedReplies.isNotEmpty ? fetchedReplies.first['patientId']?.toString() : null) ?? 
                                                       'patient_123';

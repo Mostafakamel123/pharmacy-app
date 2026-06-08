@@ -154,7 +154,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     try {
       await _repository.sendMessage(
         prescriptionId: _params.prescriptionId,
-        senderId: _params.currentUserId,
+        senderId: _params.isPharmacy ? (_params.pharmacyId ?? _params.currentUserId) : _params.currentUserId,
         receiverId: _params.otherUserId,
         content: content.trim(),
       );

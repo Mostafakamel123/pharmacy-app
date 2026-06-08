@@ -83,6 +83,7 @@ class PharmacyAcceptedPrescriptionsScreen extends ConsumerWidget {
     WidgetRef ref,
     String prescriptionId,
     dynamic pharmacy,
+    String? patientId,
   ) async {
     // Show loading dialog
     showDialog(
@@ -107,7 +108,8 @@ class PharmacyAcceptedPrescriptionsScreen extends ConsumerWidget {
       final List<dynamic> fetchedReplies = repliesRaw is List ? repliesRaw : [];
       
       // Resolve patientId case-insensitively
-      final String resolvedPatientId = presData['patientId']?.toString() ?? 
+      final String resolvedPatientId = patientId ??
+                                        presData['patientId']?.toString() ?? 
                                         presData['userId']?.toString() ?? 
                                         (fetchedReplies.isNotEmpty ? fetchedReplies.first['patientId']?.toString() : null) ?? 
                                         'patient_123';
@@ -465,7 +467,10 @@ class PharmacyAcceptedPrescriptionsScreen extends ConsumerWidget {
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => _handleChatNavigation(context, ref, id, currentPharmacy),
+                              onPressed: () {
+                                final String? pId = item['userId']?.toString() ?? item['patientId']?.toString();
+                                _handleChatNavigation(context, ref, id, currentPharmacy, pId);
+                              },
                               icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
                               label: const Text('Chat / المحادثة'),
                               style: ElevatedButton.styleFrom(
