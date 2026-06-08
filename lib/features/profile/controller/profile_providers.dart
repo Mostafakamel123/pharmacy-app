@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 import 'package:Elaaj/features/auth/service/auth_service.dart';
 import 'package:Elaaj/features/profile/model/profile_model.dart';
+import 'package:Elaaj/core/helpers/local_storage_helper.dart';
 
 // USER-SCOPED: Must be invalidated on logout — see auth_invalidation.dart.
 // Also auto-resets when the authenticated user changes via ref.watch on isAuthenticated.
@@ -91,8 +93,46 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfileModel>> {
 
 }
 
-// Dark mode provider (synced with platform)
-final darkModeProvider = StateProvider<bool>((ref) => false);
+
+// Theme mode provider (synced with local storage, defaults to system)
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+  return ThemeModeNotifier();
+});
+
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  static const _themeKey = 'theme_mode';
+
+  ThemeModeNotifier() : super(ThemeMode.system) {
+    _loadTheme();
+  }
+
+  void _loadTheme() {
+    final savedTheme = LocalStorageHelper.getStringSync(_themeKey);
+    if (savedTheme != null) {
+      if (savedTheme == 'dark') {
+        state = ThemeMode.dark;
+      } else if (savedTheme == 'light') {
+        state = ThemeMode.light;
+      } else {
+        state = ThemeMode.system;
+      }
+    } else {
+      state = ThemeMode.system;
+    }
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    state = mode;
+    String modeStr = 'system';
+    if (mode == ThemeMode.dark) {
+      modeStr = 'dark';
+    } else if (mode == ThemeMode.light) {
+      modeStr = 'light';
+    }
+    await LocalStorageHelper.setString(_themeKey, modeStr);
+  }
+}
+
 
 // Edit form provider
 final editFormProvider =

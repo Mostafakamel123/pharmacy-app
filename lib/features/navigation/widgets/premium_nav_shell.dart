@@ -113,32 +113,47 @@ class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
       }
     });
 
-    return Scaffold(
-      extendBody: true,
-      body: NotificationListener<UserScrollNotification>(
-        onNotification: (notification) {
-          if (notification.direction == ScrollDirection.reverse) {
-            if (_isNavBarVisible) {
-              setState(() => _isNavBarVisible = false);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => _ExitDialog(),
+        );
+
+        if (shouldExit == true) {
+          await SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: NotificationListener<UserScrollNotification>(
+          onNotification: (notification) {
+            if (notification.direction == ScrollDirection.reverse) {
+              if (_isNavBarVisible) {
+                setState(() => _isNavBarVisible = false);
+              }
+            } else if (notification.direction == ScrollDirection.forward) {
+              if (!_isNavBarVisible) {
+                setState(() => _isNavBarVisible = true);
+              }
             }
-          } else if (notification.direction == ScrollDirection.forward) {
-            if (!_isNavBarVisible) {
-              setState(() => _isNavBarVisible = true);
-            }
-          }
-          return false; // let the notification bubble further up
-        },
-        child: Stack(
-          children: [
-            if (widget.child != null) widget.child! else _buildCurrentScreen(),
-            // Floating nav bar
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _buildFloatingNavigationBar(),
-            ),
-          ],
+            return false; // let the notification bubble further up
+          },
+          child: Stack(
+            children: [
+              if (widget.child != null) widget.child! else _buildCurrentScreen(),
+              // Floating nav bar
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildFloatingNavigationBar(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -274,5 +289,59 @@ class _PremiumNavShellState extends ConsumerState<PremiumNavShell>
     }
 
     return items;
+  }
+}
+
+class _ExitDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      backgroundColor: isDark ? DarkColors.card : LightColors.card,
+      title: const Text(
+        'خروج من التطبيق',
+        textAlign: TextAlign.right,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: Text(
+        'هل تريد الخروج من التطبيق فعلاً؟',
+        textAlign: TextAlign.right,
+        style: TextStyle(
+          color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(
+            'لا',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.accentRed,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+          ),
+          child: const Text(
+            'نعم',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
   }
 }

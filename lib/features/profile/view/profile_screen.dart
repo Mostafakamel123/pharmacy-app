@@ -121,7 +121,10 @@ class ProfileScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Consumer(
                 builder: (context, ref, _) {
-                  final isDarkMode = ref.watch(darkModeProvider);
+                  final themeMode = ref.watch(themeModeProvider);
+                  final isDarkMode = themeMode == ThemeMode.system
+                      ? Theme.of(context).brightness == Brightness.dark
+                      : themeMode == ThemeMode.dark;
                   return ProfileSection(
                     title: 'Settings',
                     items: [
@@ -136,7 +139,9 @@ class ProfileScreen extends ConsumerWidget {
                         isToggle: true,
                         toggleValue: isDarkMode,
                         onToggle: (value) {
-                          ref.read(darkModeProvider.notifier).state = value;
+                          ref.read(themeModeProvider.notifier).setThemeMode(
+                                value ? ThemeMode.dark : ThemeMode.light,
+                              );
                         },
                       ),
                     ],

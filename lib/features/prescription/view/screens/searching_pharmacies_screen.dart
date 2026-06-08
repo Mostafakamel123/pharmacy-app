@@ -29,7 +29,6 @@ class _SearchingPharmaciesScreenState
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _rotateController;
-  Timer? _routingTimer;
   Timer? _pollingTimer;
   String? _acceptingReplyId;
 
@@ -46,10 +45,9 @@ class _SearchingPharmaciesScreenState
       vsync: this,
     )..repeat();
 
-    // Start countdown timer
+    // Start countdown timer if not already running
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(countdownTimerNotifierProvider.notifier).start();
-      _startRoutingLogic();
     });
 
     // Poll the patient history API and specific prescription details for incoming pharmacy replies/offers every 5 seconds
@@ -64,24 +62,10 @@ class _SearchingPharmaciesScreenState
     });
   }
 
-  void _startRoutingLogic() {
-    _routingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final remaining = ref.read(countdownTimerNotifierProvider);
-
-      if (remaining <= 0 && mounted) {
-        // Time's up, move to next pharmacy
-        ref.read(routingStateNotifierProvider.notifier).moveToNextPharmacy();
-        ref.read(countdownTimerNotifierProvider.notifier).reset();
-        ref.read(countdownTimerNotifierProvider.notifier).start();
-      }
-    });
-  }
-
   @override
   void dispose() {
     _pulseController.dispose();
     _rotateController.dispose();
-    _routingTimer?.cancel();
     _pollingTimer?.cancel();
     super.dispose();
   }
@@ -173,7 +157,6 @@ class _SearchingPharmaciesScreenState
     if (routingState.status == RoutingStatus.pharmacyResponded && routingState.chatId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          final chatId = routingState.chatId!;
           String displayName = 'Pharmacy / صيدلية قريبة';
           if (routingState.lockPharmacyId != null) {
             final matchingReply = replies.firstWhere(

@@ -76,9 +76,12 @@ class RoutingStateModel {
   /// Mark pharmacy as failed and move to next
   RoutingStateModel markPharmacyAsFailed(String pharmacyId) {
     final updatedFailedIds = [...failedPharmacyIds, pharmacyId];
+    final nextIndex = currentPharmacyIndex + 1;
+    final nextPharmacy = nextIndex < nearbyPharmacies.length ? nearbyPharmacies[nextIndex] : null;
     return copyWith(
       failedPharmacyIds: updatedFailedIds,
-      currentPharmacyIndex: currentPharmacyIndex + 1,
+      currentPharmacyIndex: nextIndex,
+      currentPharmacy: nextPharmacy,
       lastUpdatedAt: DateTime.now(),
     );
   }

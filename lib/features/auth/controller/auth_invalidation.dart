@@ -62,6 +62,6 @@ void invalidateAllUserProviders(Ref ref) {
   ref.invalidate(prescription_prov.routingStateNotifierProvider);
   ref.invalidate(prescription_prov.countdownTimerNotifierProvider);
 
-  // NOTE: darkModeProvider is intentionally excluded — it is a per-device
+  // NOTE: themeModeProvider is intentionally excluded — it is a per-device
   // preference, not per-user data.
 }

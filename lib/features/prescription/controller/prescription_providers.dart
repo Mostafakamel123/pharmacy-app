@@ -317,8 +317,8 @@ class RoutingStateNotifier extends StateNotifier<RoutingStateModel?> {
 
   /// Private: Start 5-minute timer for pharmacy response
   void _startPharmacyTimer() {
-    // Timer would be handled in UI layer with StateNotifierProvider
-    // This is a placeholder for the logic
+    ref.read(countdownTimerNotifierProvider.notifier).reset();
+    ref.read(countdownTimerNotifierProvider.notifier).start();
   }
 
   /// Reset isRequestPending when routing is complete
@@ -327,16 +327,24 @@ class RoutingStateNotifier extends StateNotifier<RoutingStateModel?> {
       state = state!.copyWith(isRequestPending: false);
       print('🔴 DEBUG: isRequestPending set to FALSE - ${state?.isRequestPending}');
     }
+    ref.read(countdownTimerNotifierProvider.notifier).stop();
   }
 }
 
 /// Timer countdown for current pharmacy (in seconds)
 class CountdownTimerNotifier extends StateNotifier<int> {
+  final Ref ref;
   Timer? _timer;
 
-  CountdownTimerNotifier() : super(300) {
-    // 5 minutes default
+  CountdownTimerNotifier(this.ref) : super(300) {
+    // Initialize state with whatever remainingTime is in the current routing state
+    final routingState = ref.read(routingStateNotifierProvider);
+    if (routingState != null) {
+      state = routingState.remainingTime;
+    }
   }
+
+  bool get isRunning => _timer?.isActive ?? false;
 
   @override
   void dispose() {
@@ -344,31 +352,69 @@ class CountdownTimerNotifier extends StateNotifier<int> {
     super.dispose();
   }
 
-  void start({Duration duration = const Duration(minutes: 5)}) {
+  void start({Duration? duration}) {
+    if (isRunning) {
+      return;
+    }
+
+    final routingState = ref.read(routingStateNotifierProvider);
+    if (routingState == null || 
+        routingState.isRequestPending == false ||
+        (routingState.status != RoutingStatus.contactingPharmacy &&
+         routingState.status != RoutingStatus.searching)) {
+      return;
+    }
+
     _timer?.cancel();
-    state = duration.inSeconds;
+    if (duration != null) {
+      state = duration.inSeconds;
+    } else {
+      if (state <= 0) {
+        state = 300;
+      }
+    }
+
+    // Update routing state with initial timer state
+    ref.read(routingStateNotifierProvider.notifier).updateRemainingTime(state);
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final currentRoutingState = ref.read(routingStateNotifierProvider);
+      if (currentRoutingState == null || 
+          currentRoutingState.isRequestPending == false ||
+          (currentRoutingState.status != RoutingStatus.contactingPharmacy &&
+           currentRoutingState.status != RoutingStatus.searching)) {
+        timer.cancel();
+        _timer = null;
+        return;
+      }
+
       if (state > 0) {
         state--;
+        ref.read(routingStateNotifierProvider.notifier).updateRemainingTime(state);
       } else {
         timer.cancel();
-        // This will trigger moveToNextPharmacy in UI
+        _timer = null;
+        
+        // Time's up, move to next pharmacy
+        ref.read(routingStateNotifierProvider.notifier).moveToNextPharmacy();
       }
     });
   }
 
   void pause() {
     _timer?.cancel();
+    _timer = null;
   }
 
   void reset() {
     _timer?.cancel();
+    _timer = null;
     state = 300;
   }
 
   void stop() {
     _timer?.cancel();
+    _timer = null;
     state = 0;
   }
 }
@@ -386,7 +432,7 @@ final routingStateNotifierProvider =
 /// Countdown timer notifier provider
 final countdownTimerNotifierProvider =
     StateNotifierProvider<CountdownTimerNotifier, int>((ref) {
-  return CountdownTimerNotifier();
+  return CountdownTimerNotifier(ref);
 });
 
 /// Get the current routing state
