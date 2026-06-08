@@ -24,6 +24,7 @@ class PostCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isArabicText = _isArabic(post.content);
     
     // Get current user profile to determine ownership
     final profile = ref.watch(profileProvider).value;
@@ -242,17 +243,23 @@ class PostCard extends ConsumerWidget {
                   const SizedBox(height: 12),
                   
                   // Content
-                  Text(
-                    post.content,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark
-                          ? DarkColors.textSecondary
-                          : LightColors.textSecondary,
-                      height: 1.5,
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      post.content,
+                      textDirection: isArabicText ? TextDirection.rtl : TextDirection.ltr,
+                      textAlign: isArabicText ? TextAlign.right : TextAlign.left,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark
+                            ? DarkColors.textSecondary
+                            : LightColors.textSecondary,
+                        height: 1.5,
+                        fontFamily: isArabicText ? 'Cairo' : null,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   
                   // Real High-Resolution Network Image
@@ -350,6 +357,10 @@ class PostCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  bool _isArabic(String text) {
+    return RegExp(r'[\u0600-\u06FF]').hasMatch(text);
   }
 }
 

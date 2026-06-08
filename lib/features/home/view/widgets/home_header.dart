@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:Elaaj/core/helpers/ui_helpers.dart';
 import 'package:Elaaj/core/theme/app_colors.dart';
 import 'package:Elaaj/features/home/controller/home_providers.dart';
 import 'package:Elaaj/features/profile/controller/profile_providers.dart';
@@ -203,19 +205,111 @@ class _ProfileNameWidget extends ConsumerWidget {
 class _ProfileLocationWidget extends ConsumerWidget {
   const _ProfileLocationWidget();
 
-  Future<void> _refreshLocation(WidgetRef ref) async {
-    // Invalidate both location providers so they re-fetch fresh GPS coords.
-    ref.invalidate(locationProvider);
-    ref.invalidate(locationNameProvider);
-
-    // Wait for the fresh location to resolve, then refresh nearby pharmacies.
+  Future<void> _refreshLocation(BuildContext context, WidgetRef ref) async {
     try {
+      // 1. Check if location services are enabled on the device
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      // 2. If services are disabled or permission is denied/deniedForever, show SnackBar
+      if (!serviceEnabled || 
+          permission == LocationPermission.denied || 
+          permission == LocationPermission.deniedForever) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.location_off_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'الرجاء تفعيل خدمة الموقع لتحديد الصيدليات القريبة منك.',
+                      style: TextStyle(
+                        fontFamily: 'Cairo', 
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFFEF4444),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              margin: const EdgeInsets.all(16),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'تفعيل',
+                textColor: Colors.white,
+                onPressed: () async {
+                  if (!serviceEnabled) {
+                    await Geolocator.openLocationSettings();
+                  } else {
+                    await Geolocator.openAppSettings();
+                  }
+                },
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      // 3. Location is enabled and authorized — proceed with refresh
+      ref.invalidate(locationProvider);
+      ref.invalidate(locationNameProvider);
+
       final loc = await ref.read(locationProvider.future);
       if (loc != null) {
         ref.read(nearbyPharmaciesProvider.notifier).refresh();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'تم تحديث موقعك الحالي بنجاح.',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFF10B981),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              margin: const EdgeInsets.all(16),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
       }
-    } catch (_) {
-      // Location failed — nearby pharmacies keep their current state.
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ أثناء تحديث الموقع: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -234,7 +328,7 @@ class _ProfileLocationWidget extends ConsumerWidget {
     );
 
     return GestureDetector(
-      onTap: isRefreshing ? null : () => _refreshLocation(ref),
+      onTap: isRefreshing ? null : () => _refreshLocation(context, ref),
       child: _LocationPill(
         location: displayLocation,
         isRefreshing: isRefreshing,
@@ -392,70 +486,74 @@ class _NotificationBadge extends ConsumerWidget {
     final count = ref.watch(notificationCountProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(11),
-          decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0x1A0EA5E9)
-                : const Color(0xE6FFFFFF),
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
-            border: Border.all(
+    return GestureDetector(
+      onTap: () => UiHelpers.showComingSoonDialog(context, featureName: 'الإشعارات'),
+      behavior: HitTestBehavior.opaque,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0x330EA5E9)
-                  : const Color(0xFFE8F5E9),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
+                  ? const Color(0x1A0EA5E9)
+                  : const Color(0xE6FFFFFF),
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              border: Border.all(
                 color: isDark
-                    ? const Color(0x1A000000)
-                    : const Color(0x0F0EA5E9),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                    ? const Color(0x330EA5E9)
+                    : const Color(0xFFE8F5E9),
+                width: 1,
               ),
-            ],
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? const Color(0x1A000000)
+                      : const Color(0x0F0EA5E9),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.notifications_none_rounded,
+              size: 20,
+              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9),
+            ),
           ),
-          child: Icon(
-            Icons.notifications_none_rounded,
-            size: 20,
-            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9),
-          ),
-        ),
-        if (count > 0)
-          Positioned(
-            right: 2,
-            top: 2,
-            child: Container(
-              width: 18,
-              height: 18,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEF4444),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x66EF4444),
-                    blurRadius: 6,
+          if (count > 0)
+            Positioned(
+              right: 2,
+              top: 2,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEF4444),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x66EF4444),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    count > 9 ? '9+' : '$count',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  count > 9 ? '9+' : '$count',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
-                  ),
-                  textAlign: TextAlign.center,
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

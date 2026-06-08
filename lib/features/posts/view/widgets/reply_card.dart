@@ -163,6 +163,8 @@ class ReplyCard extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, bool isBest, bool isDark) {
+    final isPharmacyNameArabic = _isArabic(reply.pharmacyName);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -171,17 +173,21 @@ class ReplyCard extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
           child: Row(
+            textDirection: isPharmacyNameArabic ? TextDirection.rtl : TextDirection.ltr,
             children: [
               _buildAvatar(isBest),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: isPharmacyNameArabic 
+                      ? CrossAxisAlignment.end 
+                      : CrossAxisAlignment.start,
                   children: [
                     _buildNameRow(isBest, isDark),
                     const SizedBox(height: 2),
                     Text(
                       reply.timeAgo,
+                      textDirection: isPharmacyNameArabic ? TextDirection.rtl : TextDirection.ltr,
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? DarkColors.textHint : LightColors.textHint,
@@ -221,16 +227,21 @@ class ReplyCard extends ConsumerWidget {
     final nameColor = isBest
         ? AppColors.primaryGreen
         : (isDark ? DarkColors.textPrimary : LightColors.textPrimary);
+    final isPharmacyNameArabic = _isArabic(reply.pharmacyName);
 
     return Row(
+      textDirection: isPharmacyNameArabic ? TextDirection.rtl : TextDirection.ltr,
       children: [
         Expanded(
           child: Text(
             reply.pharmacyName,
+            textDirection: isPharmacyNameArabic ? TextDirection.rtl : TextDirection.ltr,
+            textAlign: isPharmacyNameArabic ? TextAlign.right : TextAlign.left,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: nameColor,
+              fontFamily: isPharmacyNameArabic ? 'Cairo' : null,
             ),
           ),
         ),
@@ -240,12 +251,19 @@ class ReplyCard extends ConsumerWidget {
   }
 
   Widget _buildContent(bool isDark) {
-    return Text(
-      reply.content,
-      style: TextStyle(
-        fontSize: 14,
-        color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
-        height: 1.5,
+    final isArabicText = _isArabic(reply.content);
+    return SizedBox(
+      width: double.infinity,
+      child: Text(
+        reply.content,
+        textDirection: isArabicText ? TextDirection.rtl : TextDirection.ltr,
+        textAlign: isArabicText ? TextAlign.right : TextAlign.left,
+        style: TextStyle(
+          fontSize: 14,
+          color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+          height: 1.5,
+          fontFamily: isArabicText ? 'Cairo' : null,
+        ),
       ),
     );
   }
@@ -253,6 +271,7 @@ class ReplyCard extends ConsumerWidget {
   Widget _buildMedicineInfo(bool isDark) {
     final iconColor = isDark ? const Color(0xFF90CAF9) : AppColors.primaryBlue;
     final surfaceColor = isDark ? DarkColors.surfaceVariant : LightColors.surfaceVariant;
+    final isMedicineArabic = reply.medicineName != null && _isArabic(reply.medicineName!);
 
     return Container(
       padding: const EdgeInsets.all(10),
@@ -261,23 +280,30 @@ class ReplyCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
+        textDirection: isMedicineArabic ? TextDirection.rtl : TextDirection.ltr,
         children: [
           Icon(Icons.medication_rounded, size: 18, color: iconColor),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: isMedicineArabic 
+                  ? CrossAxisAlignment.end 
+                  : CrossAxisAlignment.start,
               children: [
                 Text(
                   reply.medicineName!,
+                  textDirection: isMedicineArabic ? TextDirection.rtl : TextDirection.ltr,
+                  textAlign: isMedicineArabic ? TextAlign.right : TextAlign.left,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    fontFamily: isMedicineArabic ? 'Cairo' : null,
                   ),
                 ),
                 Text(
                   reply.isAvailable ? 'In Stock' : 'Out of Stock',
+                  textDirection: isMedicineArabic ? TextDirection.rtl : TextDirection.ltr,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -308,6 +334,10 @@ class ReplyCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  bool _isArabic(String text) {
+    return RegExp(r'[\u0600-\u06FF]').hasMatch(text);
   }
 }
 

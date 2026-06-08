@@ -8,6 +8,7 @@ import 'package:Elaaj/features/profile/view/widgets/profile_actions.dart';
 import 'package:Elaaj/features/profile/view/widgets/profile_header.dart';
 import 'package:Elaaj/features/auth/controller/auth_providers.dart';
 import 'package:Elaaj/features/prescription/view/screens/my_prescriptions_screen.dart';
+import 'package:Elaaj/core/helpers/ui_helpers.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -109,7 +110,9 @@ class ProfileScreen extends ConsumerWidget {
                     title: 'Notifications',
                     icon: Icons.notifications_outlined,
                     iconColor: AppColors.primaryGreen,
-                    onTap: () {},
+                    onTap: () {
+                      UiHelpers.showComingSoonDialog(context, featureName: 'Notifications');
+                    },
                   ),
                 ],
               ),

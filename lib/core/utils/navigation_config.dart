@@ -56,7 +56,7 @@ class UserNavItems {
           route: '/pharmacy/profile',
         ),
         NavItem(
-          label: 'الروشتات المقبولة',
+          label: 'Prescriptions',
           icon: Icons.receipt_long_outlined,
           activeIcon: Icons.receipt_long,
           builder: (ref) => const PharmacyAcceptedPrescriptionsScreen(),
@@ -95,7 +95,7 @@ class UserNavItems {
         route: '/posts',
       ),
       NavItem(
-        label: 'روشتاتي',
+        label: 'Prescriptions',
         icon: Icons.receipt_long_outlined,
         activeIcon: Icons.receipt_long,
         builder: (ref) => const MyPrescriptionsScreen(),
