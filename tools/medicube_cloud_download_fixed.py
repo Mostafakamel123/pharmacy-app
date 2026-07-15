@@ -16,8 +16,6 @@ def to_webp_fill(raw: bytes, dest: Path) -> None:
         else:
             im = im.convert('RGB')
 
-        # Scale proportionally and crop only the overflow. This prevents a
-        # 300x300 source from being pasted as a tiny square on a 1200 canvas.
         result = ImageOps.fit(
             im,
             (1200, 1200),
