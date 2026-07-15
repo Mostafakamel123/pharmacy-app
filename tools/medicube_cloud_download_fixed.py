@@ -54,14 +54,7 @@ def download_best(url: str) -> bytes:
         raise RuntimeError(' | '.join(errors))
     choices.sort(reverse=True, key=lambda x: (x[0], x[1]))
     _, byte_count, width, height, selected_url, raw = choices[0]
-    SELECTED[url] = {
-        'requested_url': url,
-        'selected_url': selected_url,
-        'source_width': width,
-        'source_height': height,
-        'source_bytes': byte_count,
-        'master_recovered': selected_url != clean_query(url),
-    }
+    SELECTED[url] = {'requested_url': url, 'selected_url': selected_url, 'source_width': width, 'source_height': height, 'source_bytes': byte_count, 'master_recovered': selected_url != clean_query(url)}
     print(f'SOURCE {width}x{height} {selected_url}')
     return raw
 
@@ -79,15 +72,9 @@ def to_webp_high_quality(raw: bytes, dest: Path) -> None:
         dest.parent.mkdir(parents=True, exist_ok=True)
         result.save(dest, 'WEBP', quality=96, method=6)
 
-
 original.download = download_best
 original.to_webp = to_webp_high_quality
 
 if __name__ == '__main__':
     original.main()
-    report_path = original.OUT / 'source_quality_report.json'
-    report_path.write_text(json.dumps({
-        'image_count': len(SELECTED),
-        'below_800px': [v for v in SELECTED.values() if min(v['source_width'], v['source_height']) < 800],
-        'sources': list(SELECTED.values()),
-    }, ensure_ascii=False, indent=2), encoding='utf-8')
+    (original.OUT / 'source_quality_report.json').write_text(json.dumps({'image_count': len(SELECTED), 'below_800px': [v for v in SELECTED.values() if min(v['source_width'], v['source_height']) < 800], 'sources': list(SELECTED.values())}, ensure_ascii=False, indent=2), encoding='utf-8')
