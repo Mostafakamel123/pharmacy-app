@@ -16,12 +16,7 @@ def to_webp_fill(raw: bytes, dest: Path) -> None:
         else:
             im = im.convert('RGB')
 
-        result = ImageOps.fit(
-            im,
-            (1200, 1200),
-            method=Image.Resampling.LANCZOS,
-            centering=(0.5, 0.5),
-        )
+        result = ImageOps.fit(im, (1200, 1200), method=Image.Resampling.LANCZOS, centering=(0.5, 0.5))
         dest.parent.mkdir(parents=True, exist_ok=True)
         result.save(dest, 'WEBP', quality=90, method=6)
 
