@@ -21,17 +21,14 @@ def clean_query(url: str) -> str:
 
 
 def source_candidates(url: str) -> list[str]:
-    """Return the original CDN file first, not Shopify's 300x300 thumbnail."""
     url = clean_query(url)
     parts = urlsplit(url)
     path = parts.path
     out: list[str] = []
-
     match = LOW_SIZE_SUFFIX.match(path)
     if match and max(int(match.group('w')), int(match.group('h'))) <= 800:
         master_path = match.group('stem') + match.group('ext')
         out.append(urlunsplit((parts.scheme, parts.netloc, master_path, parts.query, parts.fragment)))
-
     out.append(url)
     return list(dict.fromkeys(out))
 
@@ -41,11 +38,7 @@ def download_best(url: str) -> bytes:
     errors = []
     for candidate in source_candidates(url):
         try:
-            response = original.S.get(
-                candidate,
-                timeout=60,
-                headers={'Referer': 'https://kstyleseoul.com/'},
-            )
+            response = original.S.get(candidate, timeout=60, headers={'Referer': 'https://kstyleseoul.com/'})
             response.raise_for_status()
             raw = response.content
             if len(raw) < 1200:
@@ -57,10 +50,8 @@ def download_best(url: str) -> bytes:
             choices.append((width * height, len(raw), width, height, candidate, raw))
         except Exception as exc:
             errors.append(f'{candidate}: {exc}')
-
     if not choices:
         raise RuntimeError(' | '.join(errors))
-
     choices.sort(reverse=True, key=lambda x: (x[0], x[1]))
     _, byte_count, width, height, selected_url, raw = choices[0]
     SELECTED[url] = {
@@ -76,7 +67,6 @@ def download_best(url: str) -> bytes:
 
 
 def to_webp_high_quality(raw: bytes, dest: Path) -> None:
-    """Fill 1200x1200 from the highest-resolution source without distortion."""
     with Image.open(io.BytesIO(raw)) as im:
         im = ImageOps.exif_transpose(im)
         if im.mode == 'RGBA':
@@ -85,13 +75,7 @@ def to_webp_high_quality(raw: bytes, dest: Path) -> None:
             im = bg
         else:
             im = im.convert('RGB')
-
-        result = ImageOps.fit(
-            im,
-            (1200, 1200),
-            method=Image.Resampling.LANCZOS,
-            centering=(0.5, 0.5),
-        )
+        result = ImageOps.fit(im, (1200, 1200), method=Image.Resampling.LANCZOS, centering=(0.5, 0.5))
         dest.parent.mkdir(parents=True, exist_ok=True)
         result.save(dest, 'WEBP', quality=96, method=6)
 
@@ -102,11 +86,8 @@ original.to_webp = to_webp_high_quality
 if __name__ == '__main__':
     original.main()
     report_path = original.OUT / 'source_quality_report.json'
-    report_path.write_text(
-        json.dumps({
-            'image_count': len(SELECTED),
-            'below_800px': [v for v in SELECTED.values() if min(v['source_width'], v['source_height']) < 800],
-            'sources': list(SELECTED.values()),
-        }, ensure_ascii=False, indent=2),
-        encoding='utf-8',
-    )
+    report_path.write_text(json.dumps({
+        'image_count': len(SELECTED),
+        'below_800px': [v for v in SELECTED.values() if min(v['source_width'], v['source_height']) < 800],
+        'sources': list(SELECTED.values()),
+    }, ensure_ascii=False, indent=2), encoding='utf-8')
