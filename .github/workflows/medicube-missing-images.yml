@@ -1,4 +1,4 @@
-name: Medicube Missing Images Fixed
+name: Medicube Missing Images High Resolution
 on:
   pull_request:
     branches: [ main ]
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: medicube-missing-images-fixed
+          name: medicube-missing-images-high-resolution
           path: tools/OUTPUT/
           if-no-files-found: error
           retention-days: 3
