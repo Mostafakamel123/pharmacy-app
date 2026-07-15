@@ -1,4 +1,4 @@
-name: Medicube Missing Images High Resolution
+name: Medicube Missing Images Quality Restoration
 on:
   pull_request:
     branches: [ main ]
@@ -6,18 +6,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install --quiet requests pillow rapidfuzz
+      - run: python -m pip install --quiet requests pillow rapidfuzz opencv-contrib-python-headless numpy
+      - run: curl -L --fail --retry 3 -o tools/FSRCNN_x4.pb https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x4.pb
       - run: python tools/medicube_cloud_download_fixed.py
+      - run: python tools/medicube_replace_lowres.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: medicube-missing-images-high-resolution
+          name: medicube-missing-images-quality-restored
           path: tools/OUTPUT/
           if-no-files-found: error
           retention-days: 3
