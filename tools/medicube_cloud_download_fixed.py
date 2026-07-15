@@ -15,17 +15,15 @@ LOW_SIZE_SUFFIX = re.compile(r"(?P<stem>.*?)(?:-|_)(?P<w>\d{2,4})x(?P<h>\d{2,4})
 
 def clean_query(url: str) -> str:
     parts = urlsplit(url)
-    query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
-             if k.lower() not in {'width', 'height', 'crop'}]
+    query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k.lower() not in {'width', 'height', 'crop'}]
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 def source_candidates(url: str) -> list[str]:
     url = clean_query(url)
     parts = urlsplit(url)
-    path = parts.path
     out: list[str] = []
-    match = LOW_SIZE_SUFFIX.match(path)
+    match = LOW_SIZE_SUFFIX.match(parts.path)
     if match and max(int(match.group('w')), int(match.group('h'))) <= 800:
         master_path = match.group('stem') + match.group('ext')
         out.append(urlunsplit((parts.scheme, parts.netloc, master_path, parts.query, parts.fragment)))
