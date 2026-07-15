@@ -1,4 +1,4 @@
-name: Medicube Missing Images Quality Restoration
+name: Medicube Missing Images Final Quality Restoration
 on:
   pull_request:
     branches: [ main ]
@@ -16,10 +16,11 @@ jobs:
       - run: curl -L --fail --retry 3 -o tools/FSRCNN_x4.pb https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x4.pb
       - run: python tools/medicube_cloud_download_fixed.py
       - run: python tools/medicube_replace_lowres.py
+      - run: python tools/medicube_fix_two_wrong.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: medicube-missing-images-quality-restored
+          name: medicube-missing-images-final-quality-restored
           path: tools/OUTPUT/
           if-no-files-found: error
           retention-days: 3
