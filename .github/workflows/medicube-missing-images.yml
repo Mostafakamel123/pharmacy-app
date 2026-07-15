@@ -1,4 +1,4 @@
-name: Medicube Missing Images Final Quality Restoration
+name: Medicube Missing Images Native Quality Final
 on:
   pull_request:
     branches: [ main ]
@@ -17,10 +17,11 @@ jobs:
       - run: python tools/medicube_cloud_download_fixed.py
       - run: python tools/medicube_replace_lowres.py
       - run: python tools/medicube_fix_two_wrong.py
+      - run: python tools/medicube_replace_300px.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: medicube-missing-images-final-quality-restored
+          name: medicube-missing-images-native-quality-final
           path: tools/OUTPUT/
           if-no-files-found: error
           retention-days: 3
