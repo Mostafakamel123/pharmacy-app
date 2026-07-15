@@ -1,4 +1,4 @@
-name: Medicube Missing Images
+name: Medicube Missing Images Fixed
 on:
   pull_request:
     branches: [ main ]
@@ -13,11 +13,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --quiet requests pillow rapidfuzz
-      - run: python tools/medicube_cloud_download.py
+      - run: python tools/medicube_cloud_download_fixed.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: medicube-missing-images
+          name: medicube-missing-images-fixed
           path: tools/OUTPUT/
           if-no-files-found: error
           retention-days: 3
