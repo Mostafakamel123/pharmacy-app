@@ -1,0 +1,22 @@
+name: Round Lab Soybean Gallery
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --quiet requests pillow
+      - run: python tools/roundlab_soybean_gallery.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: roundlab-soybean-serum-gallery
+          path: roundlab_output/
+          if-no-files-found: error
+          retention-days: 3
